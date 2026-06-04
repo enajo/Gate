@@ -11,6 +11,7 @@ import {
   fromZonedTime,
   toZonedTime,
 } from "date-fns-tz";
+
 import { DEFAULT_TIMEZONE } from "@/lib/constants";
 
 export type DateInput = Date | string | number;
@@ -75,7 +76,10 @@ export function fromUtc(value: DateInput, timezone: string): Date {
   return toZonedTime(assertValidDate(value), timezone);
 }
 
-export function addMinutesToDate(value: DateInput, minutes: number): Date {
+export function addMinutesToDate(
+  value: DateInput,
+  minutes: number,
+): Date {
   return addMinutes(assertValidDate(value), minutes);
 }
 
@@ -91,10 +95,36 @@ export function getUtcDayBounds(
   return { start, end };
 }
 
+export function combineDateAndTime(
+  date: DateInput,
+  time: string,
+): Date {
+  const safeDate = assertValidDate(date);
+
+  const [hours, minutes] = time.split(":").map(Number);
+
+  if (
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    throw new Error(`Invalid time value: ${time}`);
+  }
+
+  const combined = new Date(safeDate);
+
+  combined.setHours(hours, minutes, 0, 0);
+
+  return combined;
+}
+
 export function toIsoString(value: DateInput): string {
   return assertValidDate(value).toISOString();
 }
 
-export function now() {
+export function now(): Date {
   return new Date();
 }

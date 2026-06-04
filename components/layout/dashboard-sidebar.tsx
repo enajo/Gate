@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  CalendarDays,
   ClipboardList,
   Clock3,
-  CreditCard,
   Home,
   Layers3,
   Settings,
@@ -55,16 +53,6 @@ const navigationItems: NavigationItem[] = [
     href: "/app/availability",
     label: "Availability",
     icon: Clock3,
-  },
-  {
-    href: "/app/calendars",
-    label: "Calendars",
-    icon: CalendarDays,
-  },
-  {
-    href: "/app/access-codes",
-    label: "Access Codes",
-    icon: CreditCard,
   },
   {
     href: "/app/bookings",

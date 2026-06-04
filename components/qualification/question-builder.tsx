@@ -13,8 +13,8 @@ export type QualificationQuestionItem = QuestionFormValues & {
   id: string;
 };
 
-export interface QuestionBuilderProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface QuestionBuilderProps {
+  className?: string;
   questions: QualificationQuestionItem[];
   onChange?: (questions: QualificationQuestionItem[]) => void;
   onCreate?: () => void;

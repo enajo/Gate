@@ -51,8 +51,8 @@ export type QualificationRuleValue = {
   outcomeValue?: string | null;
 };
 
-export interface RulesBuilderProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface RulesBuilderProps {
+  className?: string;
   rules: QualificationRuleValue[];
   questions: QualificationQuestionOption[];
   onChange?: (rules: QualificationRuleValue[]) => void;

@@ -42,12 +42,12 @@ function getBrowserTimezone() {
   }
 }
 
-function buildTimezoneOptions(currentValue?: string) {
+function buildTimezoneOptions(currentValue?: string): string[] {
   const browserTimezone = getBrowserTimezone();
 
   return Array.from(
     new Set(
-      [currentValue, browserTimezone, ...commonTimezones].filter(Boolean),
+      [currentValue, browserTimezone, ...commonTimezones].filter((v): v is string => typeof v === "string" && v.length > 0),
     ),
   );
 }

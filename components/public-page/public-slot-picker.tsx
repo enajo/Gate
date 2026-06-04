@@ -34,8 +34,8 @@ type PublicSlotsResponse = {
   blockedRanges?: PublicBlockedRange[];
 };
 
-export interface PublicSlotPickerProps
-  extends React.HTMLAttributes<HTMLElement> {
+export interface PublicSlotPickerProps {
+  className?: string;
   slug: string;
   serviceId: string | null;
   isUnlocked?: boolean;
@@ -165,7 +165,7 @@ export function PublicSlotPicker({
       try {
         const params = new URLSearchParams({
           slug,
-          serviceId,
+          ...(serviceId != null ? { serviceId } : {}),
           startDate: rangeStart,
           endDate: rangeEnd,
           timezone,
@@ -181,7 +181,7 @@ export function PublicSlotPicker({
           | { error?: string };
 
         if (!response.ok) {
-          throw new Error(data?.error || "Failed to load available slots.");
+          throw new Error((data as { error?: string }).error || "Failed to load available slots.");
         }
 
         if (cancelled) {

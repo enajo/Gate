@@ -1,4 +1,4 @@
-import type { Professional, Testimonial } from "@prisma/client";
+import type { Professional, Testimonial as PrismaTestimonial } from "@prisma/client";
 import type {
   BrandSettings,
   ProfessionalProfile,
@@ -6,6 +6,7 @@ import type {
   ProfileWithTestimonials,
   PublicProfessionalProfile,
   SocialLinks,
+  Testimonial,
 } from "@/types/profile";
 
 export function mapProfessionalToProfile(
@@ -24,6 +25,7 @@ export function mapProfessionalToProfile(
     socialLinks: (professional.socialLinks as SocialLinks | null) ?? null,
     timezone: professional.timezone,
     onboardingCompleted: professional.onboardingCompleted,
+    publishedAt: professional.publishedAt,
     bufferBeforeMinutes: professional.bufferBeforeMinutes,
     bufferAfterMinutes: professional.bufferAfterMinutes,
     minimumNoticeMinutes: professional.minimumNoticeMinutes,
@@ -37,6 +39,7 @@ export function mapProfessionalToPublicProfile(
   professional: Professional,
 ): PublicProfessionalProfile {
   return {
+    id: professional.id,
     fullName: professional.fullName,
     slug: professional.slug,
     title: professional.title,
@@ -46,10 +49,11 @@ export function mapProfessionalToPublicProfile(
     brandSettings: (professional.brandSettings as BrandSettings | null) ?? null,
     socialLinks: (professional.socialLinks as SocialLinks | null) ?? null,
     timezone: professional.timezone,
+    publishedAt: professional.publishedAt,
   };
 }
 
-export function mapTestimonial(testimonial: Testimonial) {
+export function mapTestimonial(testimonial: PrismaTestimonial): Testimonial {
   return {
     id: testimonial.id,
     professionalId: testimonial.professionalId,
@@ -57,20 +61,24 @@ export function mapTestimonial(testimonial: Testimonial) {
     role: testimonial.role,
     company: testimonial.company,
     content: testimonial.content,
+    rating: testimonial.rating,
     avatarUrl: testimonial.avatarUrl,
+    approved: testimonial.approved,
+    featured: testimonial.featured,
+    hidden: testimonial.hidden,
     sortOrder: testimonial.sortOrder,
     createdAt: testimonial.createdAt,
     updatedAt: testimonial.updatedAt,
   };
 }
 
-export function mapTestimonials(testimonials: Testimonial[]) {
+export function mapTestimonials(testimonials: PrismaTestimonial[]): Testimonial[] {
   return testimonials.map(mapTestimonial);
 }
 
 export function mapProfileWithTestimonials(params: {
   professional: Professional;
-  testimonials: Testimonial[];
+  testimonials: PrismaTestimonial[];
 }): ProfileWithTestimonials {
   return {
     ...mapProfessionalToProfile(params.professional),
@@ -88,6 +96,7 @@ export function buildProfileCompletionState(
       hasBio: false,
       hasAvatar: false,
       hasBranding: false,
+      hasGateSettings: false,
       hasSocialLinks: false,
     };
   }
@@ -101,11 +110,10 @@ export function buildProfileCompletionState(
     hasBio: Boolean(profile.bio),
     hasAvatar: Boolean(profile.avatarUrl),
     hasBranding: Boolean(
-      profile.brandSettings?.theme &&
-        profile.brandSettings?.primaryColor &&
-        profile.brandSettings?.accentColor &&
-        profile.brandSettings?.fontPair,
+      profile.brandSettings?.accentColor &&
+        profile.brandSettings?.backgroundColor,
     ),
+    hasGateSettings: false, // Phase 4: set to true once gate settings are configured
     hasSocialLinks: hasAnySocialLink,
   };
 }

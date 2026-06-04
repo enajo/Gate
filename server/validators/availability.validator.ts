@@ -41,8 +41,22 @@ export const createAvailabilityRuleSchema = z
     path: ["endTime"],
   });
 
-export const updateAvailabilityRuleSchema = createAvailabilityRuleSchema
-  .partial()
+export const updateAvailabilityRuleSchema = z
+  .object({
+    weekday: weekdaySchema.optional(),
+    startTime: z
+      .string()
+      .trim()
+      .regex(timeRegex, "startTime must be in HH:mm format.")
+      .optional(),
+    endTime: z
+      .string()
+      .trim()
+      .regex(timeRegex, "endTime must be in HH:mm format.")
+      .optional(),
+    active: z.boolean().optional(),
+  })
+  .strict()
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one availability field must be provided.",
   })
@@ -76,8 +90,18 @@ export const createBlockedDateSchema = z
     },
   );
 
-export const updateBlockedDateSchema = createBlockedDateSchema
-  .partial()
+export const updateBlockedDateSchema = z
+  .object({
+    startDateTime: dateInputSchema.optional(),
+    endDateTime: dateInputSchema.optional(),
+    reason: z
+      .preprocess(
+        emptyStringToUndefined,
+        z.string().trim().min(1).max(500).nullable().optional(),
+      )
+      .optional(),
+  })
+  .strict()
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one blocked date field must be provided.",
   })
@@ -107,7 +131,8 @@ export const availabilityRangeQuerySchema = z
   })
   .strict()
   .refine(
-    (value) => new Date(value.endDate).getTime() > new Date(value.startDate).getTime(),
+    (value) =>
+      new Date(value.endDate).getTime() > new Date(value.startDate).getTime(),
     {
       message: "endDate must be after startDate.",
       path: ["endDate"],

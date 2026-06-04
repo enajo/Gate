@@ -5,7 +5,7 @@ import { Check, Copy } from "lucide-react";
 
 import { Button, type ButtonProps } from "@/components/ui/button";
 
-export interface CopyButtonProps extends Omit<ButtonProps, "onClick"> {
+export interface CopyButtonProps extends Omit<ButtonProps, "onClick" | "onError"> {
   value: string;
   copiedLabel?: string;
   idleLabel?: string;

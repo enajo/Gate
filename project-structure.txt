@@ -1,0 +1,353 @@
+.
+├── .DS_Store
+├── .claude
+│   ├── settings.json
+│   └── settings.local.json
+├── .env
+├── .env.example
+├── .gitignore
+├── README.md
+├── app
+│   ├── (auth)
+│   │   ├── login
+│   │   │   └── page.tsx
+│   │   └── register
+│   │       └── page.tsx
+│   ├── (dashboard)
+│   │   ├── .DS_Store
+│   │   └── app
+│   │       ├── .DS_Store
+│   │       ├── access-codes
+│   │       │   └── page.tsx
+│   │       ├── availability
+│   │       │   └── page.tsx
+│   │       ├── bookings
+│   │       │   └── page.tsx
+│   │       ├── calendars
+│   │       │   └── page.tsx
+│   │       ├── control-room
+│   │       │   └── page.tsx
+│   │       ├── layout.tsx
+│   │       ├── onboarding
+│   │       │   └── page.tsx
+│   │       ├── page.tsx
+│   │       ├── profile
+│   │       │   └── page.tsx
+│   │       ├── qualification
+│   │       │   └── page.tsx
+│   │       ├── services
+│   │       │   └── page.tsx
+│   │       └── settings
+│   │           └── page.tsx
+│   ├── (marketing)
+│   │   ├── demo
+│   │   │   └── page.tsx
+│   │   ├── how-it-works
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   └── pricing
+│   │       └── page.tsx
+│   ├── (onboarding)
+│   │   ├── .DS_Store
+│   │   └── onboarding
+│   │       └── page.tsx
+│   ├── (public)
+│   │   ├── [slug]
+│   │   │   └── page.tsx
+│   │   └── booking
+│   │       └── [holdId]
+│   │           └── page.tsx
+│   ├── .DS_Store
+│   ├── api
+│   │   ├── app
+│   │   │   ├── access-codes
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── availability
+│   │   │   │   ├── blocked-dates
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── rules
+│   │   │   │       ├── [id]
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── route.ts
+│   │   │   ├── bookings
+│   │   │   │   └── route.ts
+│   │   │   ├── control-room
+│   │   │   │   ├── publish
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── google
+│   │   │   │   ├── calendars
+│   │   │   │   │   ├── [id]
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── callback
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── connect
+│   │   │   │       └── route.ts
+│   │   │   ├── holds
+│   │   │   │   ├── [id]
+│   │   │   │   │   ├── approve
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── decline
+│   │   │   │   │       └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── profile
+│   │   │   │   └── route.ts
+│   │   │   ├── qualification
+│   │   │   │   ├── questions
+│   │   │   │   │   ├── [id]
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── rules
+│   │   │   │       ├── [id]
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── route.ts
+│   │   │   └── services
+│   │   │       ├── [id]
+│   │   │       │   └── route.ts
+│   │   │       └── route.ts
+│   │   ├── auth
+│   │   │   └── [...nextauth]
+│   │   │       └── route.ts
+│   │   ├── healthz
+│   │   │   └── route.ts
+│   │   ├── jobs
+│   │   │   ├── expire-holds
+│   │   │   │   └── route.ts
+│   │   │   ├── retry-events
+│   │   │   │   └── route.ts
+│   │   │   └── sync-calendars
+│   │   │       └── route.ts
+│   │   └── public
+│   │       ├── bookings
+│   │       │   └── confirm
+│   │       │       └── route.ts
+│   │       ├── holds
+│   │       │   └── route.ts
+│   │       ├── professionals
+│   │       │   └── [slug]
+│   │       │       └── route.ts
+│   │       ├── qualification
+│   │       │   └── submit
+│   │       │       └── route.ts
+│   │       ├── services
+│   │       │   └── [slug]
+│   │       │       └── route.ts
+│   │       └── slots
+│   │           └── route.ts
+│   ├── globals.css
+│   └── layout.tsx
+├── components
+│   ├── .DS_Store
+│   ├── access-codes
+│   │   ├── access-code-form.tsx
+│   │   ├── access-code-list.tsx
+│   │   └── access-code-row.tsx
+│   ├── auth
+│   │   ├── auth-card.tsx
+│   │   └── sign-out-button.tsx
+│   ├── availability
+│   │   ├── blocked-date-form.tsx
+│   │   ├── blocked-dates-list.tsx
+│   │   ├── timezone-select.tsx
+│   │   └── weekly-schedule-form.tsx
+│   ├── bookings
+│   │   ├── booking-status-badge.tsx
+│   │   ├── booking-success-card.tsx
+│   │   ├── booking-summary.tsx
+│   │   ├── bookings-table.tsx
+│   │   └── holds-inbox.tsx
+│   ├── calendars
+│   │   ├── calendar-row.tsx
+│   │   ├── calendars-table.tsx
+│   │   ├── google-connect-button.tsx
+│   │   └── sync-status-badge.tsx
+│   ├── control-room
+│   │   ├── appearance-settings.tsx
+│   │   ├── availability-settings.tsx
+│   │   ├── control-room-form.tsx
+│   │   ├── control-room-preview.tsx
+│   │   ├── gate-settings.tsx
+│   │   └── profile-settings.tsx
+│   ├── layout
+│   │   ├── dashboard-header.tsx
+│   │   ├── dashboard-shell.tsx
+│   │   ├── dashboard-sidebar.tsx
+│   │   ├── page-shell.tsx
+│   │   ├── site-footer.tsx
+│   │   └── site-header.tsx
+│   ├── marketing
+│   │   ├── feature-section.tsx
+│   │   ├── final-cta-section.tsx
+│   │   ├── hero-section.tsx
+│   │   ├── how-it-works-section.tsx
+│   │   └── testimonial-section.tsx
+│   ├── profile
+│   │   ├── avatar-upload.tsx
+│   │   ├── profile-form.tsx
+│   │   └── theme-selector.tsx
+│   ├── providers.tsx
+│   ├── public-page
+│   │   ├── public-booking-form.tsx
+│   │   ├── public-gatekeeper.tsx
+│   │   ├── public-hero.tsx
+│   │   ├── public-sales-page-template.tsx
+│   │   ├── public-services.tsx
+│   │   ├── public-slot-picker.tsx
+│   │   ├── public-success.tsx
+│   │   └── public-testimonials.tsx
+│   ├── qualification
+│   │   ├── qualification-flow.tsx
+│   │   ├── question-builder.tsx
+│   │   ├── question-form.tsx
+│   │   ├── rules-builder.tsx
+│   │   └── rules-preview.tsx
+│   ├── services
+│   │   ├── service-card.tsx
+│   │   ├── service-dialog.tsx
+│   │   ├── service-form.tsx
+│   │   └── service-list.tsx
+│   ├── shared
+│   │   ├── copy-button.tsx
+│   │   ├── empty-state.tsx
+│   │   ├── error-state.tsx
+│   │   ├── loading-state.tsx
+│   │   └── section-heading.tsx
+│   └── ui
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── dialog.tsx
+│       ├── form.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── select.tsx
+│       ├── table.tsx
+│       └── textarea.tsx
+├── docker-compose.yml
+├── eslint.config.js
+├── hooks
+│   ├── use-access-codes.ts
+│   ├── use-availability.ts
+│   ├── use-booking-flow.ts
+│   ├── use-bookings.ts
+│   ├── use-current-user.ts
+│   ├── use-google-calendars.ts
+│   ├── use-public-profile.ts
+│   ├── use-qualification.ts
+│   └── use-services.ts
+├── lib
+│   ├── auth.ts
+│   ├── constants.ts
+│   ├── crypto.ts
+│   ├── dates.ts
+│   ├── db.ts
+│   ├── email.ts
+│   ├── env.ts
+│   ├── logger.ts
+│   ├── permissions.ts
+│   └── utils.ts
+├── middleware.ts
+├── next-env.d.ts
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── prisma
+│   ├── migrations
+│   │   ├── 20260510102938_init
+│   │   │   └── migration.sql
+│   │   ├── 20260527211740_phase_1_foundation
+│   │   │   └── migration.sql
+│   │   ├── 20260528120822_add_draft_settings
+│   │   │   └── migration.sql
+│   │   ├── 20260528200000_booking_holds_partial_unique
+│   │   │   └── migration.sql
+│   │   └── migration_lock.toml
+│   ├── schema.prisma
+│   └── seed.ts
+├── project-structure.txt
+├── public
+│   ├── .DS_Store
+│   ├── Gemini_Generated_Image_c4xwwwc4xwwwc4xw.png
+│   ├── hero-image.png
+│   ├── heroimage.png
+│   └── images
+│       ├── demo-preview.png
+│       ├── logo.svg
+│       └── placeholder-avatar.png
+├── scripts
+│   ├── clean-expired-holds.ts
+│   ├── create-admin.ts
+│   └── seed-demo-data.ts
+├── server
+│   ├── jobs
+│   │   ├── expire-holds.job.ts
+│   │   ├── retry-event-creation.job.ts
+│   │   ├── sync-google-calendars.job.ts
+│   │   └── token-health-check.job.ts
+│   ├── mappers
+│   │   ├── booking.mapper.ts
+│   │   ├── google.mapper.ts
+│   │   ├── profile.mapper.ts
+│   │   ├── qualification.mapper.ts
+│   │   └── service.mapper.ts
+│   ├── repositories
+│   │   ├── access-code.repository.ts
+│   │   ├── availability.repository.ts
+│   │   ├── booking.repository.ts
+│   │   ├── google.repository.ts
+│   │   ├── notification.repository.ts
+│   │   ├── profile.repository.ts
+│   │   ├── qualification.repository.ts
+│   │   ├── service.repository.ts
+│   │   └── user.repository.ts
+│   ├── services
+│   │   ├── access-code.service.ts
+│   │   ├── availability.service.ts
+│   │   ├── booking.service.ts
+│   │   ├── email.service.ts
+│   │   ├── google-auth.service.ts
+│   │   ├── google-calendar.service.ts
+│   │   ├── google-sync.service.ts
+│   │   ├── notification.service.ts
+│   │   ├── onboarding.service.ts
+│   │   ├── profile.service.ts
+│   │   ├── qualification.service.ts
+│   │   └── service-catalog.service.ts
+│   └── validators
+│       ├── access-code.validator.ts
+│       ├── availability.validator.ts
+│       ├── booking.validator.ts
+│       ├── google.validator.ts
+│       ├── profile.validator.ts
+│       ├── qualification.validator.ts
+│       └── service.validator.ts
+├── styles
+│   └── tokens.css
+├── tailwind.config.ts
+├── tests
+│   ├── integration
+│   │   ├── booking-flow.integration.test.ts
+│   │   └── google-calendar.integration.test.ts
+│   └── unit
+│       ├── access-code.service.test.ts
+│       ├── availability.service.test.ts
+│       ├── booking.service.test.ts
+│       └── qualification.service.test.ts
+├── tsconfig.json
+├── tsconfig.tsbuildinfo
+└── types
+    ├── access-code.ts
+    ├── auth.ts
+    ├── availability.ts
+    ├── booking.ts
+    ├── google.ts
+    ├── notification.ts
+    ├── profile.ts
+    ├── qualification.ts
+    └── service.ts
+
+111 directories, 240 files

@@ -35,8 +35,8 @@ export type QuestionFormValues = {
   isRequired: boolean;
 };
 
-export interface QuestionFormProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface QuestionFormProps {
+  className?: string;
   initialValues?: Partial<QuestionFormValues>;
   isSubmitting?: boolean;
   submitLabel?: string;

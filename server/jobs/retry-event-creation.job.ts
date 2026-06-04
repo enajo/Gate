@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { bookingService } from "@/server/services/booking.service";
 import { googleCalendarService } from "@/server/services/google-calendar.service";
+import { googleRepository } from "@/server/repositories/google.repository";
 
 export type RetryEventCreationJobResult = {
   startedAt: string;
@@ -153,15 +154,18 @@ export async function retryEventCreationJob(): Promise<RetryEventCreationJobResu
       await bookingService.markEventCreationPending(booking.id);
 
       const createdEvent =
-        await googleCalendarService.createBookingEventForCalendarAccount({
+        await googleCalendarService.createCalendarEvent({
           calendarAccountId: defaultCalendar.id,
           title: buildEventTitle(booking),
           start: booking.slotStart,
           end: booking.slotEnd,
-          timezone: booking.timezone ?? defaultCalendar.calendarTimeZone ?? "UTC",
-          attendeeEmail: booking.lead.email,
-          attendeeName: booking.lead.name ?? undefined,
-          bookingId: booking.id,
+          timeZone: booking.timezone ?? defaultCalendar.calendarTimeZone ?? "UTC",
+          attendees: [
+            {
+              email: booking.lead.email,
+              displayName: booking.lead.name ?? undefined,
+            },
+          ],
           description: [
             `Booking ID: ${booking.id}`,
             booking.lead.name ? `Client: ${booking.lead.name}` : null,
@@ -169,16 +173,19 @@ export async function retryEventCreationJob(): Promise<RetryEventCreationJobResu
           ]
             .filter(Boolean)
             .join("\n"),
+          conferenceDataVersion: 1,
         });
 
-      await db.booking.update({
-        where: { id: booking.id },
-        data: {
+      // Record the calendar event and update booking status
+      await googleRepository.createCalendarEventForBooking(
+        booking.id,
+        defaultCalendar.id,
+        {
           externalEventId: createdEvent.externalEventId,
           eventUrl: createdEvent.eventUrl ?? null,
-          calendarStatus: "CREATED",
+          meetingUrl: createdEvent.meetingUrl ?? null,
         },
-      });
+      );
 
       await bookingService.markEventCreated(booking.id);
 

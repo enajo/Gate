@@ -70,7 +70,7 @@ export const googleRepository = {
   },
 
   async findByExternalCalendar(params: {
-    provider: Prisma.EnumCalendarProviderFilter<"CalendarAccount">["equals"] | "GOOGLE" | "OUTLOOK";
+    provider: "GOOGLE" | "OUTLOOK";
     externalAccountId: string;
     externalCalendarId?: string | null;
   }): Promise<CalendarAccount | null> {

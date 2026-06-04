@@ -15,50 +15,25 @@ import {
   serviceRepository,
 } from "@/server/repositories/service.repository";
 import {
+  mapPublicService as sharedMapPublicService,
+  mapService as sharedMapService,
+  mapServiceWithMeta as sharedMapServiceWithMeta,
+} from "@/server/mappers/service.mapper";
+import {
   createServiceSchema,
   updateServiceSchema,
 } from "@/server/validators/service.validator";
 
 function mapService(service: Awaited<ReturnType<typeof serviceRepository.findById>>): Service | null {
-  if (!service) {
-    return null;
-  }
-
-  return {
-    id: service.id,
-    professionalId: service.professionalId,
-    title: service.title,
-    slug: service.slug,
-    description: service.description,
-    displayPrice: service.displayPrice,
-    durationMinutes: service.durationMinutes,
-    preparationInstructions: service.preparationInstructions,
-    active: service.active,
-    createdAt: service.createdAt,
-    updatedAt: service.updatedAt,
-  };
+  if (!service) return null;
+  return sharedMapService(service);
 }
 
 function mapPublicService(
   service: Awaited<ReturnType<typeof serviceRepository.findById>>,
 ): PublicService | null {
-  const mapped = mapService(service);
-
-  if (!mapped) {
-    return null;
-  }
-
-  return {
-    id: mapped.id,
-    professionalId: mapped.professionalId,
-    title: mapped.title,
-    slug: mapped.slug,
-    description: mapped.description,
-    displayPrice: mapped.displayPrice,
-    durationMinutes: mapped.durationMinutes,
-    preparationInstructions: mapped.preparationInstructions,
-    active: mapped.active,
-  };
+  if (!service) return null;
+  return sharedMapPublicService(service);
 }
 
 function mapServiceSummary(service: Service): ServiceSummary {
@@ -66,8 +41,17 @@ function mapServiceSummary(service: Service): ServiceSummary {
     id: service.id,
     title: service.title,
     slug: service.slug,
+    headline: service.headline,
     displayPrice: service.displayPrice,
+    currency: service.currency,
     durationMinutes: service.durationMinutes,
+    meetingFormat: service.meetingFormat,
+    paymentRequired: service.paymentRequired,
+    qualificationRequired: service.qualificationRequired,
+    accessCodeRequired: service.accessCodeRequired,
+    manualApprovalRequired: service.manualApprovalRequired,
+    availabilityExposure: service.availabilityExposure,
+    sortOrder: service.sortOrder,
     active: service.active,
   };
 }
@@ -80,21 +64,7 @@ function mapServiceListItem(service: Service): ServiceListItem {
 }
 
 function mapServiceWithMeta(service: RepositoryServiceWithMeta): ServiceWithMeta {
-  return {
-    id: service.id,
-    professionalId: service.professionalId,
-    title: service.title,
-    slug: service.slug,
-    description: service.description,
-    displayPrice: service.displayPrice,
-    durationMinutes: service.durationMinutes,
-    preparationInstructions: service.preparationInstructions,
-    active: service.active,
-    createdAt: service.createdAt,
-    updatedAt: service.updatedAt,
-    questionCount: service._count.qualificationQuestions,
-    ruleCount: service._count.qualificationRules,
-  };
+  return sharedMapServiceWithMeta(service);
 }
 
 async function requireProfessional(userId: string) {
@@ -219,10 +189,19 @@ export const serviceCatalogService = {
       {
         title: parsed.title,
         slug: parsed.slug ?? null,
+        headline: parsed.headline ?? null,
         description: parsed.description ?? null,
+        meetingFormat: parsed.meetingFormat ?? null,
         displayPrice: parsed.displayPrice ?? null,
+        currency: parsed.currency ?? null,
         durationMinutes: parsed.durationMinutes,
         preparationInstructions: parsed.preparationInstructions ?? null,
+        paymentRequired: parsed.paymentRequired ?? false,
+        qualificationRequired: parsed.qualificationRequired ?? false,
+        accessCodeRequired: parsed.accessCodeRequired ?? false,
+        manualApprovalRequired: parsed.manualApprovalRequired ?? false,
+        availabilityExposure: parsed.availabilityExposure ?? "TWO_WEEKS",
+        sortOrder: parsed.sortOrder ?? 0,
         active: parsed.active ?? true,
       },
     );
@@ -258,21 +237,19 @@ export const serviceCatalogService = {
     const updated = await serviceRepository.updateById(existing.id, {
       ...(parsed.title !== undefined ? { title: parsed.title } : {}),
       ...(parsed.slug !== undefined ? { slug: parsed.slug ?? null } : {}),
-      ...(parsed.description !== undefined
-        ? { description: parsed.description ?? null }
-        : {}),
-      ...(parsed.displayPrice !== undefined
-        ? { displayPrice: parsed.displayPrice ?? null }
-        : {}),
-      ...(parsed.durationMinutes !== undefined
-        ? { durationMinutes: parsed.durationMinutes }
-        : {}),
-      ...(parsed.preparationInstructions !== undefined
-        ? {
-            preparationInstructions:
-              parsed.preparationInstructions ?? null,
-          }
-        : {}),
+      ...(parsed.headline !== undefined ? { headline: parsed.headline ?? null } : {}),
+      ...(parsed.description !== undefined ? { description: parsed.description ?? null } : {}),
+      ...(parsed.meetingFormat !== undefined ? { meetingFormat: parsed.meetingFormat ?? null } : {}),
+      ...(parsed.displayPrice !== undefined ? { displayPrice: parsed.displayPrice ?? null } : {}),
+      ...(parsed.currency !== undefined ? { currency: parsed.currency ?? null } : {}),
+      ...(parsed.durationMinutes !== undefined ? { durationMinutes: parsed.durationMinutes } : {}),
+      ...(parsed.preparationInstructions !== undefined ? { preparationInstructions: parsed.preparationInstructions ?? null } : {}),
+      ...(parsed.paymentRequired !== undefined ? { paymentRequired: parsed.paymentRequired } : {}),
+      ...(parsed.qualificationRequired !== undefined ? { qualificationRequired: parsed.qualificationRequired } : {}),
+      ...(parsed.accessCodeRequired !== undefined ? { accessCodeRequired: parsed.accessCodeRequired } : {}),
+      ...(parsed.manualApprovalRequired !== undefined ? { manualApprovalRequired: parsed.manualApprovalRequired } : {}),
+      ...(parsed.availabilityExposure !== undefined ? { availabilityExposure: parsed.availabilityExposure } : {}),
+      ...(parsed.sortOrder !== undefined ? { sortOrder: parsed.sortOrder } : {}),
       ...(parsed.active !== undefined ? { active: parsed.active } : {}),
     });
 

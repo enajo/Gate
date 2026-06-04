@@ -1,3 +1,5 @@
+import type { LeadQualificationResult } from "./qualification";
+
 export type BookingHoldStatus =
   | "ACTIVE"
   | "EXPIRED"
@@ -5,16 +7,34 @@ export type BookingHoldStatus =
   | "RELEASED";
 
 export type BookingStatus =
+  | "PENDING_APPROVAL"
+  | "PENDING_PAYMENT"
   | "PENDING_CODE"
   | "CODE_INVALID"
   | "CONFIRMED"
   | "EVENT_CREATION_PENDING"
   | "EVENT_CREATED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "REJECTED";
 
-export type CodeValidationStatus = "PENDING" | "VALID" | "INVALID";
+export type CodeValidationStatus = "NOT_REQUIRED" | "PENDING" | "VALID" | "INVALID";
 
-export type CalendarStatus = "PENDING" | "CREATED" | "FAILED";
+export type CalendarStatus = "NOT_REQUIRED" | "PENDING" | "CREATED" | "FAILED";
+
+export type PaymentStatus =
+  | "NOT_REQUIRED"
+  | "PENDING"
+  | "AUTHORIZED"
+  | "PAID"
+  | "FAILED"
+  | "REFUNDED"
+  | "DISPUTED";
+
+export type ApprovalStatus =
+  | "NOT_REQUIRED"
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED";
 
 export type BookingHold = {
   id: string;
@@ -39,8 +59,15 @@ export type Booking = {
   slotEnd: Date;
   timezone: string;
   status: BookingStatus;
+  // Phase 7 — manual approval: defaults to "NOT_REQUIRED" until schema migration
+  approvalStatus?: ApprovalStatus;
+  // Phase 6 — Stripe payment: defaults to "NOT_REQUIRED" until schema migration
+  paymentStatus?: PaymentStatus;
   codeValidationStatus: CodeValidationStatus;
   calendarStatus: CalendarStatus;
+  paymentIntentId?: string | null;
+  meetingUrl?: string | null;
+  eventUrl?: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -52,7 +79,7 @@ export type Lead = {
   name: string;
   email: string;
   answersJson: Record<string, unknown>;
-  qualificationResult: "QUALIFIED" | "REJECTED" | "REDIRECTED";
+  qualificationResult: LeadQualificationResult;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -72,7 +99,7 @@ export type CreateLeadInput = {
   name: string;
   email: string;
   answersJson: Record<string, unknown>;
-  qualificationResult: Lead["qualificationResult"];
+  qualificationResult: LeadQualificationResult;
 };
 
 export type ConfirmBookingInput = {
@@ -81,7 +108,8 @@ export type ConfirmBookingInput = {
   leadId: string;
   holdId: string;
   timezone: string;
-  accessCode: string;
+  accessCode?: string | null;
+  paymentIntentId?: string | null;
 };
 
 export type CreateBookingInput = {
@@ -93,15 +121,22 @@ export type CreateBookingInput = {
   slotEnd: Date | string;
   timezone: string;
   status?: BookingStatus;
+  approvalStatus?: ApprovalStatus;
+  paymentStatus?: PaymentStatus;
   codeValidationStatus?: CodeValidationStatus;
   calendarStatus?: CalendarStatus;
+  paymentIntentId?: string | null;
 };
 
 export type UpdateBookingStatusInput = {
   bookingId: string;
   status?: BookingStatus;
+  approvalStatus?: ApprovalStatus;
+  paymentStatus?: PaymentStatus;
   codeValidationStatus?: CodeValidationStatus;
   calendarStatus?: CalendarStatus;
+  meetingUrl?: string | null;
+  eventUrl?: string | null;
 };
 
 export type ReleaseBookingHoldInput = {
@@ -120,6 +155,10 @@ export type BookingConfirmationResult = {
   booking: Booking;
   isCodeValid: boolean;
   eventCreationRequired: boolean;
+  // Phase 6 — Stripe: defaults to false until payment is implemented
+  paymentRequired?: boolean;
+  // Phase 7 — Manual approval: defaults to false until approval flow is implemented
+  approvalRequired?: boolean;
 };
 
 export type BookingSummary = {
@@ -131,6 +170,8 @@ export type BookingSummary = {
   slotEnd: Date;
   timezone: string;
   status: BookingStatus;
+  approvalStatus: ApprovalStatus;
+  paymentStatus: PaymentStatus;
   codeValidationStatus: CodeValidationStatus;
   calendarStatus: CalendarStatus;
 };
@@ -144,7 +185,8 @@ export type PublicBookingRequest = {
   slotStart: string;
   slotEnd: string;
   timezone: string;
-  accessCode: string;
+  accessCode?: string | null;
+  paymentIntentId?: string | null;
 };
 
 export type PublicBookingSuccessPayload = {
@@ -166,6 +208,7 @@ export type BookingListItem = Booking & {
     slug?: string | null;
     durationMinutes: number;
     displayPrice?: string | null;
+    paymentRequired: boolean;
   };
 };
 
@@ -178,6 +221,7 @@ export type BookingWithRelations = Booking & {
     slug?: string | null;
     durationMinutes: number;
     displayPrice?: string | null;
+    paymentRequired: boolean;
     preparationInstructions?: string | null;
   };
 };

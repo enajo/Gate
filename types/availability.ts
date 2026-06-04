@@ -7,6 +7,13 @@ export type Weekday =
   | "SATURDAY"
   | "SUNDAY";
 
+export type AvailabilityExposure =
+  | "THREE_DAYS"
+  | "FIVE_DAYS"
+  | "ONE_WEEK"
+  | "TWO_WEEKS"
+  | "ALL";
+
 export type AvailabilityRule = {
   id: string;
   professionalId: string;
@@ -57,8 +64,19 @@ export type BusyTimeRange = {
 };
 
 export type BookableSlot = {
+  id?: string;
   start: Date;
   end: Date;
+};
+
+export type PublicBookableSlot = {
+  id: string;
+  start: string;
+  end: string;
+  label: string;
+  day: string;
+  dateLabel: string;
+  monthLabel: string;
 };
 
 export type AvailabilitySettings = {
@@ -67,6 +85,7 @@ export type AvailabilitySettings = {
   bufferAfterMinutes: number;
   minimumNoticeMinutes: number;
   maxBookingsPerDay?: number | null;
+  availabilityExposure: AvailabilityExposure;
 };
 
 export type SlotGenerationInput = {
@@ -82,6 +101,7 @@ export type SlotGenerationInput = {
   bufferAfterMinutes?: number;
   minimumNoticeMinutes?: number;
   maxBookingsPerDay?: number | null;
+  availabilityExposure?: AvailabilityExposure;
 };
 
 export type AvailabilityComputationResult = {
@@ -98,6 +118,7 @@ export type AvailabilityRangeQuery = {
   startDate: string;
   endDate: string;
   timezone?: string;
+  exposure?: AvailabilityExposure;
 };
 
 export type BookingConflictCheckInput = {

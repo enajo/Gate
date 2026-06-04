@@ -59,6 +59,27 @@ async function getAccessCodeIdFromContext(context: RouteContext) {
   return params.id;
 }
 
+export async function DELETE(_request: Request, context: RouteContext) {
+  try {
+    const userId = await getAuthenticatedUserId();
+
+    if (!userId) {
+      return unauthorizedResponse();
+    }
+
+    const accessCodeId = await getAccessCodeIdFromContext(context);
+
+    await accessCodeService.delete(userId, accessCodeId);
+
+    return NextResponse.json(
+      { message: "Access code deleted successfully." },
+      { status: 200 },
+    );
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
 export async function PATCH(request: Request, context: RouteContext) {
   try {
     const userId = await getAuthenticatedUserId();

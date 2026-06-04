@@ -21,7 +21,7 @@ async function main() {
     },
   });
 
-  await prisma.professionalProfile.upsert({
+  await prisma.professional.upsert({
     where: {
       userId: user.id,
     },

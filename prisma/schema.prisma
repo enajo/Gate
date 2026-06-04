@@ -30,6 +30,7 @@ enum LeadQualificationResult {
   QUALIFIED
   REJECTED
   REDIRECTED
+  PENDING_REVIEW
 }
 
 enum Weekday {
@@ -40,6 +41,34 @@ enum Weekday {
   FRIDAY
   SATURDAY
   SUNDAY
+}
+
+enum AvailabilityExposure {
+  THREE_DAYS
+  FIVE_DAYS
+  ONE_WEEK
+  TWO_WEEKS
+  ONE_MONTH
+  TWO_MONTHS
+  ALL
+}
+
+enum BookingEventType {
+  HOLD_CREATED
+  HOLD_EXPIRED
+  HOLD_CONVERTED
+  BOOKING_CONFIRMED
+  PAYMENT_AUTHORIZED
+  PAYMENT_CAPTURED
+  PAYMENT_FAILED
+  CALENDAR_EVENT_CREATED
+  CALENDAR_EVENT_FAILED
+  EMAIL_SENT
+  EMAIL_FAILED
+  ACCESS_CODE_VALIDATED
+  ACCESS_CODE_ROTATED
+  MANUALLY_APPROVED
+  MANUALLY_REJECTED
 }
 
 enum CalendarProvider {
@@ -182,6 +211,9 @@ model Professional {
   socialLinks           Json?     @map("social_links")
   timezone              String    @default("UTC")
   onboardingCompleted   Boolean   @default(false) @map("onboarding_completed")
+  publishedAt           DateTime? @map("published_at")
+  publicPageSettings    Json?     @map("public_page_settings")
+  draftSettings         Json?     @map("draft_settings")
   bufferBeforeMinutes   Int       @default(0) @map("buffer_before_minutes")
   bufferAfterMinutes    Int       @default(0) @map("buffer_after_minutes")
   minimumNoticeMinutes  Int       @default(0) @map("minimum_notice_minutes")
@@ -210,15 +242,25 @@ model Service {
   professionalId          String    @map("professional_id")
   title                   String
   slug                    String?
+  headline                String?   @db.Text
   description             String?   @db.Text
+  meetingFormat           String?   @default("Video call") @map("meeting_format")
   displayPrice            String?   @map("display_price")
+  currency                String?   @default("$")
   durationMinutes         Int       @map("duration_minutes")
   preparationInstructions String?   @db.Text @map("preparation_instructions")
+  paymentRequired         Boolean   @default(false) @map("payment_required")
+  qualificationRequired   Boolean   @default(false) @map("qualification_required")
+  accessCodeRequired      Boolean   @default(false) @map("access_code_required")
+  manualApprovalRequired  Boolean   @default(false) @map("manual_approval_required")
+  availabilityExposure    AvailabilityExposure @default(TWO_WEEKS) @map("availability_exposure")
+  sortOrder               Int       @default(0) @map("sort_order")
   active                  Boolean   @default(true)
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")
 
   professional           Professional          @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  accessCodes            AccessCode[]
   qualificationQuestions QualificationQuestion[]
   qualificationRules     QualificationRule[]
   leads                  Lead[]
@@ -237,7 +279,11 @@ model Testimonial {
   role           String?
   company        String?
   content        String   @db.Text
+  rating         Int?
   avatarUrl      String?  @map("avatar_url")
+  approved       Boolean  @default(true)
+  featured       Boolean  @default(false)
+  hidden         Boolean  @default(false)
   sortOrder      Int      @default(0) @map("sort_order")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
@@ -350,17 +396,23 @@ model CalendarAccount {
 }
 
 model AccessCode {
-  id             String   @id @default(cuid())
-  professionalId String   @map("professional_id")
-  codeHash       String   @map("code_hash")
-  codeLabel      String?  @map("code_label")
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  id             String    @id @default(cuid())
+  professionalId String    @map("professional_id")
+  codeHash       String    @map("code_hash")
+  codeLabel      String?   @map("code_label")
+  isActive       Boolean   @default(true) @map("is_active")
+  usedAt         DateTime? @map("used_at")
+  usedByEmail    String?   @map("used_by_email")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  serviceId      String?   @map("service_id")
 
   professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  service      Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
 
   @@index([professionalId, isActive])
+  @@index([serviceId, isActive])
   @@map("access_codes")
 }
 
@@ -427,7 +479,8 @@ model Booking {
   lead          Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
   hold          BookingHold    @relation(fields: [holdId], references: [id], onDelete: Cascade)
   calendarEvents CalendarEvent[]
-  notifications Notification[]
+  notifications  Notification[]
+  bookingEvents  BookingEvent[]
 
   @@index([professionalId, slotStart, slotEnd])
   @@index([status, calendarStatus])
@@ -452,6 +505,19 @@ model CalendarEvent {
   @@unique([calendarAccountId, externalEventId])
   @@index([bookingId])
   @@map("calendar_events")
+}
+
+model BookingEvent {
+  id        String           @id @default(cuid())
+  bookingId String           @map("booking_id")
+  type      BookingEventType
+  payload   Json?
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+  @@map("booking_events")
 }
 
 model Notification {

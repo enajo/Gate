@@ -1,81 +1,50 @@
 import Link from "next/link";
-import { ShieldCheck, Sparkles } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthCard } from "@/components/auth/auth-card";
 
 export default function RegisterPage() {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="hidden rounded-3xl bg-slate-900 p-10 text-white lg:flex lg:flex-col lg:justify-between">
-            <div>
-              <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-white text-slate-900">
-                <ShieldCheck className="size-6" />
-              </div>
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_45%,#F3EDE2_100%)] text-[#2B2B2B]">
+      <header className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 text-[13px]">
+        <Link href="/" className="font-medium tracking-wide">
+          GATE
+        </Link>
 
-              <h1 className="mt-6 text-4xl font-semibold tracking-tight">
-                Create your expert storefront
-              </h1>
+        <Link href="/login" className="text-[#6B7280] hover:text-[#2B2B2B]">
+          Sign in
+        </Link>
+      </header>
 
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-300">
-                Build a page that qualifies leads before they reach your
-                calendar, presents your services professionally, and gives you
-                control over who gets access to your time.
-              </p>
+      <section className="mx-auto grid min-h-[calc(100vh-56px)] max-w-6xl items-center gap-12 px-4 py-12 lg:grid-cols-[1fr_0.9fr]">
+        <div className="max-w-xl">
+          <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+            Expert access, protected
+          </p>
+
+          <h2 className="mt-5 text-[44px] font-semibold leading-none tracking-[-0.055em] text-[#2B2B2B] sm:text-[64px]">
+            Build the front desk your calendar deserved.
+          </h2>
+
+          <p className="mt-6 max-w-lg text-[17px] leading-[1.8] text-[#6B7280]">
+            Qualify prospects, control access, and turn your booking flow into
+            a premium client experience.
+          </p>
+
+          <div className="mt-8 grid max-w-md gap-3 text-[14px] text-[#6B7280]">
+            <div className="border-l border-[#DFA767] pl-4">
+              No passwords. Sign in with trusted providers or a secure email
+              token.
             </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Sparkles className="size-4" />
-                What you’ll set up next
-              </div>
-              <ul className="mt-3 space-y-2 text-sm text-slate-300">
-                <li>• Your public profile and expert page</li>
-                <li>• Productized service offers</li>
-                <li>• Qualification questions and rules</li>
-                <li>• Availability and booking controls</li>
-              </ul>
+            <div className="border-l border-[#D8D0C6] pl-4">
+              Built for consultants, mentors, coaches, and high-value
+              professionals.
             </div>
           </div>
-
-          <Card className="rounded-3xl border-slate-200 shadow-sm">
-            <CardHeader className="space-y-3 pb-2">
-              <CardTitle className="text-2xl">Get started</CardTitle>
-              <p className="text-sm leading-6 text-slate-500">
-                Create your account to start building your gated booking page.
-              </p>
-            </CardHeader>
-
-            <CardContent className="space-y-6">
-              <Button className="w-full" size="lg">
-                Continue with Google
-              </Button>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-medium text-slate-900">
-                  Fastest way to start
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  Sign up with Google to create your professional account and
-                  move directly into onboarding.
-                </p>
-              </div>
-
-              <p className="text-sm text-slate-500">
-                Already have an account?{" "}
-                <Link
-                  href="/login"
-                  className="font-medium text-slate-900 underline underline-offset-4"
-                >
-                  Log in
-                </Link>
-              </p>
-            </CardContent>
-          </Card>
         </div>
-      </div>
+
+        <div className="flex justify-center lg:justify-end">
+          <AuthCard mode="register" />
+        </div>
+      </section>
     </main>
   );
 }

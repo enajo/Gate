@@ -4,7 +4,6 @@ import * as React from "react";
 
 import { CalendarRow, type CalendarRowValue } from "@/components/calendars/calendar-row";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -19,7 +18,8 @@ export interface CalendarsTableProps
   calendars: CalendarRowValue[];
   emptyTitle?: string;
   emptyDescription?: string;
-  onConnect?: () => void;
+  /** Rendered as the CTA inside the empty state. Pass a <GoogleConnectButton> from the parent. */
+  connectButton?: React.ReactNode;
   onToggleActive?: (calendar: CalendarRowValue) => void;
   onToggleConflictCheck?: (calendar: CalendarRowValue) => void;
   onSetDefault?: (calendar: CalendarRowValue) => void;
@@ -29,7 +29,7 @@ export function CalendarsTable({
   calendars,
   emptyTitle = "No connected calendars",
   emptyDescription = "Connect your Google Calendar to sync availability, avoid conflicts, and choose where booking events should be created.",
-  onConnect,
+  connectButton,
   onToggleActive,
   onToggleConflictCheck,
   onSetDefault,
@@ -40,13 +40,7 @@ export function CalendarsTable({
       <EmptyState
         title={emptyTitle}
         description={emptyDescription}
-        action={
-          onConnect ? (
-            <Button type="button" onClick={onConnect}>
-              Connect calendar
-            </Button>
-          ) : null
-        }
+        action={connectButton ?? null}
         inset
         {...props}
       />

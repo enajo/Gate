@@ -189,7 +189,7 @@ export function PublicBookingForm({
         | { error?: string };
 
       if (!holdResponse.ok) {
-        throw new Error(holdData?.error || "Failed to reserve the selected slot.");
+        throw new Error((holdData as { error?: string }).error || "Failed to reserve the selected slot.");
       }
 
       const holdId =
@@ -220,7 +220,7 @@ export function PublicBookingForm({
         | { error?: string };
 
       if (!confirmResponse.ok) {
-        throw new Error(confirmData?.error || "Failed to confirm booking.");
+        throw new Error((confirmData as { error?: string }).error || "Failed to confirm booking.");
       }
 
       const result = confirmData as BookingConfirmResponse;

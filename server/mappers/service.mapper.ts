@@ -1,4 +1,5 @@
 import type { Service as PrismaService } from "@prisma/client";
+import type { AvailabilityExposure } from "@/types/service";
 import type {
   PublicService,
   Service,
@@ -21,10 +22,19 @@ export function mapService(service: PrismaService): Service {
     professionalId: service.professionalId,
     title: service.title,
     slug: service.slug,
+    headline: service.headline,
     description: service.description,
+    meetingFormat: service.meetingFormat,
     displayPrice: service.displayPrice,
+    currency: service.currency,
     durationMinutes: service.durationMinutes,
     preparationInstructions: service.preparationInstructions,
+    paymentRequired: service.paymentRequired,
+    qualificationRequired: service.qualificationRequired,
+    accessCodeRequired: service.accessCodeRequired,
+    manualApprovalRequired: service.manualApprovalRequired,
+    availabilityExposure: service.availabilityExposure as AvailabilityExposure,
+    sortOrder: service.sortOrder,
     active: service.active,
     createdAt: service.createdAt,
     updatedAt: service.updatedAt,
@@ -36,18 +46,24 @@ export function mapServices(services: PrismaService[]): Service[] {
 }
 
 export function mapPublicService(service: PrismaService): PublicService {
-  const mapped = mapService(service);
-
   return {
-    id: mapped.id,
-    professionalId: mapped.professionalId,
-    title: mapped.title,
-    slug: mapped.slug,
-    description: mapped.description,
-    displayPrice: mapped.displayPrice,
-    durationMinutes: mapped.durationMinutes,
-    preparationInstructions: mapped.preparationInstructions,
-    active: mapped.active,
+    id: service.id,
+    professionalId: service.professionalId,
+    title: service.title,
+    slug: service.slug,
+    headline: service.headline,
+    description: service.description,
+    meetingFormat: service.meetingFormat,
+    displayPrice: service.displayPrice,
+    currency: service.currency,
+    durationMinutes: service.durationMinutes,
+    preparationInstructions: service.preparationInstructions,
+    paymentRequired: service.paymentRequired,
+    qualificationRequired: service.qualificationRequired,
+    accessCodeRequired: service.accessCodeRequired,
+    manualApprovalRequired: service.manualApprovalRequired,
+    availabilityExposure: service.availabilityExposure as AvailabilityExposure,
+    active: service.active,
   };
 }
 
@@ -60,8 +76,17 @@ export function mapServiceSummary(service: PrismaService): ServiceSummary {
     id: service.id,
     title: service.title,
     slug: service.slug,
+    headline: service.headline,
     displayPrice: service.displayPrice,
+    currency: service.currency,
     durationMinutes: service.durationMinutes,
+    meetingFormat: service.meetingFormat,
+    paymentRequired: service.paymentRequired,
+    qualificationRequired: service.qualificationRequired,
+    accessCodeRequired: service.accessCodeRequired,
+    manualApprovalRequired: service.manualApprovalRequired,
+    availabilityExposure: service.availabilityExposure as AvailabilityExposure,
+    sortOrder: service.sortOrder,
     active: service.active,
   };
 }
@@ -87,19 +112,10 @@ export function mapServiceListItems(
 
 export function mapServiceWithMeta(service: ServiceWithCountMeta): ServiceWithMeta {
   return {
-    id: service.id,
-    professionalId: service.professionalId,
-    title: service.title,
-    slug: service.slug,
-    description: service.description,
-    displayPrice: service.displayPrice,
-    durationMinutes: service.durationMinutes,
-    preparationInstructions: service.preparationInstructions,
-    active: service.active,
-    createdAt: service.createdAt,
-    updatedAt: service.updatedAt,
+    ...mapService(service),
     questionCount: service._count?.qualificationQuestions ?? 0,
     ruleCount: service._count?.qualificationRules ?? 0,
+    bookingCount: service._count?.bookings ?? 0,
   };
 }
 

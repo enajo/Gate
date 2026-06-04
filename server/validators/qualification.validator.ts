@@ -57,7 +57,8 @@ export const qualificationAnswerValueSchema = z.union([
   z.null(),
 ]);
 
-export const createQualificationQuestionSchema = z
+// Base object (no refinements) — used by the update schema to call .partial().
+const qualificationQuestionBaseSchema = z
   .object({
     serviceId: z.preprocess(
       emptyStringToUndefined,
@@ -80,8 +81,10 @@ export const createQualificationQuestionSchema = z
     sortOrder: z.coerce.number().int().min(0).max(999).optional(),
     isRequired: z.boolean().optional(),
   })
-  .strict()
-  .superRefine((value, ctx) => {
+  .strict();
+
+export const createQualificationQuestionSchema =
+  qualificationQuestionBaseSchema.superRefine((value, ctx) => {
     if (value.questionType === "MULTIPLE_CHOICE") {
       if (!value.optionsJson || value.optionsJson.length < 2) {
         ctx.addIssue({
@@ -107,7 +110,7 @@ export const createQualificationQuestionSchema = z
   });
 
 export const updateQualificationQuestionSchema =
-  createQualificationQuestionSchema
+  qualificationQuestionBaseSchema
     .partial()
     .refine((value) => Object.keys(value).length > 0, {
       message: "At least one question field must be provided.",
@@ -199,7 +202,8 @@ export const qualificationConditionGroupSchema = z
     message: "At least one condition group is required.",
   });
 
-export const createQualificationRuleSchema = z
+// Base object (no refinements) — used by the update schema to call .partial().
+const qualificationRuleBaseSchema = z
   .object({
     serviceId: z.preprocess(
       emptyStringToUndefined,
@@ -211,8 +215,10 @@ export const createQualificationRuleSchema = z
     priority: z.coerce.number().int().min(0).max(999).optional(),
     active: z.boolean().optional(),
   })
-  .strict()
-  .superRefine((value, ctx) => {
+  .strict();
+
+export const createQualificationRuleSchema =
+  qualificationRuleBaseSchema.superRefine((value, ctx) => {
     if (value.outcomeType === "REDIRECT" && !value.outcomeValue) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -230,7 +236,7 @@ export const createQualificationRuleSchema = z
     }
   });
 
-export const updateQualificationRuleSchema = createQualificationRuleSchema
+export const updateQualificationRuleSchema = qualificationRuleBaseSchema
   .partial()
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one rule field must be provided.",

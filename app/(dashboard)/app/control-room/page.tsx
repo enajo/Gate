@@ -1,0 +1,405 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import Link from "next/link";
+import {
+  CheckCircle2,
+  ExternalLink,
+  Loader2,
+  Save,
+  UploadCloud,
+} from "lucide-react";
+
+import { ControlRoomForm } from "@/components/control-room/control-room-form";
+import { ControlRoomPreview } from "@/components/control-room/control-room-preview";
+import type { ProfileState } from "@/components/control-room/profile-settings";
+import type { PublicSalesPageTemplateData } from "@/components/public-page/public-sales-page-template";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getBaseUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "";
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default function ControlRoomPage() {
+  const [draftProfile, setDraftProfile] = useState<ProfileState | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isUnpublishing, setIsUnpublishing] = useState(false);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [publishedAt, setPublishedAt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // ── Load on mount ─────────────────────────────────────────────────────────
+
+  const loadState = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch("/api/app/control-room", {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        // 404 means no profile yet — start with empty state.
+        if (response.status === 404) {
+          setDraftProfile(getEmptyProfile());
+          return;
+        }
+        throw new Error(payload.error ?? "Failed to load Control Room.");
+      }
+
+      const data = (await response.json()) as {
+        profile: PublicSalesPageTemplateData;
+        publishedAt: string | null;
+      };
+
+      setDraftProfile(data.profile);
+      setPublishedAt(data.publishedAt);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadState();
+  }, [loadState]);
+
+  // ── Save draft ────────────────────────────────────────────────────────────
+
+  async function handleSaveDraft() {
+    if (!draftProfile || isSaving) return;
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      const response = await fetch("/api/app/control-room", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftProfile),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        throw new Error(payload.error ?? "Failed to save draft.");
+      }
+
+      const data = (await response.json()) as {
+        profile: PublicSalesPageTemplateData;
+        publishedAt: string | null;
+      };
+
+      // Refresh from server to pick up any server-side transforms
+      // (e.g. auto-generated access codes).
+      setDraftProfile(data.profile);
+      setPublishedAt(data.publishedAt);
+      setSavedAt(new Date().toISOString());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  // ── Unpublish ─────────────────────────────────────────────────────────────
+
+  async function handleUnpublish() {
+    if (isUnpublishing) return;
+
+    try {
+      setIsUnpublishing(true);
+      setError(null);
+
+      const response = await fetch("/api/app/control-room/publish", {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { error?: string };
+        throw new Error(payload.error ?? "Failed to unpublish.");
+      }
+
+      setPublishedAt(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to unpublish.");
+    } finally {
+      setIsUnpublishing(false);
+    }
+  }
+
+  // ── Publish ───────────────────────────────────────────────────────────────
+
+  async function handlePublish() {
+    if (!draftProfile || isPublishing) return;
+
+    try {
+      setIsPublishing(true);
+      setError(null);
+
+      // Save first so publish reflects latest edits.
+      const saveResponse = await fetch("/api/app/control-room", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(draftProfile),
+      });
+
+      if (!saveResponse.ok) {
+        const payload = (await saveResponse.json()) as { error?: string };
+        throw new Error(payload.error ?? "Failed to save before publishing.");
+      }
+
+      const publishResponse = await fetch("/api/app/control-room/publish", {
+        method: "POST",
+      });
+
+      if (!publishResponse.ok) {
+        const payload = (await publishResponse.json()) as { error?: string };
+        throw new Error(payload.error ?? "Failed to publish.");
+      }
+
+      const payload = (await publishResponse.json()) as { publishedAt: string };
+      setPublishedAt(payload.publishedAt);
+      setSavedAt(new Date().toISOString());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to publish.");
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
+  // ── Derived values ────────────────────────────────────────────────────────
+
+  const slug = useMemo(() => {
+    if (!draftProfile?.name) return "";
+    return draftProfile.name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }, [draftProfile?.name]);
+
+  const publicUrl =
+    slug && getBaseUrl() ? `${getBaseUrl()}/${slug}` : `/${slug}`;
+
+  const initials = draftProfile?.name ? getInitials(draftProfile.name) : "G";
+
+  // Wrap the nullable setter so ControlRoomForm receives a non-nullable one.
+  // The guard below (`if (!draftProfile) return null`) ensures this is only
+  // called when draftProfile is already non-null.
+  const setProfile = useCallback<Dispatch<SetStateAction<ProfileState>>>(
+    (action) => {
+      setDraftProfile((prev) => {
+        if (prev === null) return prev;
+        return typeof action === "function" ? action(prev) : action;
+      });
+    },
+    [],
+  );
+
+  // ── Loading ───────────────────────────────────────────────────────────────
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)]">
+        <div className="flex flex-col items-center gap-3 text-[#6B7280]">
+          <Loader2 className="size-6 animate-spin text-[#DFA767]" />
+          <p className="text-[13px]">Loading Control Room…</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!draftProfile) return null;
+
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-[#2B2B2B]">
+      <header className="sticky top-0 z-50 bg-[#F9FAFB]/75 backdrop-blur-xl">
+        <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 text-[13px]">
+          <Link href="/app" className="font-medium tracking-wide">
+            GATE
+          </Link>
+
+          <div className="hidden items-center gap-7 text-[#6B7280] md:flex">
+            <Link href="/app">Dashboard</Link>
+
+            <Link href="/app/control-room" className="text-[#2B2B2B]">
+              Control Room
+            </Link>
+
+            {slug ? (
+              <Link
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1"
+              >
+                Public Page
+                <ExternalLink className="size-3" />
+              </Link>
+            ) : null}
+          </div>
+
+          <div className="flex size-8 items-center justify-center rounded-full bg-[#2B2B2B] text-[12px] text-white">
+            {initials}
+          </div>
+        </nav>
+      </header>
+
+      <section className="mx-auto max-w-5xl px-4 py-10">
+        {/* Hero card */}
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.68),rgba(243,237,226,0.86))] p-8 shadow-[0_28px_90px_rgba(120,100,80,0.14)]">
+          <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
+            <div>
+              <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+                Control Room
+              </p>
+
+              <h1 className="mt-5 text-[44px] font-semibold leading-none tracking-[-0.055em] sm:text-[64px]">
+                Design access to your time.
+              </h1>
+
+              <p className="mt-5 max-w-2xl text-[17px] leading-[1.8] text-[#6B7280]">
+                Configure your expert profile, services, qualification gates,
+                pricing, access codes, availability exposure, and publish state.
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-3 text-[12px] text-[#6B7280]">
+                {savedAt ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1">
+                    <CheckCircle2 className="size-3 text-emerald-600" />
+                    Draft saved
+                  </span>
+                ) : null}
+
+                {publishedAt ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1">
+                    <CheckCircle2 className="size-3 text-emerald-600" />
+                    Published
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 text-[#DFA767]">
+                    Draft only — not visible publicly
+                  </span>
+                )}
+              </div>
+
+              {error ? (
+                <p className="mt-3 text-[13px] text-red-500">{error}</p>
+              ) : null}
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <ControlRoomPreview profile={draftProfile} />
+
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={isSaving}
+                className="inline-flex h-10 items-center justify-center rounded-full border border-[#D8D0C6] bg-white/70 px-5 text-[14px] text-[#2B2B2B] transition hover:border-[#2B2B2B] disabled:opacity-60"
+              >
+                {isSaving ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 size-4" />
+                )}
+                {isSaving ? "Saving…" : "Save Draft"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={isPublishing || isSaving}
+                className="inline-flex h-10 items-center justify-center rounded-full border border-[#DFA767] bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-[#2B2B2B] transition hover:brightness-[1.04] disabled:opacity-60"
+              >
+                {isPublishing ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <UploadCloud className="mr-2 size-4" />
+                )}
+                {isPublishing
+                  ? "Publishing…"
+                  : publishedAt
+                    ? "Publish Update"
+                    : "Publish"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="mt-8">
+          <ControlRoomForm
+            profile={draftProfile}
+            setProfile={setProfile}
+          />
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// ── Empty state for new users ─────────────────────────────────────────────────
+
+function getEmptyProfile(): ProfileState {
+  const defaultServiceId = crypto.randomUUID();
+
+  return {
+    name: "",
+    role: "",
+    bio: "",
+    avatarUrl: null,
+    theme: {
+      accentColor: "#DFA767",
+      backgroundColor: "#F6F2EA",
+    },
+    services: [
+      {
+        id: defaultServiceId,
+        title: "Intro Call",
+        headline: "",
+        duration: "30 min",
+        format: "Video call",
+        price: "",
+        currency: "$",
+        qualificationRequired: false,
+        paymentRequired: false,
+        accessCodeRequired: false,
+        manualApprovalRequired: false,
+        availabilityExposure: "TWO_WEEKS",
+        currentAccessCode: undefined,
+        questions: [],
+      },
+    ],
+    activeServiceId: defaultServiceId,
+    timezone: "UTC",
+    availableDates: [],
+    availableTimes: [],
+    metrics: [],
+    featuredReview: null,
+  };
+}

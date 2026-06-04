@@ -20,93 +20,104 @@ const features = [
   {
     title: "The Gatekeeper",
     description:
-      "Require leads to qualify before they ever see the calendar. Filter out bad-fit requests and protect expert time.",
+      "Require leads to qualify before they ever see your calendar. Bad-fit requests are filtered before they waste your time.",
     icon: ShieldCheck,
-    badge: "Flagship feature",
+    badge: "Flagship",
   },
   {
     title: "Trust Engine",
     description:
-      "Use testimonials, credibility signals, and premium positioning to turn qualified visitors into paying bookings.",
+      "Add testimonials, authority markers, and credibility signals exactly where prospects decide whether to book.",
     icon: Sparkles,
-    badge: "Conversion layer",
+    badge: "Conversion",
   },
   {
     title: "The Toll Booth",
     description:
-      "Turn access into a paid asset with access codes, paid entry, and controlled booking flow.",
+      "Turn access into a controlled asset with access codes now, and paid booking flows when you are ready.",
     icon: CreditCard,
-    badge: "Monetization",
+    badge: "Revenue",
   },
   {
-    title: "Productized Service Tiles",
+    title: "Service Tiles",
     description:
-      "Sell outcomes, not generic time slots. Present strategy sessions, audits, and mentoring offers like premium products.",
+      "Sell outcomes like strategy sessions, audits, and mentoring offers instead of generic 30-minute slots.",
     icon: LayoutTemplate,
     badge: "Storefront",
   },
   {
-    title: "Social Proof + Verified Signals",
+    title: "Verified Signals",
     description:
-      "Show testimonials, experience highlights, and authority markers right where a client decides whether to book.",
+      "Show experience highlights, social proof, and client outcomes so the expert page feels premium and trustworthy.",
     icon: BadgeCheck,
-    badge: "Trust builder",
+    badge: "Trust",
   },
   {
-    title: "Branded QR Distribution",
+    title: "Branded QR Links",
     description:
-      "Turn offline attention into instant bookings with premium QR links for banners, cards, decks, and events.",
+      "Turn LinkedIn banners, decks, business cards, and live events into direct paths to qualified bookings.",
     icon: QrCode,
-    badge: "Unfair advantage",
+    badge: "Distribution",
   },
 ];
 
 export function FeatureSection() {
   return (
-    <section className="border-b border-slate-200 bg-slate-50/50">
-      <div className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="secondary">Core product features</Badge>
+    <section className="relative overflow-hidden border-b border-slate-200/70 bg-slate-950 text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.28),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.16),_transparent_30%)]" />
 
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+      <div className="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div className="mx-auto max-w-3xl text-center">
+          <Badge variant="secondary" className="border-white/10 bg-white/10 text-white">
+            Core product features
+          </Badge>
+
+          <h2 className="mt-5 text-4xl font-bold tracking-tight text-white sm:text-5xl">
             Built to filter, convert, and monetize expert time
           </h2>
 
-          <p className="mt-4 text-lg leading-8 text-slate-600">
-            This is not a scheduler. It is a conversion system for mentors,
-            consultants, and solo experts who want qualified leads only.
+          <p className="mt-5 text-lg leading-8 text-slate-300">
+            This is not a scheduler. It is a premium conversion system for
+            mentors, consultants, and solo experts who only want qualified leads.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-14 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {features.map((feature) => {
             const Icon = feature.icon;
 
             return (
               <Card
                 key={feature.title}
-                className="rounded-2xl border-slate-200 bg-white shadow-sm transition-transform hover:-translate-y-0.5"
+                className="group overflow-hidden border-white/10 bg-white/[0.06] text-white shadow-2xl shadow-black/20 backdrop-blur hover:border-white/20 hover:bg-white/[0.09]"
               >
-                <CardHeader className="space-y-4">
+                <CardHeader className="space-y-5">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex size-11 items-center justify-center rounded-xl bg-slate-900 text-white">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-white text-slate-950 shadow-lg shadow-black/20 transition-transform duration-300 group-hover:scale-105">
                       <Icon className="size-5" />
                     </div>
 
-                    <Badge variant="outline">{feature.badge}</Badge>
+                    <Badge
+                      variant="secondary"
+                      className="border-white/10 bg-white/10 text-white"
+                    >
+                      {feature.badge}
+                    </Badge>
                   </div>
 
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{feature.title}</CardTitle>
-                    <CardDescription className="text-sm leading-6">
+                  <div className="space-y-2">
+                    <CardTitle className="text-xl text-white">
+                      {feature.title}
+                    </CardTitle>
+                    <CardDescription className="text-sm leading-6 text-slate-300">
                       {feature.description}
                     </CardDescription>
                   </div>
                 </CardHeader>
 
-                <CardContent className="pt-0">
-                  <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                    Designed to help professionals look more selective, more
+                <CardContent>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm leading-6 text-slate-300">
+                    Designed to make professionals look more selective, more
                     credible, and more premium.
                   </div>
                 </CardContent>

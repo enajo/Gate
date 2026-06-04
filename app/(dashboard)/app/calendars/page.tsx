@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 
 import { CalendarsTable } from "@/components/calendars/calendars-table";
@@ -19,10 +20,36 @@ type CalendarsResponse = {
 };
 
 export default function CalendarsPage() {
+  const searchParams = useSearchParams();
   const [calendars, setCalendars] = React.useState<CalendarRowValue[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Single connect button instance — shared between the header and the empty state
+  const connectButton = (
+    <GoogleConnectButton
+      returnTo="/app/calendars"
+      onSuccess={() => void loadCalendars()}
+      onError={(msg) => setError(msg)}
+    />
+  );
+
+  // ── Popup mode: if we land here inside the OAuth popup, signal the opener
+  //    and close the popup so the parent can refresh its calendar list.
+  React.useEffect(() => {
+    const googleStatus = searchParams.get("google");
+    if (!googleStatus) return;
+
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage(
+        { type: "GOOGLE_AUTH_COMPLETE", status: googleStatus },
+        window.location.origin,
+      );
+      window.close();
+    }
+    // If opener is gone (e.g. full redirect fallback), just stay on this page
+  }, [searchParams]);
 
   const loadCalendars = React.useCallback(async () => {
     setIsLoading(true);
@@ -37,7 +64,7 @@ export default function CalendarsPage() {
       const data = (await response.json()) as CalendarsResponse;
 
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to load calendars.");
+        throw new Error(data?.error ?? "Failed to load calendars.");
       }
 
       setCalendars(data.calendars ?? []);
@@ -72,18 +99,19 @@ export default function CalendarsPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/app/google/calendars/${calendar.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/app/google/calendars/${calendar.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       const data = (await response.json()) as CalendarsResponse;
 
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to update calendar.");
+        throw new Error(data?.error ?? "Failed to update calendar.");
       }
 
       if (data.calendar) {
@@ -105,9 +133,7 @@ export default function CalendarsPage() {
   }
 
   async function handleToggleActive(calendar: CalendarRowValue) {
-    await patchCalendar(calendar, {
-      isActive: !calendar.isActive,
-    });
+    await patchCalendar(calendar, { isActive: !calendar.isActive });
   }
 
   async function handleToggleConflictCheck(calendar: CalendarRowValue) {
@@ -117,9 +143,7 @@ export default function CalendarsPage() {
   }
 
   async function handleSetDefault(calendar: CalendarRowValue) {
-    await patchCalendar(calendar, {
-      isDefaultEventCalendar: true,
-    });
+    await patchCalendar(calendar, { isDefaultEventCalendar: true });
   }
 
   return (
@@ -145,7 +169,7 @@ export default function CalendarsPage() {
             Refresh
           </Button>
 
-          <GoogleConnectButton returnTo="/app/calendars" />
+          {connectButton}
         </div>
       }
     >
@@ -173,14 +197,12 @@ export default function CalendarsPage() {
 
           <CalendarsTable
             calendars={calendars}
-            onConnect={() => {
-              window.location.href = "/app/calendars";
-            }}
-            onToggleActive={(calendar) => void handleToggleActive(calendar)}
-            onToggleConflictCheck={(calendar) =>
-              void handleToggleConflictCheck(calendar)
+            connectButton={connectButton}
+            onToggleActive={(cal) => void handleToggleActive(cal)}
+            onToggleConflictCheck={(cal) =>
+              void handleToggleConflictCheck(cal)
             }
-            onSetDefault={(calendar) => void handleSetDefault(calendar)}
+            onSetDefault={(cal) => void handleSetDefault(cal)}
           />
         </div>
       )}

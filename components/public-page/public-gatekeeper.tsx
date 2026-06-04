@@ -70,8 +70,8 @@ type SubmittedPayload = QualificationResponse & {
   answers: Record<string, unknown>;
 };
 
-export interface PublicGatekeeperProps
-  extends React.HTMLAttributes<HTMLElement> {
+export interface PublicGatekeeperProps {
+  className?: string;
   professionalId: string;
   serviceId: string | null;
   questions: GatekeeperQuestion[];
@@ -406,7 +406,7 @@ export function PublicGatekeeper({
         | { error?: string };
 
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to submit qualification.");
+        throw new Error((data as { error?: string }).error || "Failed to submit qualification.");
       }
 
       const payload: SubmittedPayload = {

@@ -17,11 +17,17 @@ import type {
 } from "@/types/booking";
 import { DEFAULT_TIMEZONE } from "@/lib/constants";
 import { assertValidDate } from "@/lib/dates";
+import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { accessCodeService } from "@/server/services/access-code.service";
 import { availabilityService } from "@/server/services/availability.service";
+import { emailService } from "@/server/services/email.service";
 import { bookingRepository } from "@/server/repositories/booking.repository";
+import type { HoldWithRelations } from "@/server/repositories/booking.repository";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
+import { googleRepository } from "@/server/repositories/google.repository";
+import { googleCalendarService } from "@/server/services/google-calendar.service";
 import {
   bookingSlotSelectionSchema,
   confirmBookingSchema,
@@ -103,6 +109,7 @@ function mapBookingListItem(
       slug: booking.service.slug,
       durationMinutes: booking.service.durationMinutes,
       displayPrice: booking.service.displayPrice,
+      paymentRequired: booking.service.paymentRequired ?? false,
     },
   };
 }
@@ -157,6 +164,7 @@ function mapBookingWithRelations(
       slug: booking.service.slug,
       durationMinutes: booking.service.durationMinutes,
       displayPrice: booking.service.displayPrice,
+      paymentRequired: booking.service.paymentRequired ?? false,
       preparationInstructions: booking.service.preparationInstructions,
     },
   };
@@ -505,26 +513,24 @@ export const bookingService = {
       }
 
       const invalidBooking = await bookingRepository.createBooking({
-        data: {
-          professional: {
-            connect: { id: parsed.professionalId },
-          },
-          service: {
-            connect: { id: parsed.serviceId },
-          },
-          lead: {
-            connect: { id: parsed.leadId },
-          },
-          hold: {
-            connect: { id: parsed.holdId },
-          },
-          slotStart: hold.slotStart,
-          slotEnd: hold.slotEnd,
-          timezone: parsed.timezone,
-          status: "CODE_INVALID",
-          codeValidationStatus: "INVALID",
-          calendarStatus: "PENDING",
+        professional: {
+          connect: { id: parsed.professionalId },
         },
+        service: {
+          connect: { id: parsed.serviceId },
+        },
+        lead: {
+          connect: { id: parsed.leadId },
+        },
+        hold: {
+          connect: { id: parsed.holdId },
+        },
+        slotStart: hold.slotStart,
+        slotEnd: hold.slotEnd,
+        timezone: parsed.timezone,
+        status: "CODE_INVALID",
+        codeValidationStatus: "INVALID",
+        calendarStatus: "PENDING",
       });
 
       return {
@@ -667,5 +673,226 @@ export const bookingService = {
       meetingUrl: primaryEvent?.meetingUrl ?? null,
       eventUrl: primaryEvent?.eventUrl ?? null,
     };
+  },
+
+  // ── Phase 3: Auto-confirm + approval flow ─────────────────────────────────
+
+  /**
+   * Creates a confirmed booking directly from an active hold, bypassing code
+   * validation.  Used for non-manual-approval services (auto-confirm) and for
+   * the professional's "Approve" action.
+   */
+  async autoConfirmFromHold(params: {
+    holdId: string;
+    professionalId: string;
+    timezone: string;
+  }): Promise<Booking> {
+    const hold = await bookingRepository.findBookingHoldByIdForProfessional(
+      params.holdId,
+      params.professionalId,
+    );
+
+    if (!hold) throw new Error("Hold not found.");
+    if (hold.status !== "ACTIVE") throw new Error("Hold is no longer active.");
+    if (hold.expiresAt <= new Date()) throw new Error("Hold has expired.");
+    if (!hold.leadId) throw new Error("Hold has no associated lead.");
+
+    const booking = await bookingRepository.createBookingFromHold({
+      professionalId: hold.professionalId,
+      serviceId: hold.serviceId,
+      leadId: hold.leadId,
+      holdId: hold.id,
+      slotStart: hold.slotStart,
+      slotEnd: hold.slotEnd,
+      timezone: params.timezone,
+      status: "CONFIRMED",
+      codeValidationStatus: "VALID",
+      calendarStatus: "PENDING",
+    });
+
+    return mapBooking(booking)!;
+  },
+
+  /**
+   * Lists all non-expired ACTIVE holds for the professional's dashboard inbox.
+   */
+  async listActiveHolds(userId: string): Promise<HoldWithRelations[]> {
+    const professional = await requireProfessionalByUserId(userId);
+    return bookingRepository.findActiveHoldsWithRelationsByProfessionalId(
+      professional.id,
+    );
+  },
+
+  /**
+   * Professional approves a pending hold → creates a confirmed booking and
+   * triggers calendar event creation + emails asynchronously.
+   */
+  async approveHold(userId: string, holdId: string): Promise<Booking> {
+    const professional = await requireProfessionalByUserId(userId);
+    const hold = await bookingRepository.findHoldWithRelationsById(holdId);
+
+    if (!hold || hold.professionalId !== professional.id) {
+      throw new Error("Hold not found.");
+    }
+    if (hold.status !== "ACTIVE") throw new Error("Hold is no longer active.");
+    if (hold.expiresAt <= new Date()) throw new Error("Hold has expired.");
+    if (!hold.leadId || !hold.lead) throw new Error("Hold has no associated lead.");
+
+    const booking = await bookingRepository.createBookingFromHold({
+      professionalId: hold.professionalId,
+      serviceId: hold.serviceId,
+      leadId: hold.leadId,
+      holdId: hold.id,
+      slotStart: hold.slotStart,
+      slotEnd: hold.slotEnd,
+      timezone: professional.timezone || DEFAULT_TIMEZONE,
+      status: "CONFIRMED",
+      codeValidationStatus: "VALID",
+      calendarStatus: "PENDING",
+    });
+
+    // Fire calendar + emails without blocking the response
+    void bookingService.postConfirmAsync({
+      bookingId: booking.id,
+      professionalId: professional.id,
+      timezone: professional.timezone || DEFAULT_TIMEZONE,
+    });
+
+    return mapBooking(booking)!;
+  },
+
+  /**
+   * Professional declines a pending hold → releases the slot and notifies
+   * the visitor.
+   */
+  async declineHold(userId: string, holdId: string): Promise<BookingHold> {
+    const professional = await requireProfessionalByUserId(userId);
+    const hold = await bookingRepository.findHoldWithRelationsById(holdId);
+
+    if (!hold || hold.professionalId !== professional.id) {
+      throw new Error("Hold not found.");
+    }
+    if (hold.status !== "ACTIVE") throw new Error("Hold is no longer active.");
+
+    const updated = await bookingRepository.updateBookingHoldById(holdId, {
+      status: "RELEASED",
+    });
+
+    // Notify visitor of decline
+    if (hold.lead) {
+      void emailService
+        .sendBookingDeclinedVisitor({
+          to: hold.lead.email,
+          visitorName: hold.lead.name,
+          professionalName: professional.fullName,
+          serviceTitle: hold.service.title,
+          slotStart: hold.slotStart,
+          slotEnd: hold.slotEnd,
+          timezone: professional.timezone || DEFAULT_TIMEZONE,
+        })
+        .catch((err: unknown) => logger.error("Decline email failed", { err }));
+    }
+
+    return mapBookingHold(updated)!;
+  },
+
+  /**
+   * Fire-and-forget: creates a Google Calendar event for a confirmed booking
+   * and sends confirmation emails to both the visitor and the professional.
+   * Should be called without `await` from API routes.
+   */
+  async postConfirmAsync(params: {
+    bookingId: string;
+    professionalId: string;
+    timezone: string;
+  }): Promise<void> {
+    const appUrl = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+
+    try {
+      const booking = await bookingRepository.findBookingByIdWithRelations(
+        params.bookingId,
+      );
+      if (!booking) return;
+
+      const professional = await profileRepository.findByIdWithUser(
+        params.professionalId,
+      );
+      if (!professional) return;
+
+      const professionalEmail = professional.user.email;
+
+      // ── Google Calendar event ─────────────────────────────────────────────
+      let meetingUrl: string | null = null;
+
+      try {
+        const calendarAccount =
+          await googleRepository.findDefaultEventCalendarByProfessionalId(
+            params.professionalId,
+          );
+
+        if (calendarAccount) {
+          const event = await googleCalendarService.createCalendarEvent({
+            calendarAccountId: calendarAccount.id,
+            title: `${booking.service.title} with ${booking.lead.name}`,
+            start: booking.slotStart,
+            end: booking.slotEnd,
+            timeZone: params.timezone,
+            attendees: [
+              { email: booking.lead.email, displayName: booking.lead.name },
+              ...(calendarAccount.providerEmail
+                ? [{ email: calendarAccount.providerEmail }]
+                : []),
+            ],
+            conferenceDataVersion: 1,
+          });
+
+          await googleRepository.createCalendarEventForBooking(
+            params.bookingId,
+            calendarAccount.id,
+            {
+              externalEventId: event.externalEventId,
+              eventUrl: event.eventUrl ?? null,
+              meetingUrl: event.meetingUrl ?? null,
+              syncStatus: "CREATED",
+            },
+          );
+
+          await bookingRepository.markEventCreated(params.bookingId);
+          meetingUrl = event.meetingUrl ?? null;
+        }
+      } catch (calendarErr) {
+        logger.error("Calendar event creation failed", { calendarErr });
+        await bookingRepository.markEventFailed(params.bookingId);
+      }
+
+      // ── Confirmation emails ───────────────────────────────────────────────
+      await Promise.allSettled([
+        emailService.sendBookingConfirmedVisitor({
+          to: booking.lead.email,
+          visitorName: booking.lead.name,
+          professionalName: professional.fullName,
+          serviceTitle: booking.service.title,
+          slotStart: booking.slotStart,
+          slotEnd: booking.slotEnd,
+          timezone: params.timezone,
+          holdId: booking.holdId,
+          meetingUrl,
+          appUrl,
+        }),
+        emailService.sendBookingConfirmedProfessional({
+          to: professionalEmail,
+          professionalName: professional.fullName,
+          visitorName: booking.lead.name,
+          visitorEmail: booking.lead.email,
+          serviceTitle: booking.service.title,
+          slotStart: booking.slotStart,
+          slotEnd: booking.slotEnd,
+          timezone: params.timezone,
+          appUrl,
+        }),
+      ]);
+    } catch (err) {
+      logger.error("postConfirmAsync failed", { err });
+    }
   },
 };

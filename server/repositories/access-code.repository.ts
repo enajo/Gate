@@ -1,7 +1,20 @@
 import "server-only";
 
-import type { AccessCode, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import type { AccessCode } from "@prisma/client";
 import { db } from "@/lib/db";
+
+// ── Includes ───────────────────────────────────────────────────────────────────
+
+const accessCodeWithServiceInclude = Prisma.validator<Prisma.AccessCodeInclude>()({
+  service: { select: { id: true, title: true } },
+});
+
+export type AccessCodeWithService = Prisma.AccessCodeGetPayload<{
+  include: typeof accessCodeWithServiceInclude;
+}>;
+
+// ── Repository ─────────────────────────────────────────────────────────────────
 
 export const accessCodeRepository = {
   async findById(id: string): Promise<AccessCode | null> {
@@ -27,7 +40,27 @@ export const accessCodeRepository = {
   ): Promise<AccessCode[]> {
     return db.accessCode.findMany({
       where: { professionalId },
-      orderBy: [{ createdAt: "asc" }],
+      orderBy: [{ createdAt: "desc" }],
+    });
+  },
+
+  async findManyByProfessionalAndService(
+    professionalId: string,
+    serviceId: string,
+  ): Promise<AccessCode[]> {
+    return db.accessCode.findMany({
+      where: { professionalId, serviceId },
+      orderBy: [{ createdAt: "desc" }],
+    });
+  },
+
+  async findManyWithServiceByProfessionalId(
+    professionalId: string,
+  ): Promise<AccessCodeWithService[]> {
+    return db.accessCode.findMany({
+      where: { professionalId },
+      include: accessCodeWithServiceInclude,
+      orderBy: [{ createdAt: "desc" }],
     });
   },
 
@@ -43,15 +76,31 @@ export const accessCodeRepository = {
     });
   },
 
+  /**
+   * Find a valid, unused access code by its hash.
+   * - Must be active
+   * - Must not have been used (usedAt is null)
+   * - If serviceId provided: must match that service OR be universal (serviceId is null)
+   */
   async findByCodeHashForProfessional(
     professionalId: string,
     codeHash: string,
+    serviceId?: string | null,
   ): Promise<AccessCode | null> {
     return db.accessCode.findFirst({
       where: {
         professionalId,
         codeHash,
         isActive: true,
+        usedAt: null,
+        ...(serviceId
+          ? {
+              OR: [
+                { serviceId },
+                { serviceId: null },
+              ],
+            }
+          : {}),
       },
     });
   },
@@ -72,6 +121,13 @@ export const accessCodeRepository = {
         ...data,
       },
     });
+  },
+
+  async createManyForProfessional(
+    rows: Prisma.AccessCodeUncheckedCreateInput[],
+  ): Promise<number> {
+    const result = await db.accessCode.createMany({ data: rows });
+    return result.count;
   },
 
   async updateById(
@@ -132,6 +188,22 @@ export const accessCodeRepository = {
     });
   },
 
+  /**
+   * Mark a code as used by a specific email. Idempotent — if already used, no-op.
+   */
+  async markUsed(
+    id: string,
+    usedByEmail: string,
+  ): Promise<AccessCode> {
+    return db.accessCode.update({
+      where: { id },
+      data: {
+        usedAt: new Date(),
+        usedByEmail,
+      },
+    });
+  },
+
   async deleteById(id: string): Promise<AccessCode> {
     return db.accessCode.delete({
       where: { id },
@@ -173,5 +245,20 @@ export const accessCodeRepository = {
         isActive: true,
       },
     });
+  },
+
+  async countStatsByProfessionalAndService(
+    professionalId: string,
+    serviceId: string,
+  ): Promise<{ available: number; used: number; total: number }> {
+    const [available, used] = await Promise.all([
+      db.accessCode.count({
+        where: { professionalId, serviceId, isActive: true, usedAt: null },
+      }),
+      db.accessCode.count({
+        where: { professionalId, serviceId, usedAt: { not: null } },
+      }),
+    ]);
+    return { available, used, total: available + used };
   },
 };

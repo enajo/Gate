@@ -27,8 +27,8 @@ export type WeeklyScheduleRule = {
   active: boolean;
 };
 
-export interface WeeklyScheduleFormProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface WeeklyScheduleFormProps {
+  className?: string;
   value: WeeklyScheduleRule[];
   onChange?: (value: WeeklyScheduleRule[]) => void;
   disabled?: boolean;

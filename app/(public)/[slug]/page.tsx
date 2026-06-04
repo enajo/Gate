@@ -1,399 +1,152 @@
-"use client";
+import { addDays } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
-import * as React from "react";
-import { useParams } from "next/navigation";
+import type {
+  AvailabilityDate,
+  AvailabilityTime,
+  PublicSalesPageTemplateData,
+} from "@/components/public-page/public-sales-page-template";
+import { PublicSalesPageTemplate } from "@/components/public-page/public-sales-page-template";
+import { profileRepository } from "@/server/repositories/profile.repository";
+import { profileService } from "@/server/services/profile.service";
+import { availabilityService } from "@/server/services/availability.service";
+import type { BookableSlot } from "@/types/availability";
 
-import { PublicBookingForm } from "@/components/public-page/public-booking-form";
-import { PublicGatekeeper } from "@/components/public-page/public-gatekeeper";
-import { PublicHero } from "@/components/public-page/public-hero";
-import { PublicServices } from "@/components/public-page/public-services";
-import { PublicSlotPicker } from "@/components/public-page/public-slot-picker";
-import { PublicSuccess } from "@/components/public-page/public-success";
-import { PublicTestimonials } from "@/components/public-page/public-testimonials";
-import { ErrorState } from "@/components/shared/error-state";
-import { LoadingState } from "@/components/shared/loading-state";
-import { useBookingFlow } from "@/hooks/use-booking-flow";
-import { usePublicProfile } from "@/hooks/use-public-profile";
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-type PublicService = {
-  id: string;
-  title: string;
-  slug?: string | null;
-  description?: string | null;
-  displayPrice?: string | null;
-  durationMinutes: number;
-  preparationInstructions?: string | null;
-  active?: boolean;
+type PageProps = {
+  params: Promise<{ slug: string }>;
 };
 
-type PublicServicesResponse = {
-  services?: PublicService[];
-  error?: string;
-};
+/** Max exposure days — must cover the widest option (TWO_MONTHS = 62). */
+const MAX_EXPOSURE_DAYS = 62;
 
-type PublicQuestion = {
-  id: string;
-  questionText: string;
-  questionType:
-    | "SHORT_TEXT"
-    | "LONG_TEXT"
-    | "NUMBER"
-    | "MULTIPLE_CHOICE"
-    | "YES_NO";
-  helpText?: string | null;
-  optionsJson?: string[] | null;
-  isRequired?: boolean;
-  sortOrder?: number;
-};
+/**
+ * Transforms raw BookableSlot[] from the slot engine into the two shapes the
+ * template needs:
+ *  - availableDates  — one entry per calendar day that has ≥ 1 slot
+ *  - slotsPerDate    — map of YYYY-MM-DD → AvailabilityTime[] (id = "start__end")
+ */
+function transformSlots(
+  slots: BookableSlot[],
+  timezone: string,
+): {
+  availableDates: AvailabilityDate[];
+  slotsPerDate: Record<string, AvailabilityTime[]>;
+} {
+  const dateMap = new Map<
+    string,
+    { date: AvailabilityDate; times: AvailabilityTime[] }
+  >();
 
-type PublicQuestionsResponse = {
-  questions?: PublicQuestion[];
-  error?: string;
-};
+  for (const slot of slots) {
+    const dateKey = formatInTimeZone(slot.start, timezone, "yyyy-MM-dd");
+    const dayLabel = formatInTimeZone(slot.start, timezone, "EEE"); // "Mon"
+    const dayNum = formatInTimeZone(slot.start, timezone, "d");      // "5"
+    const monthLabel = formatInTimeZone(slot.start, timezone, "MMM"); // "Jun"
+    const timeLabel = formatInTimeZone(slot.start, timezone, "h:mm a"); // "9:00 AM"
 
-function getDateRange(days = 14) {
-  const start = new Date();
-  const end = new Date();
-  end.setDate(start.getDate() + days);
+    if (!dateMap.has(dateKey)) {
+      dateMap.set(dateKey, {
+        date: {
+          id: dateKey,
+          label: dayLabel,
+          day: dayNum,
+          monthLabel,
+          available: true,
+        },
+        times: [],
+      });
+    }
+
+    // Encode start + end into the time id so the template can pass them to
+    // the holds endpoint without a separate lookup.
+    const timeId = `${slot.start.toISOString()}__${slot.end.toISOString()}`;
+    dateMap.get(dateKey)!.times.push({ id: timeId, label: timeLabel });
+  }
+
+  const sorted = [...dateMap.entries()].sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
 
   return {
-    startDate: start.toISOString(),
-    endDate: end.toISOString(),
+    availableDates: sorted.map(([, e]) => e.date),
+    slotsPerDate: Object.fromEntries(sorted.map(([k, e]) => [k, e.times])),
   };
 }
 
-export default function PublicProfessionalPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = typeof params?.slug === "string" ? params.slug : "";
+// ── Metadata ──────────────────────────────────────────────────────────────────
 
-  const { profile, isLoading, error } = usePublicProfile(slug);
-  const bookingFlow = useBookingFlow();
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const profile = await profileService.getPublicProfileBySlug(slug);
 
-  const [services, setServices] = React.useState<PublicService[]>([]);
-  const [questions, setQuestions] = React.useState<PublicQuestion[]>([]);
-  const [servicesLoading, setServicesLoading] = React.useState(false);
-  const [questionsLoading, setQuestionsLoading] = React.useState(false);
-  const [pageError, setPageError] = React.useState<string | null>(null);
-  const [selectedServiceId, setSelectedServiceId] = React.useState<string | null>(
-    null,
-  );
+  if (!profile) return { title: "Not Found" };
 
-  const selectedService = React.useMemo(
-    () => services.find((service) => service.id === selectedServiceId) ?? null,
-    [services, selectedServiceId],
-  );
+  return {
+    title: `${profile.fullName} — Gate`,
+    description: profile.headline ?? profile.bio ?? undefined,
+    openGraph: {
+      title: `${profile.fullName} — Gate`,
+      description: profile.headline ?? profile.bio ?? undefined,
+      images: profile.avatarUrl ? [profile.avatarUrl] : [],
+    },
+  };
+}
 
-  React.useEffect(() => {
-    async function loadServices() {
-      if (!slug) return;
+// ── Page ──────────────────────────────────────────────────────────────────────
 
-      setServicesLoading(true);
-      setPageError(null);
+export default async function PublicProfessionalPage({ params }: PageProps) {
+  const { slug } = await params;
 
-      try {
-        const response = await fetch(`/api/public/services/${slug}`, {
-          method: "GET",
-          cache: "no-store",
-        });
+  // 1. Fetch the published profile data (returns null if not published).
+  const data = await profileService.getPublicPageData(slug);
+  if (!data) notFound();
 
-        const data = (await response.json()) as PublicServicesResponse;
+  // 2. Fetch the professional's DB record for the ID + timezone.
+  const professional = await profileRepository.findPublishedBySlug(slug);
+  if (!professional) notFound();
 
-        if (!response.ok) {
-          throw new Error(data?.error || "Failed to load services.");
-        }
+  const timezone = professional.timezone || "UTC";
+  const activeService =
+    data.services.find((s) => s.id === data.activeServiceId) ??
+    data.services[0];
 
-        const nextServices = (data.services ?? []).filter(
-          (service) => service.active !== false,
-        );
+  // 3. Fetch real availability slots for the active service.
+  let availableDates: AvailabilityDate[] = [];
+  let slotsPerDate: Record<string, AvailabilityTime[]> = {};
 
-        setServices(nextServices);
-        setSelectedServiceId((current) => current ?? nextServices[0]?.id ?? null);
-      } catch (loadError) {
-        setPageError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Failed to load services.",
-        );
-      } finally {
-        setServicesLoading(false);
-      }
+  if (activeService) {
+    try {
+      const now = new Date();
+      const endDate = addDays(now, MAX_EXPOSURE_DAYS);
+
+      const result = await availabilityService.getPublicBookableSlots({
+        slug,
+        serviceId: activeService.id,
+        startDate: now,
+        endDate,
+        timezone,
+      });
+
+      const transformed = transformSlots(result.slots, timezone);
+      availableDates = transformed.availableDates;
+      slotsPerDate = transformed.slotsPerDate;
+    } catch {
+      // If the slot engine throws (e.g. no availability rules set yet),
+      // gracefully fall through with empty dates — the template handles it.
     }
-
-    void loadServices();
-  }, [slug]);
-
-  React.useEffect(() => {
-    async function loadQuestions() {
-      if (!selectedServiceId) {
-        setQuestions([]);
-        return;
-      }
-
-      setQuestionsLoading(true);
-      setPageError(null);
-
-      try {
-        const params = new URLSearchParams({
-          serviceId: selectedServiceId,
-        });
-
-        const response = await fetch(
-          `/api/app/qualification/questions?${params.toString()}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
-
-        const data = (await response.json()) as PublicQuestionsResponse;
-
-        if (!response.ok) {
-          throw new Error(data?.error || "Failed to load qualification questions.");
-        }
-
-        setQuestions(
-          (data.questions ?? []).slice().sort((a, b) => {
-            return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
-          }),
-        );
-      } catch (loadError) {
-        setPageError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Failed to load qualification questions.",
-        );
-      } finally {
-        setQuestionsLoading(false);
-      }
-    }
-
-    void loadQuestions();
-  }, [selectedServiceId]);
-
-  React.useEffect(() => {
-    async function loadSlotsAfterQualification() {
-      if (
-        !bookingFlow.evaluation ||
-        bookingFlow.evaluation.result !== "QUALIFIED" ||
-        !selectedServiceId ||
-        !slug
-      ) {
-        return;
-      }
-
-      const { startDate, endDate } = getDateRange(14);
-
-      try {
-        await bookingFlow.loadSlots({
-          slug,
-          serviceId: selectedServiceId,
-          startDate,
-          endDate,
-          timezone:
-            profile?.timezone ||
-            Intl.DateTimeFormat().resolvedOptions().timeZone ||
-            "UTC",
-        });
-      } catch {
-        // handled in hook state
-      }
-    }
-
-    void loadSlotsAfterQualification();
-  }, [
-    bookingFlow,
-    bookingFlow.evaluation,
-    profile?.timezone,
-    selectedServiceId,
-    slug,
-  ]);
-
-  const qualified =
-    bookingFlow.evaluation?.result === "QUALIFIED" && !!bookingFlow.lead;
-
-  const successPayload = bookingFlow.confirmation?.success
-    ? {
-        bookingId: bookingFlow.confirmation.success.bookingId ?? "",
-        professionalName:
-          bookingFlow.confirmation.success.professionalName ||
-          profile?.fullName ||
-          "",
-        serviceTitle:
-          bookingFlow.confirmation.success.serviceTitle ||
-          selectedService?.title ||
-          "",
-        slotStart:
-          bookingFlow.confirmation.success.slotStart ||
-          bookingFlow.selectedSlot?.start ||
-          "",
-        slotEnd:
-          bookingFlow.confirmation.success.slotEnd ||
-          bookingFlow.selectedSlot?.end ||
-          "",
-        timezone:
-          bookingFlow.confirmation.success.timezone ||
-          profile?.timezone ||
-          "UTC",
-        meetingUrl: bookingFlow.confirmation.success.meetingUrl ?? null,
-        eventUrl: bookingFlow.confirmation.success.eventUrl ?? null,
-      }
-    : null;
-
-  if (isLoading || servicesLoading) {
-    return (
-      <main className="min-h-screen bg-white text-slate-900">
-        <LoadingState
-          fullPage
-          title="Loading public page"
-          description="Please wait while we prepare this expert page."
-        />
-      </main>
-    );
   }
 
-  if ((error || pageError) && !profile) {
-    return (
-      <main className="min-h-screen bg-white text-slate-900">
-        <ErrorState
-          fullPage
-          title="Could not load this page"
-          description={error || pageError || "This public page is unavailable."}
-        />
-      </main>
-    );
-  }
+  const pageData: PublicSalesPageTemplateData = {
+    ...data,
+    professionalId: professional.id,
+    availableDates,
+    availableTimes: [], // unused — template reads from slotsPerDate
+    slotsPerDate,
+  };
 
-  if (!profile) {
-    return (
-      <main className="min-h-screen bg-white text-slate-900">
-        <ErrorState
-          fullPage
-          title="Professional not found"
-          description="This public expert page does not exist or is no longer available."
-        />
-      </main>
-    );
-  }
-
-  return (
-    <main className="min-h-screen bg-white text-slate-900">
-      <PublicHero
-        professional={profile}
-        ctaLabel={profile.ctaText || "Apply to work with me"}
-        ctaHref="#gatekeeper"
-      />
-
-      <PublicTestimonials testimonials={profile.testimonials ?? []} />
-
-      <PublicServices
-        services={services}
-        selectedServiceId={selectedServiceId}
-        onSelectService={(service) => {
-          setSelectedServiceId(service.id);
-          bookingFlow.resetFlow();
-        }}
-      />
-
-      {questionsLoading ? (
-        <LoadingState
-          inset
-          title="Loading qualification flow"
-          description="Please wait while we prepare the Gatekeeper questions."
-        />
-      ) : (
-        <PublicGatekeeper
-          professionalId={profile.id || ""}
-          serviceId={selectedServiceId}
-          serviceTitle={selectedService?.title}
-          questions={questions}
-          onSubmitted={(payload) => {
-            bookingFlow.resetFlow();
-            // restore submitted state manually
-            void bookingFlow.submitQualification({
-              professionalId: profile.id || "",
-              serviceId: selectedServiceId || "",
-              name: payload.lead.name,
-              email: payload.lead.email,
-              answers: payload.answers,
-            }).catch(() => undefined);
-          }}
-          onQualified={(payload) => {
-            bookingFlow.resetFlow();
-            void bookingFlow
-              .submitQualification({
-                professionalId: profile.id || "",
-                serviceId: selectedServiceId || "",
-                name: payload.lead.name,
-                email: payload.lead.email,
-                answers: payload.answers,
-              })
-              .catch(() => undefined);
-          }}
-          onRejected={(payload) => {
-            bookingFlow.resetFlow();
-            void bookingFlow
-              .submitQualification({
-                professionalId: profile.id || "",
-                serviceId: selectedServiceId || "",
-                name: payload.lead.name,
-                email: payload.lead.email,
-                answers: payload.answers,
-              })
-              .catch(() => undefined);
-          }}
-        />
-      )}
-
-      <PublicSlotPicker
-        slug={slug}
-        serviceId={selectedServiceId}
-        isUnlocked={qualified}
-        timezone={profile.timezone || "UTC"}
-        selectedSlotStart={bookingFlow.selectedSlot?.start ?? null}
-        onSelectSlot={(slot) => {
-          bookingFlow.selectSlot(slot);
-        }}
-      />
-
-      <PublicBookingForm
-        professionalId={profile.id || ""}
-        serviceId={selectedServiceId}
-        leadId={bookingFlow.lead?.id ?? null}
-        selectedSlot={bookingFlow.selectedSlot}
-        isUnlocked={qualified}
-        timezone={profile.timezone || "UTC"}
-        serviceTitle={selectedService?.title}
-        onSuccess={() => {
-          // confirmation already handled by component’s internal requests
-        }}
-      />
-
-      <PublicSuccess
-        success={successPayload}
-        eventCreationPending={
-          bookingFlow.confirmation?.eventCreationRequired ?? false
-        }
-      />
-
-      {bookingFlow.error ? (
-        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-          <ErrorState
-            inset
-            title="Booking flow issue"
-            description={bookingFlow.error}
-          />
-        </div>
-      ) : null}
-
-      {pageError && profile ? (
-        <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-          <ErrorState
-            inset
-            title="Some page data could not be loaded"
-            description={pageError}
-          />
-        </div>
-      ) : null}
-    </main>
-  );
+  return <PublicSalesPageTemplate data={pageData} />;
 }

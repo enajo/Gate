@@ -1,10 +1,10 @@
 import "server-only";
 
+import { Prisma } from "@prisma/client";
 import type {
   Booking,
   BookingHold,
   Lead,
-  Prisma,
 } from "@prisma/client";
 import { db } from "@/lib/db";
 
@@ -12,6 +12,17 @@ const bookingListInclude = Prisma.validator<Prisma.BookingInclude>()({
   lead: true,
   service: true,
 });
+
+// Holds with lead + service + converted booking, for dashboard inbox
+const holdWithRelationsInclude = Prisma.validator<Prisma.BookingHoldInclude>()({
+  lead: true,
+  service: true,
+  booking: true,
+});
+
+export type HoldWithRelations = Prisma.BookingHoldGetPayload<{
+  include: typeof holdWithRelationsInclude;
+}>;
 
 const bookingWithRelationsInclude = Prisma.validator<Prisma.BookingInclude>()({
   hold: true,
@@ -518,6 +529,30 @@ export const bookingRepository = {
           not: "CANCELLED",
         },
       },
+    });
+  },
+
+  // ── Holds with relations (Phase 3 dashboard inbox) ────────────────────────
+
+  async findActiveHoldsWithRelationsByProfessionalId(
+    professionalId: string,
+    now = new Date(),
+  ): Promise<HoldWithRelations[]> {
+    return db.bookingHold.findMany({
+      where: {
+        professionalId,
+        status: "ACTIVE",
+        expiresAt: { gt: now },
+      },
+      include: holdWithRelationsInclude,
+      orderBy: [{ createdAt: "desc" }],
+    });
+  },
+
+  async findHoldWithRelationsById(id: string): Promise<HoldWithRelations | null> {
+    return db.bookingHold.findUnique({
+      where: { id },
+      include: holdWithRelationsInclude,
     });
   },
 };

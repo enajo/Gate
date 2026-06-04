@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, Globe, Linkedin, Twitter } from "lucide-react";
+import { ArrowDown, ExternalLink, Globe } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,7 @@ type PublicHeroProfile = {
   } | null;
 };
 
-export interface PublicHeroProps
-  extends React.HTMLAttributes<HTMLElement> {
+export interface PublicHeroProps extends React.HTMLAttributes<HTMLElement> {
   professional: PublicHeroProfile;
   ctaLabel?: string;
   ctaHref?: string;
@@ -46,10 +45,8 @@ export function PublicHero({
   ctaHref = "#gatekeeper",
   ...props
 }: PublicHeroProps) {
-  const accentColor =
-    professional.brandSettings?.accentColor || "#0f172a";
-  const primaryColor =
-    professional.brandSettings?.primaryColor || "#111827";
+  const accentColor = professional.brandSettings?.accentColor || "#6366f1";
+  const primaryColor = professional.brandSettings?.primaryColor || "#111827";
 
   const socialLinks = [
     {
@@ -60,21 +57,22 @@ export function PublicHero({
     {
       href: professional.socialLinks?.linkedin,
       label: "LinkedIn",
-      icon: Linkedin,
+      icon: ExternalLink,
     },
     {
       href: professional.socialLinks?.x,
       label: "X",
-      icon: Twitter,
+      icon: ExternalLink,
     },
-  ].filter((item): item is { href: string; label: string; icon: typeof Globe } =>
-    Boolean(item.href),
+  ].filter(
+    (item): item is { href: string; label: string; icon: typeof Globe } =>
+      Boolean(item.href),
   );
 
   return (
     <section
       className={cn(
-        "relative overflow-hidden border-b border-slate-200 bg-white",
+        "relative overflow-hidden border-b border-slate-200/70 bg-gradient-to-br from-white via-slate-50 to-indigo-50",
         className,
       )}
       style={
@@ -85,27 +83,29 @@ export function PublicHero({
       }
       {...props}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(15,23,42,0.06),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.08),transparent_28%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(15,23,42,0.10),transparent_30%)]" />
 
-      <div className="relative mx-auto grid w-full max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-24">
+      <div className="relative mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8 lg:py-24">
         <div className="flex items-start justify-center lg:justify-start">
           <div className="relative">
             <div
-              className="absolute inset-0 rounded-[2rem] blur-3xl opacity-25"
+              className="absolute inset-0 rounded-[2rem] opacity-30 blur-3xl"
               style={{ backgroundColor: accentColor }}
             />
-            <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-100 shadow-xl">
+
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-2xl shadow-slate-300/70">
               {professional.avatarUrl ? (
                 <Image
                   src={professional.avatarUrl}
                   alt={professional.fullName}
                   width={420}
                   height={420}
+                  priority
                   className="h-[280px] w-[280px] object-cover sm:h-[340px] sm:w-[340px]"
                 />
               ) : (
                 <div
-                  className="flex h-[280px] w-[280px] items-center justify-center text-5xl font-semibold text-white sm:h-[340px] sm:w-[340px]"
+                  className="flex h-[280px] w-[280px] items-center justify-center text-5xl font-bold text-white sm:h-[340px] sm:w-[340px]"
                   style={{ backgroundColor: primaryColor }}
                 >
                   {getInitials(professional.fullName)}
@@ -118,9 +118,8 @@ export function PublicHero({
         <div className="flex flex-col justify-center">
           <Badge
             variant="secondary"
-            className="w-fit"
+            className="w-fit border border-white/70 bg-white/80 shadow-sm"
             style={{
-              backgroundColor: `${accentColor}14`,
               color: primaryColor,
             }}
           >
@@ -129,19 +128,19 @@ export function PublicHero({
 
           <div className="mt-6 space-y-4">
             <div className="space-y-2">
-              <h1 className="text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl">
+              <h1 className="text-5xl font-bold tracking-tight text-slate-950 sm:text-6xl">
                 {professional.fullName}
               </h1>
 
               {professional.title ? (
-                <p className="text-base font-medium text-slate-500 sm:text-lg">
+                <p className="text-lg font-semibold text-slate-500">
                   {professional.title}
                 </p>
               ) : null}
             </div>
 
             {professional.headline ? (
-              <p className="max-w-3xl text-xl leading-8 text-slate-700 sm:text-2xl">
+              <p className="max-w-3xl text-2xl font-semibold leading-9 text-slate-800">
                 {professional.headline}
               </p>
             ) : null}
@@ -157,7 +156,7 @@ export function PublicHero({
             <Button
               asChild
               size="lg"
-              className="shadow-sm"
+              className="rounded-full px-7 shadow-lg shadow-slate-900/20"
               style={{
                 backgroundColor: primaryColor,
               }}
@@ -174,12 +173,14 @@ export function PublicHero({
                   const Icon = link.icon;
 
                   return (
-                    <Button key={link.label} asChild variant="outline" size="sm">
-                      <Link
-                        href={link.href}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
+                    <Button
+                      key={link.label}
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full bg-white/80"
+                    >
+                      <Link href={link.href} target="_blank" rel="noreferrer">
                         <Icon className="size-4" />
                         {link.label}
                       </Link>
@@ -191,32 +192,21 @@ export function PublicHero({
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
-                Step 1
-              </p>
-              <p className="mt-2 text-sm font-semibold text-slate-900">
-                Review the offer
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
-                Step 2
-              </p>
-              <p className="mt-2 text-sm font-semibold text-slate-900">
-                Qualify through the Gatekeeper
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
-                Step 3
-              </p>
-              <p className="mt-2 text-sm font-semibold text-slate-900">
-                Unlock booking if accepted
-              </p>
-            </div>
+            {[
+              ["Step 1", "Review the offer"],
+              ["Step 2", "Qualify through the Gatekeeper"],
+              ["Step 3", "Unlock booking if accepted"],
+            ].map(([step, text]) => (
+              <div
+                key={step}
+                className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-lg shadow-slate-200/60 backdrop-blur"
+              >
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                  {step}
+                </p>
+                <p className="mt-2 text-sm font-bold text-slate-950">{text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

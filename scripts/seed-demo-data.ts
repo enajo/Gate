@@ -22,7 +22,7 @@ async function main() {
     },
   });
 
-  const profile = await prisma.professionalProfile.upsert({
+  const profile = await prisma.professional.upsert({
     where: {
       userId: user.id,
     },
@@ -87,8 +87,8 @@ async function main() {
 
   const strategySession = await prisma.service.upsert({
     where: {
-      professionalProfileId_slug: {
-        professionalProfileId: profile.id,
+      professionalId_slug: {
+        professionalId: profile.id,
         slug: "fractional-cto-strategy-session",
       },
     },
@@ -103,7 +103,7 @@ async function main() {
       active: true,
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       title: "Fractional CTO Strategy Session",
       slug: "fractional-cto-strategy-session",
       description:
@@ -118,8 +118,8 @@ async function main() {
 
   const systemsAudit = await prisma.service.upsert({
     where: {
-      professionalProfileId_slug: {
-        professionalProfileId: profile.id,
+      professionalId_slug: {
+        professionalId: profile.id,
         slug: "saas-product-systems-audit",
       },
     },
@@ -134,7 +134,7 @@ async function main() {
       active: true,
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       title: "SaaS Product Systems Audit",
       slug: "saas-product-systems-audit",
       description:
@@ -149,8 +149,8 @@ async function main() {
 
   const questionRevenue = await prisma.qualificationQuestion.upsert({
     where: {
-      professionalProfileId_sortOrder: {
-        professionalProfileId: profile.id,
+      professionalId_sortOrder: {
+        professionalId: profile.id,
         sortOrder: 1,
       },
     },
@@ -162,7 +162,7 @@ async function main() {
       isRequired: true,
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       questionText: "What is your current monthly revenue in EUR?",
       questionType: "NUMBER",
       helpText:
@@ -174,8 +174,8 @@ async function main() {
 
   const questionBlocker = await prisma.qualificationQuestion.upsert({
     where: {
-      professionalProfileId_sortOrder: {
-        professionalProfileId: profile.id,
+      professionalId_sortOrder: {
+        professionalId: profile.id,
         sortOrder: 2,
       },
     },
@@ -186,7 +186,7 @@ async function main() {
       isRequired: true,
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       questionText: "What is your biggest technical blocker right now?",
       questionType: "LONG_TEXT",
       helpText: "Be specific. A good answer makes the session much more useful.",
@@ -197,8 +197,8 @@ async function main() {
 
   const questionUrgency = await prisma.qualificationQuestion.upsert({
     where: {
-      professionalProfileId_sortOrder: {
-        professionalProfileId: profile.id,
+      professionalId_sortOrder: {
+        professionalId: profile.id,
         sortOrder: 3,
       },
     },
@@ -211,7 +211,7 @@ async function main() {
       isRequired: true,
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       questionText: "How urgent is solving this problem?",
       questionType: "MULTIPLE_CHOICE",
       helpText:
@@ -224,8 +224,8 @@ async function main() {
 
   await prisma.qualificationRule.upsert({
     where: {
-      professionalProfileId_priority: {
-        professionalProfileId: profile.id,
+      professionalId_priority: {
+        professionalId: profile.id,
         priority: 1,
       },
     },
@@ -250,7 +250,7 @@ async function main() {
       outcomeValue: "Qualified leads can continue to booking.",
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       serviceId: strategySession.id,
       priority: 1,
       active: true,
@@ -275,8 +275,8 @@ async function main() {
 
   await prisma.qualificationRule.upsert({
     where: {
-      professionalProfileId_priority: {
-        professionalProfileId: profile.id,
+      professionalId_priority: {
+        professionalId: profile.id,
         priority: 2,
       },
     },
@@ -295,7 +295,7 @@ async function main() {
       outcomeValue: "https://example.com/resources",
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       priority: 2,
       active: true,
       conditionsJson: {
@@ -323,8 +323,8 @@ async function main() {
   for (const rule of weeklyRules) {
     await prisma.availabilityRule.upsert({
       where: {
-        professionalProfileId_weekday_startTime_endTime: {
-          professionalProfileId: profile.id,
+        professionalId_weekday_startTime_endTime: {
+          professionalId: profile.id,
           weekday: rule.weekday,
           startTime: rule.startTime,
           endTime: rule.endTime,
@@ -334,7 +334,7 @@ async function main() {
         active: true,
       },
       create: {
-        professionalProfileId: profile.id,
+        professionalId: profile.id,
         weekday: rule.weekday,
         startTime: rule.startTime,
         endTime: rule.endTime,
@@ -352,8 +352,8 @@ async function main() {
 
   await prisma.blockedDate.upsert({
     where: {
-      professionalProfileId_startDateTime_endDateTime: {
-        professionalProfileId: profile.id,
+      professionalId_startDateTime_endDateTime: {
+        professionalId: profile.id,
         startDateTime: blockedStart,
         endDateTime: blockedEnd,
       },
@@ -362,7 +362,7 @@ async function main() {
       reason: "Conference day",
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       startDateTime: blockedStart,
       endDateTime: blockedEnd,
       reason: "Conference day",
@@ -371,8 +371,8 @@ async function main() {
 
   await prisma.accessCode.upsert({
     where: {
-      professionalProfileId_code: {
-        professionalProfileId: profile.id,
+      professionalId_code: {
+        professionalId: profile.id,
         code: "BETA2026",
       },
     },
@@ -381,7 +381,7 @@ async function main() {
       isActive: true,
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       code: "BETA2026",
       codeLabel: "Founder beta invite",
       isActive: true,
@@ -390,8 +390,8 @@ async function main() {
 
   await prisma.testimonial.upsert({
     where: {
-      professionalProfileId_name_company: {
-        professionalProfileId: profile.id,
+      professionalId_name_company: {
+        professionalId: profile.id,
         name: "Marta Nowak",
         company: "Flowstack",
       },
@@ -404,7 +404,7 @@ async function main() {
         "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=300&q=80",
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       name: "Marta Nowak",
       role: "Founder",
       company: "Flowstack",
@@ -417,8 +417,8 @@ async function main() {
 
   await prisma.testimonial.upsert({
     where: {
-      professionalProfileId_name_company: {
-        professionalProfileId: profile.id,
+      professionalId_name_company: {
+        professionalId: profile.id,
         name: "David Kim",
         company: "Orbitlane",
       },
@@ -431,7 +431,7 @@ async function main() {
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       name: "David Kim",
       role: "CEO",
       company: "Orbitlane",
@@ -444,8 +444,8 @@ async function main() {
 
   const lead = await prisma.lead.upsert({
     where: {
-      professionalProfileId_email_serviceId: {
-        professionalProfileId: profile.id,
+      professionalId_email_serviceId: {
+        professionalId: profile.id,
         email: "client@example.com",
         serviceId: strategySession.id,
       },
@@ -465,7 +465,7 @@ async function main() {
       },
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       serviceId: strategySession.id,
       name: "Sarah Founder",
       email: "client@example.com",
@@ -506,7 +506,7 @@ async function main() {
       calendarStatus: "PENDING",
     },
     create: {
-      professionalProfileId: profile.id,
+      professionalId: profile.id,
       serviceId: strategySession.id,
       leadId: lead.id,
       slotStart,

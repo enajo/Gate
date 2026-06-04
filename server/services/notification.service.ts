@@ -394,4 +394,5 @@ export const notificationService = {
     sent: 0,
     failed,
   };
-}
+  },
+};

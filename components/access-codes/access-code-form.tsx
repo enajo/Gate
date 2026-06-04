@@ -23,8 +23,8 @@ export type AccessCodeFormValues = {
   isActive: boolean;
 };
 
-export interface AccessCodeFormProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface AccessCodeFormProps {
+  className?: string;
   initialValues?: Partial<AccessCodeFormValues>;
   isSubmitting?: boolean;
   submitLabel?: string;

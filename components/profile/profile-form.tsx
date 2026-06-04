@@ -52,8 +52,8 @@ export type ProfileFormValues = {
   maxBookingsPerDay?: number | null;
 };
 
-export interface ProfileFormProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ProfileFormProps {
+  className?: string;
   initialValues?: Partial<ProfileFormValues>;
   isSubmitting?: boolean;
   submitLabel?: string;

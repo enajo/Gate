@@ -12,8 +12,8 @@ export type ThemeSettingsValue = {
   fontPair?: string | null;
 };
 
-export interface ThemeSelectorProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ThemeSelectorProps {
+  className?: string;
   value?: ThemeSettingsValue;
   onChange?: (value: ThemeSettingsValue) => void;
   disabled?: boolean;
@@ -272,8 +272,8 @@ export function ThemeSelector({
           <div
             className="inline-flex rounded-full px-3 py-1 text-xs font-medium"
             style={{
-              backgroundColor: `${merged.accentColor}18`,
-              color: merged.primaryColor ?? defaultValue.primaryColor,
+              backgroundColor: `${merged.accentColor ?? defaultValue.accentColor}18`,
+              color: merged.primaryColor ?? defaultValue.primaryColor ?? undefined,
             }}
           >
             Premium expert storefront
@@ -281,7 +281,7 @@ export function ThemeSelector({
 
           <h3
             className="mt-4 text-xl font-semibold"
-            style={{ color: merged.primaryColor ?? defaultValue.primaryColor }}
+            style={{ color: merged.primaryColor ?? defaultValue.primaryColor ?? undefined }}
           >
             Your public page preview
           </h3>
@@ -296,7 +296,7 @@ export function ThemeSelector({
               type="button"
               className="rounded-lg px-4 py-2 text-sm font-medium text-white"
               style={{
-                backgroundColor: merged.primaryColor ?? defaultValue.primaryColor,
+                backgroundColor: merged.primaryColor ?? defaultValue.primaryColor ?? undefined,
               }}
             >
               Apply to work with me
@@ -306,8 +306,8 @@ export function ThemeSelector({
               type="button"
               className="rounded-lg border px-4 py-2 text-sm font-medium"
               style={{
-                borderColor: merged.accentColor ?? defaultValue.accentColor,
-                color: merged.primaryColor ?? defaultValue.primaryColor,
+                borderColor: merged.accentColor ?? defaultValue.accentColor ?? undefined,
+                color: merged.primaryColor ?? defaultValue.primaryColor ?? undefined,
               }}
             >
               Learn more

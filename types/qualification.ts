@@ -8,12 +8,14 @@ export type QuestionType =
 export type QualificationOutcomeType =
   | "ALLOW_BOOKING"
   | "REJECT"
-  | "REDIRECT";
+  | "REDIRECT"
+  | "MANUAL_REVIEW";
 
 export type LeadQualificationResult =
   | "QUALIFIED"
   | "REJECTED"
-  | "REDIRECTED";
+  | "REDIRECTED"
+  | "PENDING_REVIEW";
 
 export type QualificationQuestion = {
   id: string;
@@ -126,6 +128,7 @@ export type QualificationQuestionSummary = Pick<
   "id" | "questionText" | "questionType" | "sortOrder" | "isRequired"
 > & {
   optionsJson?: string[] | null;
+  helpText?: string | null;
 };
 
 export type QualificationRuleSummary = Pick<
@@ -143,7 +146,6 @@ export type QualificationPreviewResult = QualificationEvaluationResult & {
 };
 
 export type QualificationQuestionListItem = QualificationQuestionSummary & {
-  helpText?: string | null;
   serviceId?: string | null;
 };
 

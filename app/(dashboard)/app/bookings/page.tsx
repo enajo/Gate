@@ -2,6 +2,10 @@
 
 import * as React from "react";
 
+import {
+  HoldsInbox,
+  type HoldInboxItem,
+} from "@/components/bookings/holds-inbox";
 import { BookingSummary, type BookingSummaryValue } from "@/components/bookings/booking-summary";
 import { BookingsTable, type BookingsTableValue } from "@/components/bookings/bookings-table";
 import { PageShell } from "@/components/layout/page-shell";
@@ -21,8 +25,45 @@ type BookingsResponse = {
   error?: string;
 };
 
+type HoldsResponse = {
+  holds?: RawHold[];
+  error?: string;
+};
+
+type RawHold = {
+  id: string;
+  slotStart: string;
+  slotEnd: string;
+  expiresAt: string;
+  timezone?: string | null;
+  status: string;
+  lead?: {
+    name?: string | null;
+    email?: string | null;
+  } | null;
+  service?: {
+    title?: string | null;
+    manualApprovalRequired?: boolean;
+  } | null;
+};
+
+function rawHoldToInboxItem(h: RawHold): HoldInboxItem {
+  return {
+    id: h.id,
+    slotStart: h.slotStart,
+    slotEnd: h.slotEnd,
+    expiresAt: h.expiresAt,
+    timezone: h.timezone,
+    clientName: h.lead?.name ?? null,
+    clientEmail: h.lead?.email ?? null,
+    serviceTitle: h.service?.title ?? null,
+    requiresApproval: h.service?.manualApprovalRequired ?? true,
+  };
+}
+
 export default function BookingsPage() {
   const [bookings, setBookings] = React.useState<BookingsTableValue[]>([]);
+  const [holds, setHolds] = React.useState<HoldInboxItem[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -30,23 +71,31 @@ export default function BookingsPage() {
     React.useState<BookingsTableValue | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  const loadBookings = React.useCallback(async () => {
+  const loadData = React.useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/app/bookings", {
-        method: "GET",
-        cache: "no-store",
-      });
+      const [bookingsRes, holdsRes] = await Promise.all([
+        fetch("/api/app/bookings", { cache: "no-store" }),
+        fetch("/api/app/holds", { cache: "no-store" }),
+      ]);
 
-      const data = (await response.json()) as BookingsResponse;
+      const [bookingsData, holdsData] = await Promise.all([
+        bookingsRes.json() as Promise<BookingsResponse>,
+        holdsRes.json() as Promise<HoldsResponse>,
+      ]);
 
-      if (!response.ok) {
-        throw new Error(data?.error || "Failed to load bookings.");
+      if (!bookingsRes.ok) {
+        throw new Error(bookingsData?.error ?? "Failed to load bookings.");
       }
 
-      setBookings(data.bookings ?? []);
+      setBookings(bookingsData.bookings ?? []);
+
+      // Holds endpoint is best-effort — don't fail the whole page
+      if (holdsRes.ok) {
+        setHolds((holdsData.holds ?? []).map(rawHoldToInboxItem));
+      }
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -59,8 +108,34 @@ export default function BookingsPage() {
   }, []);
 
   React.useEffect(() => {
-    void loadBookings();
-  }, [loadBookings]);
+    void loadData();
+  }, [loadData]);
+
+  async function handleApprove(holdId: string) {
+    const res = await fetch(`/api/app/holds/${holdId}/approve`, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error ?? "Failed to approve booking.");
+    }
+    // Remove from holds, reload bookings
+    setHolds((prev) => prev.filter((h) => h.id !== holdId));
+    const bookingsRes = await fetch("/api/app/bookings", { cache: "no-store" });
+    const bookingsData = (await bookingsRes.json()) as BookingsResponse;
+    if (bookingsRes.ok) setBookings(bookingsData.bookings ?? []);
+  }
+
+  async function handleDecline(holdId: string) {
+    const res = await fetch(`/api/app/holds/${holdId}/decline`, {
+      method: "POST",
+    });
+    if (!res.ok) {
+      const data = (await res.json()) as { error?: string };
+      throw new Error(data.error ?? "Failed to decline booking.");
+    }
+    setHolds((prev) => prev.filter((h) => h.id !== holdId));
+  }
 
   function handleView(booking: BookingsTableValue) {
     setSelectedBooking(booking);
@@ -70,10 +145,7 @@ export default function BookingsPage() {
   function mapBookingToSummary(
     booking: BookingsTableValue | null,
   ): BookingSummaryValue | null {
-    if (!booking) {
-      return null;
-    }
-
+    if (!booking) return null;
     return {
       id: booking.id,
       serviceTitle: booking.serviceTitle ?? null,
@@ -91,7 +163,7 @@ export default function BookingsPage() {
       header={
         <SectionHeading
           title="Bookings"
-          description="Review confirmed sessions, pending booking states, and the overall output of your Gatekeeper flow."
+          description="Review confirmed sessions, pending approval requests, and the overall output of your Gatekeeper flow."
           maxWidth="full"
         />
       }
@@ -102,14 +174,14 @@ export default function BookingsPage() {
           title="Loading bookings"
           description="Please wait while we fetch your booking activity."
         />
-      ) : error && bookings.length === 0 ? (
+      ) : error && bookings.length === 0 && holds.length === 0 ? (
         <ErrorState
           inset
           title="Could not load bookings"
           description={error}
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-8">
           {error ? (
             <ErrorState
               inset
@@ -118,7 +190,34 @@ export default function BookingsPage() {
             />
           ) : null}
 
-          <BookingsTable bookings={bookings} onView={handleView} />
+          {/* ── Pending approval inbox ────────────────────────────────────── */}
+          {holds.length > 0 ? (
+            <section>
+              <div className="mb-4 flex items-center gap-2">
+                <h2 className="text-[15px] font-semibold text-slate-900">
+                  Pending Requests
+                </h2>
+                <span className="inline-flex size-5 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white">
+                  {holds.length}
+                </span>
+              </div>
+              <HoldsInbox
+                holds={holds}
+                onApprove={handleApprove}
+                onDecline={handleDecline}
+              />
+            </section>
+          ) : null}
+
+          {/* ── Confirmed bookings table ──────────────────────────────────── */}
+          <section>
+            {holds.length > 0 ? (
+              <h2 className="mb-4 text-[15px] font-semibold text-slate-900">
+                Confirmed Bookings
+              </h2>
+            ) : null}
+            <BookingsTable bookings={bookings} onView={handleView} />
+          </section>
         </div>
       )}
 

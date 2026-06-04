@@ -2,7 +2,8 @@
 /node_modules
 /.pnp
 .pnp.*
-
+.env
+.claude/
 # next.js
 /.next/
 /out/

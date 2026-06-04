@@ -28,8 +28,8 @@ export type ServiceFormValues = {
   active: boolean;
 };
 
-export interface ServiceFormProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ServiceFormProps {
+  className?: string;
   initialValues?: Partial<ServiceFormValues>;
   isSubmitting?: boolean;
   submitLabel?: string;

@@ -58,6 +58,7 @@ function buildEmptyProfileCompletion(): ProfileCompletionState {
     hasBio: false,
     hasAvatar: false,
     hasBranding: false,
+    hasGateSettings: false,
     hasSocialLinks: false,
   };
 }

@@ -280,12 +280,12 @@ function generateSlotsFromWindows(input: SlotGenerationInput & {
 
   while (localCursor <= localEndBoundary) {
     const weekday = weekdayFromDate(
-      combineDateAndTime(localCursor, "00:00", timezone),
+      combineDateAndTime(localCursor, "00:00"),
       timezone,
     );
 
     const dayKey = toDateKey(
-      combineDateAndTime(localCursor, "00:00", timezone),
+      combineDateAndTime(localCursor, "00:00"),
       timezone,
     );
 
@@ -298,16 +298,8 @@ function generateSlotsFromWindows(input: SlotGenerationInput & {
         existingBookingsThatDay < input.maxBookingsPerDay)
     ) {
       for (const rule of dayRules) {
-        let windowStart = combineDateAndTime(
-          localCursor,
-          rule.startTime,
-          timezone,
-        );
-        const windowEnd = combineDateAndTime(
-          localCursor,
-          rule.endTime,
-          timezone,
-        );
+        let windowStart = combineDateAndTime(localCursor, rule.startTime);
+        const windowEnd = combineDateAndTime(localCursor, rule.endTime);
 
         if (isBefore(windowEnd, start) || isAfter(windowStart, end)) {
           continue;

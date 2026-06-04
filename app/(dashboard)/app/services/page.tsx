@@ -244,7 +244,13 @@ export default function ServicesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         mode={dialogMode}
-        initialValues={selectedService ?? undefined}
+        initialValues={selectedService ? {
+          ...selectedService,
+          slug: selectedService.slug ?? undefined,
+          description: selectedService.description ?? undefined,
+          displayPrice: selectedService.displayPrice ?? undefined,
+          preparationInstructions: selectedService.preparationInstructions ?? undefined,
+        } : undefined}
         isSubmitting={isSaving}
         onSubmit={handleSubmit}
       />

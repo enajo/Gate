@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const AUTH_ROUTES = ["/login", "/register"];
-const PROTECTED_PREFIXES = ["/app"];
+const PROTECTED_PREFIXES: string[] = [];
 
 function hasSessionCookie(request: NextRequest) {
   const possibleSessionCookies = [

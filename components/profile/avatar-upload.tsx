@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export interface AvatarUploadProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface AvatarUploadProps {
+  className?: string;
   value?: string | null;
   name?: string;
   onChange?: (value: string) => void;

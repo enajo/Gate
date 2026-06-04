@@ -1,16 +1,8 @@
-export type BrandTheme = "light" | "dark" | "minimal";
-
-export type FontPair =
-  | "inter-manrope"
-  | "inter-space-grotesk"
-  | "inter-plus-jakarta"
-  | "system";
+// ── Brand / Appearance ────────────────────────────────────────────────────────
 
 export type BrandSettings = {
-  theme: BrandTheme;
-  primaryColor: string;
   accentColor: string;
-  fontPair: FontPair;
+  backgroundColor: string;
 };
 
 export type SocialLinks = {
@@ -21,6 +13,30 @@ export type SocialLinks = {
   youtube?: string | null;
   github?: string | null;
 };
+
+// ── Public page display settings (metrics, featured review) ──────────────────
+
+export type PublicMetric = {
+  id: string;
+  label: string;
+  value?: string | number | null;
+  sortOrder?: number;
+};
+
+export type PublicReview = {
+  id: string;
+  quote: string;
+  author: string;
+  role?: string;
+  rating?: number;
+};
+
+export type PublicPageSettings = {
+  metrics?: PublicMetric[];
+  featuredReview?: PublicReview | null;
+};
+
+// ── Core professional profile ─────────────────────────────────────────────────
 
 export type ProfessionalProfile = {
   id: string;
@@ -35,6 +51,7 @@ export type ProfessionalProfile = {
   socialLinks?: SocialLinks | null;
   timezone: string;
   onboardingCompleted: boolean;
+  publishedAt?: Date | null;
   bufferBeforeMinutes: number;
   bufferAfterMinutes: number;
   minimumNoticeMinutes: number;
@@ -43,7 +60,10 @@ export type ProfessionalProfile = {
   updatedAt: Date;
 };
 
+// ── Public-facing profile (returned to public page) ───────────────────────────
+
 export type PublicProfessionalProfile = {
+  id: string;
   fullName: string;
   slug: string;
   title?: string | null;
@@ -53,7 +73,13 @@ export type PublicProfessionalProfile = {
   brandSettings?: BrandSettings | null;
   socialLinks?: SocialLinks | null;
   timezone: string;
+  publishedAt: Date | null;
+  testimonials?: PublicTestimonial[];
+  metrics?: PublicMetric[];
+  featuredReview?: PublicReview | null;
 };
+
+// ── Testimonials ──────────────────────────────────────────────────────────────
 
 export type Testimonial = {
   id: string;
@@ -62,11 +88,28 @@ export type Testimonial = {
   role?: string | null;
   company?: string | null;
   content: string;
+  rating?: number | null;
   avatarUrl?: string | null;
+  approved: boolean;
+  featured: boolean;
+  hidden: boolean;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type PublicTestimonial = Pick<
+  Testimonial,
+  "id" | "name" | "role" | "company" | "content" | "rating" | "avatarUrl" | "featured"
+>;
+
+// ── Composed types ────────────────────────────────────────────────────────────
+
+export type ProfileWithTestimonials = ProfessionalProfile & {
+  testimonials: Testimonial[];
+};
+
+// ── Input types ───────────────────────────────────────────────────────────────
 
 export type UpsertProfessionalProfileInput = {
   fullName: string;
@@ -86,7 +129,6 @@ export type UpsertProfessionalProfileInput = {
 };
 
 export type UpdateBrandSettingsInput = BrandSettings;
-
 export type UpdateSocialLinksInput = SocialLinks;
 
 export type CreateTestimonialInput = {
@@ -94,7 +136,11 @@ export type CreateTestimonialInput = {
   role?: string | null;
   company?: string | null;
   content: string;
+  rating?: number | null;
   avatarUrl?: string | null;
+  approved?: boolean;
+  featured?: boolean;
+  hidden?: boolean;
   sortOrder?: number;
 };
 
@@ -106,9 +152,6 @@ export type ProfileCompletionState = {
   hasBio: boolean;
   hasAvatar: boolean;
   hasBranding: boolean;
+  hasGateSettings: boolean;
   hasSocialLinks: boolean;
-};
-
-export type ProfileWithTestimonials = ProfessionalProfile & {
-  testimonials: Testimonial[];
 };

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { auth } from "@/lib/auth";
@@ -43,7 +43,7 @@ async function getAuthenticatedUserId() {
   return session?.user?.id ?? null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const userId = await getAuthenticatedUserId();
 
@@ -51,14 +51,13 @@ export async function GET() {
       return unauthorizedResponse();
     }
 
-    const accessCodes = await accessCodeService.list(userId);
+    const serviceId = request.nextUrl.searchParams.get("serviceId");
 
-    return NextResponse.json(
-      {
-        accessCodes,
-      },
-      { status: 200 },
-    );
+    const accessCodes = serviceId
+      ? await accessCodeService.listByService(userId, serviceId)
+      : await accessCodeService.list(userId);
+
+    return NextResponse.json({ accessCodes }, { status: 200 });
   } catch (error) {
     return errorResponse(error);
   }

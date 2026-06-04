@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { Lead } from "@/types/booking";
 import type {
   CreateQualificationQuestionInput,

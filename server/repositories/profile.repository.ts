@@ -1,52 +1,105 @@
 import "server-only";
 
-import type { Prisma, Professional, Testimonial } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import type { Professional, Testimonial } from "@prisma/client";
 import { db } from "@/lib/db";
+
+// ── Include shapes ────────────────────────────────────────────────────────────
 
 const professionalWithTestimonialsInclude =
   Prisma.validator<Prisma.ProfessionalInclude>()({
     testimonials: {
-      orderBy: {
-        sortOrder: "asc",
-      },
+      where: { hidden: false },
+      orderBy: { sortOrder: "asc" },
     },
   });
 
-const publicProfessionalInclude =
-  Prisma.validator<Prisma.ProfessionalInclude>()({
-    testimonials: {
-      orderBy: {
-        sortOrder: "asc",
+// Used by the Control Room GET — loads everything the editor needs.
+const controlRoomInclude = Prisma.validator<Prisma.ProfessionalInclude>()({
+  services: {
+    orderBy: { sortOrder: "asc" },
+    include: {
+      qualificationQuestions: {
+        orderBy: { sortOrder: "asc" },
+      },
+      accessCodes: {
+        where: { isActive: true },
+        orderBy: { createdAt: "desc" },
+        take: 1,
       },
     },
-    services: {
-      where: {
-        active: true,
+  },
+});
+
+// Used by the public page — only published profiles, only active services.
+const publicPageInclude = Prisma.validator<Prisma.ProfessionalInclude>()({
+  services: {
+    where: { active: true },
+    orderBy: { sortOrder: "asc" },
+    include: {
+      qualificationQuestions: {
+        orderBy: { sortOrder: "asc" },
       },
-      orderBy: {
-        createdAt: "asc",
+      accessCodes: {
+        where: { isActive: true },
+        orderBy: { createdAt: "desc" },
+        take: 1,
       },
     },
-  });
+  },
+  testimonials: {
+    where: { approved: true, hidden: false },
+    orderBy: { sortOrder: "asc" },
+  },
+});
+
+// ── Exported payload types ────────────────────────────────────────────────────
 
 export type ProfessionalWithTestimonials = Prisma.ProfessionalGetPayload<{
   include: typeof professionalWithTestimonialsInclude;
 }>;
 
-export type PublicProfessionalProfile = Prisma.ProfessionalGetPayload<{
-  include: typeof publicProfessionalInclude;
+export type ProfessionalForControlRoom = Prisma.ProfessionalGetPayload<{
+  include: typeof controlRoomInclude;
+}>;
+
+export type ProfessionalForPublicPage = Prisma.ProfessionalGetPayload<{
+  include: typeof publicPageInclude;
+}>;
+
+// ── Repository ────────────────────────────────────────────────────────────────
+
+const professionalWithUserInclude = Prisma.validator<Prisma.ProfessionalInclude>()({
+  user: { select: { email: true, name: true } },
+});
+
+export type ProfessionalWithUser = Prisma.ProfessionalGetPayload<{
+  include: typeof professionalWithUserInclude;
 }>;
 
 export const profileRepository = {
   async findById(id: string): Promise<Professional | null> {
+    return db.professional.findUnique({ where: { id } });
+  },
+
+  /** Returns professional + their login email — used for notification routing. */
+  async findByIdWithUser(id: string): Promise<ProfessionalWithUser | null> {
     return db.professional.findUnique({
       where: { id },
+      include: professionalWithUserInclude,
     });
   },
 
   async findByUserId(userId: string): Promise<Professional | null> {
+    return db.professional.findUnique({ where: { userId } });
+  },
+
+  async findByUserIdForControlRoom(
+    userId: string,
+  ): Promise<ProfessionalForControlRoom | null> {
     return db.professional.findUnique({
       where: { userId },
+      include: controlRoomInclude,
     });
   },
 
@@ -60,21 +113,16 @@ export const profileRepository = {
   },
 
   async findBySlug(slug: string): Promise<Professional | null> {
-    return db.professional.findUnique({
-      where: { slug },
-    });
+    return db.professional.findUnique({ where: { slug } });
   },
 
-  async findPublicBySlug(slug: string): Promise<PublicProfessionalProfile | null> {
-    return db.professional.findUnique({
-      where: { slug },
-      include: publicProfessionalInclude,
-    });
-  },
-
-  async create(data: Prisma.ProfessionalCreateInput): Promise<Professional> {
-    return db.professional.create({
-      data,
+  // Public page: only returns profiles where publishedAt is set.
+  async findPublishedBySlug(
+    slug: string,
+  ): Promise<ProfessionalForPublicPage | null> {
+    return db.professional.findFirst({
+      where: { slug, publishedAt: { not: null } },
+      include: publicPageInclude,
     });
   },
 
@@ -91,6 +139,8 @@ export const profileRepository = {
       bio,
       avatarUrl,
       brandSettings,
+      publicPageSettings,
+      draftSettings,
       socialLinks,
       timezone,
       onboardingCompleted,
@@ -110,6 +160,8 @@ export const profileRepository = {
         bio,
         avatarUrl,
         brandSettings,
+        publicPageSettings,
+        draftSettings,
         socialLinks,
         timezone,
         onboardingCompleted,
@@ -127,6 +179,8 @@ export const profileRepository = {
         bio,
         avatarUrl,
         brandSettings,
+        publicPageSettings,
+        draftSettings,
         socialLinks,
         timezone,
         onboardingCompleted,
@@ -142,19 +196,23 @@ export const profileRepository = {
     id: string,
     data: Prisma.ProfessionalUpdateInput,
   ): Promise<Professional> {
-    return db.professional.update({
-      where: { id },
-      data,
-    });
+    return db.professional.update({ where: { id }, data });
   },
 
   async updateByUserId(
     userId: string,
     data: Prisma.ProfessionalUpdateInput,
   ): Promise<Professional> {
+    return db.professional.update({ where: { userId }, data });
+  },
+
+  async setPublishedAt(
+    professionalId: string,
+    publishedAt: Date | null,
+  ): Promise<Professional> {
     return db.professional.update({
-      where: { userId },
-      data,
+      where: { id: professionalId },
+      data: { publishedAt },
     });
   },
 
@@ -164,9 +222,7 @@ export const profileRepository = {
   ): Promise<Professional> {
     return db.professional.update({
       where: { id: professionalId },
-      data: {
-        brandSettings,
-      },
+      data: { brandSettings },
     });
   },
 
@@ -176,9 +232,7 @@ export const profileRepository = {
   ): Promise<Professional> {
     return db.professional.update({
       where: { id: professionalId },
-      data: {
-        socialLinks,
-      },
+      data: { socialLinks },
     });
   },
 
@@ -188,17 +242,15 @@ export const profileRepository = {
   ): Promise<Professional> {
     return db.professional.update({
       where: { id: professionalId },
-      data: {
-        onboardingCompleted,
-      },
+      data: { onboardingCompleted },
     });
   },
 
   async deleteById(id: string): Promise<Professional> {
-    return db.professional.delete({
-      where: { id },
-    });
+    return db.professional.delete({ where: { id } });
   },
+
+  // ── Testimonials ────────────────────────────────────────────────────────────
 
   async listTestimonials(professionalId: string): Promise<Testimonial[]> {
     return db.testimonial.findMany({
@@ -208,36 +260,24 @@ export const profileRepository = {
   },
 
   async findTestimonialById(id: string): Promise<Testimonial | null> {
-    return db.testimonial.findUnique({
-      where: { id },
-    });
+    return db.testimonial.findUnique({ where: { id } });
   },
 
   async createTestimonial(
     professionalId: string,
     data: Omit<Prisma.TestimonialUncheckedCreateInput, "professionalId">,
   ): Promise<Testimonial> {
-    return db.testimonial.create({
-      data: {
-        professionalId,
-        ...data,
-      },
-    });
+    return db.testimonial.create({ data: { professionalId, ...data } });
   },
 
   async updateTestimonialById(
     id: string,
     data: Prisma.TestimonialUpdateInput,
   ): Promise<Testimonial> {
-    return db.testimonial.update({
-      where: { id },
-      data,
-    });
+    return db.testimonial.update({ where: { id }, data });
   },
 
   async deleteTestimonialById(id: string): Promise<Testimonial> {
-    return db.testimonial.delete({
-      where: { id },
-    });
+    return db.testimonial.delete({ where: { id } });
   },
 };

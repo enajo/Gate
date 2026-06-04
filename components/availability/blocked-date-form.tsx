@@ -26,8 +26,8 @@ export type BlockedDateFormValues = {
   reason: string;
 };
 
-export interface BlockedDateFormProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface BlockedDateFormProps {
+  className?: string;
   initialValues?: Partial<BlockedDateFormValues>;
   isSubmitting?: boolean;
   submitLabel?: string;

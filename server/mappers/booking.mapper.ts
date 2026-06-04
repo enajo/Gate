@@ -9,6 +9,8 @@ import type {
   BookingHold,
   BookingListItem,
   BookingWithRelations,
+  CalendarStatus,
+  CodeValidationStatus,
   Lead,
 } from "@/types/booking";
 
@@ -71,8 +73,8 @@ export function mapBooking(booking: PrismaBooking): Booking {
     slotEnd: booking.slotEnd,
     timezone: booking.timezone,
     status: booking.status,
-    codeValidationStatus: booking.codeValidationStatus,
-    calendarStatus: booking.calendarStatus,
+    codeValidationStatus: booking.codeValidationStatus as CodeValidationStatus,
+    calendarStatus: booking.calendarStatus as CalendarStatus,
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt,
   };
@@ -86,19 +88,7 @@ export function mapBookingListItem(
   booking: BookingListItemSource,
 ): BookingListItem {
   return {
-    id: booking.id,
-    professionalId: booking.professionalId,
-    serviceId: booking.serviceId,
-    leadId: booking.leadId,
-    holdId: booking.holdId,
-    slotStart: booking.slotStart,
-    slotEnd: booking.slotEnd,
-    timezone: booking.timezone,
-    status: booking.status,
-    codeValidationStatus: booking.codeValidationStatus,
-    calendarStatus: booking.calendarStatus,
-    createdAt: booking.createdAt,
-    updatedAt: booking.updatedAt,
+    ...mapBooking(booking),
     lead: {
       id: booking.lead.id,
       name: booking.lead.name,
@@ -111,6 +101,7 @@ export function mapBookingListItem(
       slug: booking.service.slug,
       durationMinutes: booking.service.durationMinutes,
       displayPrice: booking.service.displayPrice,
+      paymentRequired: booking.service.paymentRequired,
     },
   };
 }
@@ -125,19 +116,7 @@ export function mapBookingWithRelations(
   booking: BookingWithRelationsSource,
 ): BookingWithRelations {
   return {
-    id: booking.id,
-    professionalId: booking.professionalId,
-    serviceId: booking.serviceId,
-    leadId: booking.leadId,
-    holdId: booking.holdId,
-    slotStart: booking.slotStart,
-    slotEnd: booking.slotEnd,
-    timezone: booking.timezone,
-    status: booking.status,
-    codeValidationStatus: booking.codeValidationStatus,
-    calendarStatus: booking.calendarStatus,
-    createdAt: booking.createdAt,
-    updatedAt: booking.updatedAt,
+    ...mapBooking(booking),
     hold: mapBookingHold(booking.hold),
     lead: mapLead(booking.lead),
     service: {
@@ -146,7 +125,10 @@ export function mapBookingWithRelations(
       slug: booking.service.slug,
       durationMinutes: booking.service.durationMinutes,
       displayPrice: booking.service.displayPrice,
+      paymentRequired: booking.service.paymentRequired,
       preparationInstructions: booking.service.preparationInstructions,
     },
   };
 }
+
+// Not used in service mapper but re-exported here for convenience

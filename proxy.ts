@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const AUTH_ROUTES = ["/login", "/register"];
-const PROTECTED_PREFIXES: string[] = [];
+const PROTECTED_PREFIXES = ["/app"];
 
 function hasSessionCookie(request: NextRequest) {
   const possibleSessionCookies = [
@@ -14,7 +14,7 @@ function hasSessionCookie(request: NextRequest) {
   return possibleSessionCookies.some((name) => request.cookies.has(name));
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));

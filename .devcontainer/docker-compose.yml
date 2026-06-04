@@ -6,13 +6,14 @@ services:
     image: mcr.microsoft.com/devcontainers/base:ubuntu
     volumes:
       - ../..:/workspaces:cached
-    command: sleep infinity      # keeps the container alive; VS Code attaches here
+    command: sleep infinity
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/gatekeeper
+    networks:
+      - gate
     depends_on:
       db:
         condition: service_healthy
-    network_mode: service:db    # share network so localhost:5432 works inside the app
 
   # ── PostgreSQL ───────────────────────────────────────────────────────────────
   db:
@@ -26,11 +27,17 @@ services:
       POSTGRES_DB: gatekeeper
     ports:
       - "5432:5432"
+    networks:
+      - gate
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d gatekeeper"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+networks:
+  gate:
+    driver: bridge
 
 volumes:
   postgres-data:

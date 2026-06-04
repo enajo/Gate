@@ -26,14 +26,17 @@ if [ ! -f .env ]; then
   sed -i "s|NEXTAUTH_SECRET=\"change-me\"|NEXTAUTH_SECRET=\"${SECRET}\"|" .env
   sed -i "s|AUTH_SECRET=\"change-me\"|AUTH_SECRET=\"${SECRET}\"|" .env
 
-  # Fix NEXTAUTH_URL for Codespaces (overrides the localhost default)
+  # In Codespaces, DB is reachable at hostname "db" (docker-compose service name)
+  # In local dev it stays as localhost
   if [ -n "${CODESPACE_NAME:-}" ]; then
     DOMAIN="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
     CODESPACE_URL="https://${CODESPACE_NAME}-3000.${DOMAIN}"
+    sed -i "s|DATABASE_URL=\"postgresql://postgres:postgres@localhost:5432/gatekeeper\"|DATABASE_URL=\"postgresql://postgres:postgres@db:5432/gatekeeper\"|" .env
     sed -i "s|NEXTAUTH_URL=\"http://localhost:3000\"|NEXTAUTH_URL=\"${CODESPACE_URL}\"|" .env
     sed -i "s|NEXT_PUBLIC_APP_URL=\"http://localhost:3000\"|NEXT_PUBLIC_APP_URL=\"${CODESPACE_URL}\"|" .env
     sed -i "s|GOOGLE_REDIRECT_URI=\"http://localhost:3000/api/app/google/callback\"|GOOGLE_REDIRECT_URI=\"${CODESPACE_URL}/api/app/google/callback\"|" .env
     echo "   ✓ URLs set to ${CODESPACE_URL}"
+    echo "   ✓ DATABASE_URL pointed to docker-compose db service"
   else
     echo "   ✓ .env created (localhost URLs — local dev mode)"
   fi
@@ -52,14 +55,19 @@ echo "   ✓ Done"
 echo ""
 
 # ── 3. Wait for PostgreSQL ────────────────────────────────────────────────────
-echo "▸ Waiting for PostgreSQL …"
+# In Codespaces the DB is a separate container reachable at "db".
+# In local dev it's at "localhost".
+DB_HOST="${CODESPACE_NAME:+db}"
+DB_HOST="${DB_HOST:-localhost}"
+
+echo "▸ Waiting for PostgreSQL at ${DB_HOST}:5432 …"
 for i in $(seq 1 30); do
-  if pg_isready -h localhost -U postgres -d gatekeeper -q 2>/dev/null; then
+  if pg_isready -h "${DB_HOST}" -U postgres -d gatekeeper -q 2>/dev/null; then
     break
   fi
   sleep 2
 done
-pg_isready -h localhost -U postgres -d gatekeeper -q || { echo "❌ Postgres never became ready"; exit 1; }
+pg_isready -h "${DB_HOST}" -U postgres -d gatekeeper -q || { echo "❌ Postgres never became ready"; exit 1; }
 echo "   ✓ PostgreSQL is ready"
 echo ""
 

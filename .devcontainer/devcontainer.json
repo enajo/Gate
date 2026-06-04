@@ -11,8 +11,11 @@
     }
   },
 
-  // Runs once after the container is created
+  // Runs once on first creation (install, migrate, seed)
   "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Runs every time the codespace starts — keeps the dev server alive
+  "postStartCommand": "npm run dev",
 
   // Forward the Next.js dev server and Prisma Studio
   "forwardPorts": [3000, 5555],

@@ -1,8 +1,8 @@
 {
   "name": "Gate",
 
-  // Node 20 on Ubuntu — no external features needed
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  // Build from Dockerfile so postgres is baked in (cached layer, not re-installed each time)
+  "build": { "dockerfile": "Dockerfile" },
 
   // Runs once on first creation (installs postgres, deps, migrates, seeds)
   "postCreateCommand": "bash .devcontainer/post-create.sh",

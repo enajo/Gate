@@ -1,20 +1,20 @@
 {
   "name": "Gate",
-  "dockerComposeFile": "docker-compose.yml",
-  "service": "app",
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
 
-  // Features added on top of the base image
+  // Single container — Node 20 base with Postgres 16 installed as a feature.
+  // No docker-compose, no cross-container networking, no forwarding surprises.
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
+    "ghcr.io/devcontainers/features/postgres:1": {
+      "version": "16"
     }
   },
 
-  // Runs once on first creation (install, migrate, seed)
+  // Runs once on first creation (install deps, migrate, seed)
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 
-  // Runs every time the codespace starts — keeps the dev server alive
+  // Runs on every start — keeps the dev server alive
   "postStartCommand": "npm run dev",
 
   // Forward the Next.js dev server and Prisma Studio

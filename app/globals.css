@@ -49,26 +49,75 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 0.5rem);
 
-  /* ── Brand palette ──────────────────────────────────────────────────────── */
-  /* Usage: text-brand-amber, bg-warm-cream, border-warm-border, etc.         */
+  /* ─────────────────────────────────────────────────────────────────────────
+     BRAND PALETTE
+     How to use: replace [#HEX] arbitrary values with the named token below.
+     e.g.  text-[#DFA767]  →  text-brand-amber
+           bg-[#2B2B2B]    →  bg-ink
+           border-[#E4DED4] → border-warm-border
+  ───────────────────────────────────────────────────────────────────────── */
 
-  /* Amber/gold accent — buttons, icons, highlights */
-  --color-brand-amber: #dfa767;
+  /* ── Amber / gold ── accent colour, icons, highlights */
+  --color-brand-amber:       #dfa767;   /* [#DFA767] — 48 uses */
   --color-brand-amber-light: #f3d9b1;
+  --color-brand-amber-faint: #fff9f2;   /* [#FFF9F2] — amber-tinted white */
 
-  /* Ink — headings, dark backgrounds */
-  --color-ink: #2b2b2b;
-  --color-ink-soft: #475569;
+  /* ── Ink ── dark text, filled backgrounds */
+  --color-ink:       #2b2b2b;           /* [#2B2B2B] — 99 uses */
+  --color-ink-deep:  #111827;           /* [#111827] — 21 uses (near-black) */
+  --color-ink-dark:  #1a1a1a;           /* [#1a1a1a] —  2 uses */
+  --color-ink-slate: #334155;           /* [#334155] —  6 uses */
+  --color-ink-soft:  #475569;           /* [#475569] — 35 uses */
 
-  /* Warm neutrals — page backgrounds, card fills, borders */
-  --color-warm-cream: #f3ede2;
-  --color-warm-cream-dark: #ede5d8;
-  --color-warm-border: #e4ded4;
-  --color-warm-border-soft: #d8d0c6;
+  /* ── Warm neutrals ── backgrounds, card fills */
+  --color-warm-cream:       #f3ede2;    /* [#F3EDE2] —  5 uses */
+  --color-warm-cream-light: #f3f0eb;    /* [#F3F0EB] —  2 uses */
+  --color-warm-cream-dark:  #ede5d8;    /* (gradient end) */
+  --color-warm-stone:       #e5e1d8;    /* [#E5E1D8] —  5 uses */
+  --color-warm-off-white:   #fafaf9;    /* [#FAFAF9] */
 
-  /* Text greys (supplement Tailwind's built-in gray-*) */
-  --color-text-muted: #6b7280;
-  --color-text-subtle: #9ca3af;
+  /* ── Warm borders ── outlines, dividers */
+  --color-warm-border:        #e4ded4;  /* [#E4DED4] — 15 uses */
+  --color-warm-border-mid:    #e7e5e4;  /* [#E7E5E4] — 18 uses */
+  --color-warm-border-soft:   #d8d0c6;  /* [#D8D0C6] — 48 uses */
+  --color-warm-border-lighter:#d6d3d1;  /* [#D6D3D1] —  2 uses */
+  --color-warm-gray:          #a19b8f;  /* [#A19B8F] —  3 uses */
+
+  /* ── Text greys ── body copy, captions */
+  --color-text-muted:     #6b7280;      /* [#6B7280] — 84 uses */
+  --color-text-secondary: #667085;      /* [#667085] —  2 uses */
+  --color-text-subtle:    #9ca3af;      /* [#9CA3AF] — 25 uses */
+  --color-surface-light:  #f9fafb;      /* [#F9FAFB] —  7 uses */
+
+  /* ── Status colours ── feedback, validation */
+  --color-success:        #166534;      /* [#166534] —  5 uses (green text) */
+  --color-error:          #b42318;      /* [#B42318] —  1 use  (red text) */
+  --color-error-bg:       #feecec;      /* [#FEECEC] */
+  --color-error-bg-light: #fff5f5;      /* [#FFF5F5] */
+  --color-error-border:   #f1d5d5;      /* [#F1D5D5] */
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     SHADOWS  (all use the same warm rgba(120,100,80) tint)
+     Usage:  shadow-[0_18px_50px_rgba(120,100,80,0.06)]  →  shadow-warm-sm
+  ───────────────────────────────────────────────────────────────────────── */
+  --shadow-warm-xs: 0 4px 16px rgba(120, 100, 80, 0.05);
+  --shadow-warm-sm: 0 18px 50px rgba(120, 100, 80, 0.06);  /* 7 uses */
+  --shadow-warm-md: 0 18px 45px rgba(120, 100, 80, 0.10);  /* 3 uses */
+  --shadow-warm-lg: 0 22px 60px rgba(120, 100, 80, 0.12);  /* 3 uses */
+  --shadow-warm-xl: 0 24px 80px rgba(120, 100, 80, 0.13);  /* 2 uses */
+  --shadow-warm-2xl:0 28px 90px rgba(120, 100, 80, 0.14);  /* 3 uses */
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     BORDER RADII  (named by where they're used, not the pixel value)
+     Usage:  rounded-[2rem]     →  rounded-card
+             rounded-[1.75rem]  →  rounded-section
+             rounded-[1.25rem]  →  rounded-inner
+             rounded-[0.875rem] →  rounded-banner
+  ───────────────────────────────────────────────────────────────────────── */
+  --radius-card:    2rem;      /* dashboard action cards          */
+  --radius-section: 1.75rem;   /* section / panel cards           */
+  --radius-inner:   1.25rem;   /* inner cards, list rows          */
+  --radius-banner:  0.875rem;  /* alerts, error banners, toasts   */
 }
 
 *,
@@ -128,7 +177,7 @@ a {
   height: 42px;
   width: 100%;
   border-radius: 9999px;
-  border: 1px solid #d8d0c6;
+  border: 1px solid var(--color-warm-border-soft);
   background: rgba(255, 255, 255, 0.82);
   padding: 0 1rem;
   font-size: 14px;
@@ -138,6 +187,6 @@ a {
 }
 
 .field-input:focus {
-  border-color: #2b2b2b;
+  border-color: var(--color-ink);
   box-shadow: 0 0 0 3px rgba(43, 43, 43, 0.06);
 }

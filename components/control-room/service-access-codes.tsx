@@ -102,26 +102,26 @@ function CodeModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex w-full max-w-lg flex-col rounded-[1.75rem] bg-white shadow-2xl"
+      <div className="flex w-full max-w-lg flex-col rounded-section bg-white shadow-2xl"
         style={{ maxHeight: "80vh" }}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-[#F3F0EB] px-5 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-warm-cream-light px-5 py-4">
           <div className="flex items-center gap-2">
-            <KeyRound className="size-4 text-[#DFA767]" />
-            <p className="text-[14px] font-semibold text-[#2B2B2B]">
+            <KeyRound className="size-4 text-brand-amber" />
+            <p className="text-[14px] font-semibold text-ink">
               Access Codes
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-[12px] text-[#6B7280]">
+            <span className="text-[12px] text-gray-500">
               {available.length} available · {used.length} used
             </span>
             <button
               type="button"
               onClick={onClose}
-              className="flex size-7 items-center justify-center rounded-full border border-[#E7E5E4] text-[#9CA3AF] transition hover:border-[#2B2B2B] hover:text-[#2B2B2B]"
+              className="flex size-7 items-center justify-center rounded-full border border-warm-border-mid text-gray-400 transition hover:border-ink hover:text-ink"
             >
               <X className="size-3.5" />
             </button>
@@ -132,9 +132,9 @@ function CodeModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {codes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <KeyRound className="mb-3 size-6 text-[#D8D0C6]" />
-              <p className="text-[13px] text-[#6B7280]">No codes yet.</p>
-              <p className="mt-1 text-[11px] text-[#9CA3AF]">
+              <KeyRound className="mb-3 size-6 text-warm-border-soft" />
+              <p className="text-[13px] text-gray-500">No codes yet.</p>
+              <p className="mt-1 text-[11px] text-gray-400">
                 Generate codes using the controls below.
               </p>
             </div>
@@ -143,7 +143,7 @@ function CodeModal({
               {/* Available codes */}
               {available.length > 0 && (
                 <section>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                     Available ({available.length})
                   </p>
                   <div className="space-y-1.5">
@@ -168,7 +168,7 @@ function CodeModal({
               {/* Used codes */}
               {used.length > 0 && (
                 <section>
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                     Used ({used.length})
                   </p>
                   <div className="space-y-1.5">
@@ -219,28 +219,28 @@ function CodeRowItem({
   return (
     <div
       className={[
-        "flex items-center gap-3 rounded-[0.875rem] border px-3 py-2.5 transition-colors",
+        "flex items-center gap-3 rounded-banner border px-3 py-2.5 transition-colors",
         isNew
           ? "border-emerald-200 bg-emerald-50/60"
           : code.usedAt
-            ? "border-[#F3F0EB] bg-[#FAFAF9]"
-            : "border-[#E7E5E4] bg-white",
+            ? "border-warm-cream-light bg-warm-off-white"
+            : "border-warm-border-mid bg-white",
       ].join(" ")}
     >
       {/* Code label */}
       <div className="min-w-0 flex-1">
-        <span className="block font-mono text-[13px] tracking-[0.12em] text-[#2B2B2B]">
+        <span className="block font-mono text-[13px] tracking-[0.12em] text-ink">
           {code.codeLabel ?? "—"}
         </span>
         {code.usedAt ? (
-          <span className="block truncate text-[10px] text-[#9CA3AF]">
+          <span className="block truncate text-[10px] text-gray-400">
             Used {formatDate(code.usedAt)}
             {code.usedByEmail ? ` · ${code.usedByEmail}` : ""}
           </span>
         ) : isNew ? (
           <span className="block text-[10px] text-emerald-600">Just generated</span>
         ) : (
-          <span className="block text-[10px] text-[#9CA3AF]">
+          <span className="block text-[10px] text-gray-400">
             Created {formatDate(code.createdAt)}
           </span>
         )}
@@ -253,7 +253,7 @@ function CodeRowItem({
             type="button"
             onClick={onCopy}
             title="Copy code"
-            className="flex size-7 items-center justify-center rounded-full border border-[#D8D0C6] text-[#6B7280] transition hover:border-[#2B2B2B] hover:text-[#2B2B2B]"
+            className="flex size-7 items-center justify-center rounded-full border border-warm-border-soft text-gray-500 transition hover:border-ink hover:text-ink"
           >
             {copied ? (
               <CheckCircle2 className="size-3.5 text-green-500" />
@@ -268,7 +268,7 @@ function CodeRowItem({
           onClick={onDelete}
           disabled={deleting}
           title="Delete code"
-          className="flex size-7 items-center justify-center rounded-full border border-[#D8D0C6] text-[#9CA3AF] transition hover:border-red-300 hover:text-red-500 disabled:opacity-40"
+          className="flex size-7 items-center justify-center rounded-full border border-warm-border-soft text-gray-400 transition hover:border-red-300 hover:text-red-500 disabled:opacity-40"
         >
           {deleting ? (
             <Loader2 className="size-3.5 animate-spin" />
@@ -420,22 +420,22 @@ export function ServiceAccessCodes({ serviceId }: ServiceAccessCodesProps) {
 
   return (
     <>
-      <div className="mt-6 rounded-[1.25rem] border border-[#E7E5E4] bg-white/80 p-4">
+      <div className="mt-6 card-inner bg-white/80 p-4">
         {/* Header */}
         <div className="flex items-center gap-2">
-          <KeyRound className="size-3.5 text-[#DFA767]" />
-          <p className="text-[12px] font-medium text-[#2B2B2B]">
+          <KeyRound className="size-3.5 text-brand-amber" />
+          <p className="text-[12px] font-medium text-ink">
             Access Codes
           </p>
 
-          <span className="ml-auto text-[11px] text-[#9CA3AF]">
+          <span className="ml-auto text-[11px] text-gray-400">
             {loading
               ? "Loading…"
               : `${available} available · ${used} used`}
           </span>
         </div>
 
-        <p className="mt-2 text-[11px] leading-5 text-[#6B7280]">
+        <p className="mt-2 text-[11px] leading-5 text-gray-500">
           Generate single-use codes for this service. Each code can only be
           used once.
         </p>
@@ -443,8 +443,8 @@ export function ServiceAccessCodes({ serviceId }: ServiceAccessCodesProps) {
         {/* Controls */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {/* Count input */}
-          <div className="flex items-center gap-1.5 rounded-full border border-[#D8D0C6] bg-[#F9FAFB] px-3 py-1.5">
-            <span className="text-[11px] text-[#6B7280]">Count</span>
+          <div className="flex items-center gap-1.5 rounded-full border border-warm-border-soft bg-gray-50 px-3 py-1.5">
+            <span className="text-[11px] text-gray-500">Count</span>
             <input
               type="number"
               min={1}
@@ -455,7 +455,7 @@ export function ServiceAccessCodes({ serviceId }: ServiceAccessCodesProps) {
                   Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1)),
                 )
               }
-              className="w-10 bg-transparent text-center text-[13px] font-medium text-[#2B2B2B] outline-none"
+              className="w-10 bg-transparent text-center text-[13px] font-medium text-ink outline-none"
             />
           </div>
 
@@ -464,7 +464,7 @@ export function ServiceAccessCodes({ serviceId }: ServiceAccessCodesProps) {
             type="button"
             onClick={handleGenerate}
             disabled={generating}
-            className="inline-flex h-9 items-center rounded-full bg-[#2B2B2B] px-4 text-[12px] text-white transition hover:bg-[#1a1a1a] disabled:opacity-60"
+            className="inline-flex h-9 items-center rounded-full bg-ink px-4 text-[12px] text-white transition hover:bg-ink-dark disabled:opacity-60"
           >
             {generating ? (
               <Loader2 className="mr-2 size-3.5 animate-spin" />
@@ -479,7 +479,7 @@ export function ServiceAccessCodes({ serviceId }: ServiceAccessCodesProps) {
             <button
               type="button"
               onClick={() => setModalOpen(true)}
-              className="inline-flex h-9 items-center rounded-full border border-[#D8D0C6] px-4 text-[12px] transition hover:border-[#2B2B2B]"
+              className="inline-flex h-9 items-center rounded-full border border-warm-border-soft px-4 text-[12px] transition hover:border-ink"
             >
               View all {codes.length}
             </button>
@@ -488,7 +488,7 @@ export function ServiceAccessCodes({ serviceId }: ServiceAccessCodesProps) {
 
         {/* Error */}
         {error ? (
-          <div className="mt-4 rounded-[0.875rem] border border-red-100 bg-red-50 px-4 py-3 text-[12px] text-red-700">
+          <div className="mt-4 error-banner">
             {error}
           </div>
         ) : null}

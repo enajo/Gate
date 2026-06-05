@@ -52,8 +52,8 @@ function DashboardButton({
 }) {
   const className =
     variant === "primary"
-      ? "inline-flex h-10 items-center justify-center rounded-full border border-[#475569] bg-[#475569] px-5 text-[14px] text-white transition duration-500 ease-out hover:bg-[#334155]"
-      : "inline-flex h-10 items-center justify-center rounded-full border border-[#D8D0C6] px-5 text-[14px] text-[#2B2B2B] transition duration-500 ease-out hover:border-[#475569] hover:bg-[#475569] hover:text-white";
+      ? "inline-flex h-10 items-center justify-center rounded-full border border-ink-soft bg-ink-soft px-5 text-[14px] text-white transition duration-500 ease-out hover:bg-ink-slate"
+      : "inline-flex h-10 items-center justify-center rounded-full border border-warm-border-soft px-5 text-[14px] text-ink transition duration-500 ease-out hover:border-ink-soft hover:bg-ink-soft hover:text-white";
 
   return (
     <Link
@@ -187,16 +187,16 @@ export default async function DashboardPage() {
     });
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),radial-gradient(circle_at_85%_18%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-[#2B2B2B]">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),radial-gradient(circle_at_85%_18%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-ink">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#F9FAFB]/70 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 bg-gray-50/70 backdrop-blur-xl">
         <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 text-[13px]">
           <Link href="/app" className="font-medium tracking-wide">
             GATE
           </Link>
 
-          <div className="hidden items-center gap-7 text-[#6B7280] md:flex">
-            <Link href="/app" className="text-[#2B2B2B]">
+          <div className="hidden items-center gap-7 text-gray-500 md:flex">
+            <Link href="/app" className="text-ink">
               Dashboard
             </Link>
             <Link href="/app/control-room">Control Room</Link>
@@ -215,7 +215,7 @@ export default async function DashboardPage() {
 
           <div className="flex items-center gap-3">
             <SignOutButton />
-            <div className="flex size-8 items-center justify-center rounded-full bg-[#2B2B2B] text-[12px] text-white">
+            <div className="flex size-8 items-center justify-center rounded-full bg-ink text-[12px] text-white">
               {initials}
             </div>
           </div>
@@ -224,12 +224,12 @@ export default async function DashboardPage() {
 
       <section className="mx-auto max-w-6xl px-4 py-10">
         {/* ── Hero card ───────────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.62),rgba(243,237,226,0.84))] p-8 shadow-[0_28px_90px_rgba(120,100,80,0.14)]">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#DFA767]/20 blur-3xl" />
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.62),rgba(243,237,226,0.84))] p-8 shadow-warm-2xl">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-brand-amber/20 blur-3xl" />
 
           <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
             <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+              <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
                 {isPublished ? "Your gate is live" : "Setup in progress"}
               </p>
 
@@ -237,7 +237,7 @@ export default async function DashboardPage() {
                 {greeting}, {firstName}.
               </h1>
 
-              <p className="mt-5 max-w-xl text-[17px] leading-[1.8] text-[#6B7280]">
+              <p className="mt-5 max-w-xl text-[17px] leading-[1.8] text-gray-500">
                 {isPublished
                   ? "Your gate is live and accepting qualified requests."
                   : "Complete your setup to start accepting qualified requests."}
@@ -245,14 +245,14 @@ export default async function DashboardPage() {
 
               {publicUrl ? (
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <div className="inline-flex h-10 items-center gap-2 rounded-full border border-[#D8D0C6] bg-white/45 px-4 text-[13px] text-[#6B7280]">
-                    <LockKeyhole className="size-4 text-[#DFA767]" />
+                  <div className="inline-flex h-10 items-center gap-2 rounded-full border border-warm-border-soft bg-white/45 px-4 text-[13px] text-gray-500">
+                    <LockKeyhole className="size-4 text-brand-amber" />
                     {publicUrl}
                   </div>
                   <CopyLinkButton url={publicUrl} />
                 </div>
               ) : (
-                <div className="mt-6 inline-flex h-10 items-center gap-2 rounded-full border border-dashed border-[#D8D0C6] bg-white/30 px-4 text-[13px] text-[#9CA3AF]">
+                <div className="mt-6 inline-flex h-10 items-center gap-2 rounded-full border border-dashed border-warm-border-soft bg-white/30 px-4 text-[13px] text-gray-400">
                   <LockKeyhole className="size-4" />
                   Publish to get your public link
                 </div>
@@ -275,16 +275,16 @@ export default async function DashboardPage() {
 
         {/* ── Setup checklist ─────────────────────────────────────────────── */}
         {!allSetupDone && (
-          <div className="mt-5 rounded-[2rem] border border-[#E4DED4]/80 bg-white/45 p-5 backdrop-blur">
+          <div className="mt-5 rounded-card border border-warm-border/80 bg-white/45 p-5 backdrop-blur">
             <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
               <div>
                 <div className="flex items-center gap-3">
                   <p className="text-[15px] font-medium">Complete your setup</p>
-                  <span className="rounded-full bg-[#F3EDE2] px-2.5 py-0.5 text-[12px] font-medium text-[#6B7280]">
+                  <span className="rounded-full bg-warm-cream px-2.5 py-0.5 text-[12px] font-medium text-gray-500">
                     {completionPercentage}%
                   </span>
                 </div>
-                <p className="mt-1 text-[13px] text-[#6B7280]">
+                <p className="mt-1 text-[13px] text-gray-500">
                   Finish the essentials before sharing your gate.
                 </p>
               </div>
@@ -294,7 +294,7 @@ export default async function DashboardPage() {
                   item.completed ? (
                     <div
                       key={item.label}
-                      className="inline-flex items-center rounded-full bg-[#166534]/10 px-3 py-2 text-[12px] text-[#166534]"
+                      className="inline-flex items-center rounded-full bg-success/10 px-3 py-2 text-[12px] text-success"
                     >
                       <Check className="mr-1.5 size-3.5" />
                       {item.label}
@@ -303,9 +303,9 @@ export default async function DashboardPage() {
                     <Link
                       key={item.label}
                       href={item.href}
-                      className="inline-flex items-center rounded-full bg-[#F3EDE2] px-3 py-2 text-[12px] text-[#6B7280] transition hover:bg-[#E9DDD0]"
+                      className="inline-flex items-center rounded-full bg-warm-cream px-3 py-2 text-[12px] text-gray-500 transition hover:bg-warm-stone"
                     >
-                      <span className="mr-1.5 size-2 shrink-0 rounded-full bg-[#DFA767]" />
+                      <span className="mr-1.5 size-2 shrink-0 rounded-full bg-brand-amber" />
                       {item.label}
                     </Link>
                   ),
@@ -314,9 +314,9 @@ export default async function DashboardPage() {
             </div>
 
             {/* Progress bar */}
-            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-[#E4DED4]">
+            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-warm-border">
               <div
-                className="h-full rounded-full bg-[#DFA767] transition-all duration-700"
+                className="h-full rounded-full bg-brand-amber transition-all duration-700"
                 style={{ width: `${completionPercentage}%` }}
               />
             </div>
@@ -335,13 +335,13 @@ export default async function DashboardPage() {
               <Link
                 key={card.title}
                 href={card.href}
-                className="group relative overflow-hidden rounded-[2rem] border border-[#E4DED4]/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.62),rgba(243,237,226,0.84))] p-7 shadow-[0_18px_50px_rgba(120,100,80,0.08)] transition duration-500 ease-out hover:-translate-y-1"
+                className="group relative overflow-hidden card-warm p-7 transition duration-500 ease-out hover:-translate-y-1"
               >
                 <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/60 blur-3xl" />
 
                 <div className="relative">
                   <div className="flex items-center gap-3">
-                    <div className="flex size-11 items-center justify-center rounded-2xl bg-[#2B2B2B] text-white">
+                    <div className="flex size-11 items-center justify-center rounded-2xl bg-ink text-white">
                       <Icon className="size-5" />
                     </div>
                     {card.badge !== null && (
@@ -355,11 +355,11 @@ export default async function DashboardPage() {
                     {card.title}
                   </h2>
 
-                  <p className="mt-3 text-[14px] leading-[1.7] text-[#6B7280]">
+                  <p className="mt-3 text-[14px] leading-[1.7] text-gray-500">
                     {card.description}
                   </p>
 
-                  <div className="mt-7 inline-flex items-center text-[14px] text-[#475569]">
+                  <div className="mt-7 inline-flex items-center text-[14px] text-ink-soft">
                     Open
                     <ArrowRight className="ml-2 size-4 transition group-hover:translate-x-1" />
                   </div>
@@ -381,18 +381,18 @@ export default async function DashboardPage() {
                   <p className="text-[34px] font-semibold tracking-[-0.05em]">
                     {value}
                   </p>
-                  <p className="mt-1 text-[13px] text-[#6B7280]">{label}</p>
+                  <p className="mt-1 text-[13px] text-gray-500">{label}</p>
                 </div>
               ))}
             </div>
 
             {recentActivity.length > 0 && (
-              <div className="mt-8 rounded-[2rem] bg-white/45 p-7 shadow-[0_18px_50px_rgba(120,100,80,0.08)]">
+              <div className="mt-8 rounded-card bg-white/45 p-7 shadow-warm-sm">
                 <div className="flex items-center justify-between">
                   <p className="text-[16px] font-medium">Recent activity</p>
                   <Link
                     href="/app/bookings"
-                    className="text-[13px] text-[#6B7280] hover:text-[#2B2B2B]"
+                    className="text-[13px] text-gray-500 hover:text-ink"
                   >
                     View all →
                   </Link>
@@ -402,10 +402,10 @@ export default async function DashboardPage() {
                   {recentActivity.map((item, i) => (
                     <div
                       key={i}
-                      className="flex items-start gap-3 border-b border-[#D8D0C6] pb-4 last:border-0 last:pb-0"
+                      className="flex items-start gap-3 border-b border-warm-border-soft pb-4 last:border-0 last:pb-0"
                     >
-                      <span className="mt-1 size-2 shrink-0 rounded-full bg-[#DFA767]" />
-                      <p className="text-[14px] leading-6 text-[#6B7280]">
+                      <span className="mt-1 size-2 shrink-0 rounded-full bg-brand-amber" />
+                      <p className="text-[14px] leading-6 text-gray-500">
                         {item}
                       </p>
                     </div>
@@ -415,8 +415,8 @@ export default async function DashboardPage() {
             )}
           </>
         ) : (
-          <div className="relative mt-8 overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.14),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.56),rgba(243,237,226,0.84))] p-10 text-center shadow-[0_24px_80px_rgba(120,100,80,0.12)]">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-[#2B2B2B] text-white">
+          <div className="relative mt-8 overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.14),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.56),rgba(243,237,226,0.84))] p-10 text-center shadow-warm-xl">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-ink text-white">
               <Sparkles className="size-6" />
             </div>
 
@@ -424,7 +424,7 @@ export default async function DashboardPage() {
               No bookings yet.
             </h2>
 
-            <p className="mx-auto mt-3 max-w-lg text-[15px] leading-[1.8] text-[#6B7280]">
+            <p className="mx-auto mt-3 max-w-lg text-[15px] leading-[1.8] text-gray-500">
               {isPublished
                 ? "Share your gate link to start receiving qualified requests."
                 : "Finish setting up your gate, then share your link to start accepting requests."}

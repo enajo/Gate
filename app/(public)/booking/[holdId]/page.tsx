@@ -83,11 +83,11 @@ export default async function BookingStatusPage({ params }: PageProps) {
     <main className="min-h-screen bg-[linear-gradient(180deg,#F9FAFB_0%,#F3EDE2_100%)] px-4 py-16">
       <div className="mx-auto max-w-md">
         {/* Logo */}
-        <p className="mb-10 text-center text-xs font-bold uppercase tracking-[0.22em] text-[#2B2B2B]">
+        <p className="mb-10 text-center text-xs font-bold uppercase tracking-[0.22em] text-ink">
           GATE
         </p>
 
-        <div className="rounded-[2rem] border border-[#E4DED4] bg-white/80 p-8 shadow-[0_24px_80px_rgba(120,100,80,0.12)] backdrop-blur-xl">
+        <div className="rounded-card border border-warm-border bg-white/80 p-8 shadow-warm-xl backdrop-blur-xl">
           {/* Status badge */}
           <span
             className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusColor}`}
@@ -95,18 +95,18 @@ export default async function BookingStatusPage({ params }: PageProps) {
             {statusLabel}
           </span>
 
-          <h1 className="mt-5 text-[26px] font-semibold leading-tight tracking-[-0.04em] text-[#2B2B2B]">
+          <h1 className="mt-5 text-[26px] font-semibold leading-tight tracking-[-0.04em] text-ink">
             {headline}
           </h1>
 
-          <p className="mt-3 text-[14px] leading-7 text-[#6B7280]">{detail}</p>
+          <p className="mt-3 text-[14px] leading-7 text-gray-500">{detail}</p>
 
           {/* Slot summary */}
-          <div className="mt-6 rounded-[1.25rem] border border-[#E4DED4] bg-[#F9FAFB] px-4 py-3">
-            <p className="text-[13px] font-semibold text-[#2B2B2B]">
+          <div className="mt-6 rounded-inner border border-warm-border bg-gray-50 px-4 py-3">
+            <p className="text-[13px] font-semibold text-ink">
               {service.title}
             </p>
-            <p className="mt-1 text-[13px] text-[#6B7280]">{slotLabel}</p>
+            <p className="mt-1 text-[13px] text-gray-500">{slotLabel}</p>
           </div>
 
           {/* Meeting link for confirmed bookings */}
@@ -115,14 +115,14 @@ export default async function BookingStatusPage({ params }: PageProps) {
               href={meetingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[#2B2B2B] py-3 text-[14px] font-semibold text-white transition hover:bg-[#1a1a1a]"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-ink py-3 text-[14px] font-semibold text-white transition hover:bg-ink-dark"
             >
               Join Meeting →
             </a>
           ) : null}
         </div>
 
-        <p className="mt-6 text-center text-[12px] text-[#9CA3AF]">
+        <p className="mt-6 text-center text-[12px] text-gray-400">
           Powered by <span className="font-semibold">GATE</span>
         </p>
       </div>

@@ -38,12 +38,12 @@ export default function OAuthClosePage() {
   }, [searchParams]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F9FAFB] text-[#2B2B2B]">
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-[#2B2B2B] text-white">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-50 text-ink">
+      <div className="flex size-14 items-center justify-center rounded-2xl bg-ink text-white">
         <CheckCircle2 className="size-6" />
       </div>
       <p className="text-[15px] font-medium">Google Calendar connected.</p>
-      <p className="text-[13px] text-[#6B7280]">Closing window…</p>
+      <p className="text-[13px] text-gray-500">Closing window…</p>
     </div>
   );
 }

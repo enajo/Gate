@@ -89,11 +89,11 @@ export function PublicHero({
         <div className="flex items-start justify-center lg:justify-start">
           <div className="relative">
             <div
-              className="absolute inset-0 rounded-[2rem] opacity-30 blur-3xl"
+              className="absolute inset-0 rounded-card opacity-30 blur-3xl"
               style={{ backgroundColor: accentColor }}
             />
 
-            <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-2xl shadow-slate-300/70">
+            <div className="relative overflow-hidden rounded-card border border-white/70 bg-white shadow-2xl shadow-slate-300/70">
               {professional.avatarUrl ? (
                 <Image
                   src={professional.avatarUrl}

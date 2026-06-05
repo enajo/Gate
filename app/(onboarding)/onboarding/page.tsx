@@ -97,29 +97,29 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_45%,#F3EDE2_100%)] text-[#2B2B2B]">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_45%,#F3EDE2_100%)] text-ink">
       <header className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 text-[13px]">
         <Link href="/" className="font-medium tracking-wide">
           GATE
         </Link>
 
-        <span className="text-[#6B7280]">
+        <span className="text-gray-500">
           Step {step} of 2 — {step === 1 ? "Profile Setup" : "Gate Configuration"}
         </span>
       </header>
 
       <section className="mx-auto grid min-h-[calc(100vh-56px)] max-w-6xl items-center gap-12 px-4 py-12 lg:grid-cols-[1fr_0.9fr]">
         {/* ── Left: live preview ────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.58),rgba(243,237,226,0.82))] p-10 shadow-[0_28px_90px_rgba(120,100,80,0.14)]">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-[#DFA767]/20 blur-3xl" />
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.58),rgba(243,237,226,0.82))] p-10 shadow-warm-2xl">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-brand-amber/20 blur-3xl" />
 
           <div className="relative">
-            <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+            <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
               Live preview
             </p>
 
-            <div className="mt-16 rounded-[2rem] bg-white/70 p-8 shadow-[0_22px_70px_rgba(120,100,80,0.12)]">
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-[#2B2B2B] text-white">
+            <div className="mt-16 rounded-card bg-white/70 p-8 shadow-warm-lg">
+              <div className="flex size-14 items-center justify-center rounded-2xl bg-ink text-white">
                 <UserRound className="size-6" />
               </div>
 
@@ -127,24 +127,24 @@ export default function OnboardingPage() {
                 {publicName || "Your Name"}
               </h1>
 
-              <p className="mt-3 text-[15px] text-[#6B7280]">{displayRole}</p>
+              <p className="mt-3 text-[15px] text-gray-500">{displayRole}</p>
 
               <p
                 className={
                   hasHeadline
-                    ? "mt-6 max-w-md text-[22px] leading-tight tracking-[-0.035em] text-[#2B2B2B]"
-                    : "mt-6 max-w-md text-[22px] italic leading-tight tracking-[-0.035em] text-[#9CA3AF]"
+                    ? "mt-6 max-w-md text-[22px] leading-tight tracking-[-0.035em] text-ink"
+                    : "mt-6 max-w-md text-[22px] italic leading-tight tracking-[-0.035em] text-gray-400"
                 }
               >
                 {displayHeadline}
               </p>
 
-              <div className="mt-8 inline-flex h-10 items-center justify-center rounded-full bg-[#475569] px-5 text-[14px] text-white">
+              <div className="mt-8 inline-flex h-10 items-center justify-center rounded-full bg-ink-soft px-5 text-[14px] text-white">
                 Apply to work together
               </div>
             </div>
 
-            <p className="mt-8 max-w-md text-[14px] leading-[1.7] text-[#6B7280]">
+            <p className="mt-8 max-w-md text-[14px] leading-[1.7] text-gray-500">
               This is how qualified leads will see your public gate. You can
               refine everything inside your Control Room.
             </p>
@@ -152,24 +152,24 @@ export default function OnboardingPage() {
         </div>
 
         {/* ── Right: form ───────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2rem] border border-[#E4DED4]/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.72),rgba(243,237,226,0.86))] p-7 shadow-[0_24px_80px_rgba(120,100,80,0.13)] backdrop-blur">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#DFA767]/20 blur-3xl" />
+        <div className="relative overflow-hidden card-warm p-7 shadow-warm-xl backdrop-blur">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-brand-amber/20 blur-3xl" />
 
           <div className="relative">
             {launching ? (
               <div className="flex min-h-[480px] flex-col items-center justify-center text-center">
-                <Sparkles className="size-10 text-[#DFA767]" />
+                <Sparkles className="size-10 text-brand-amber" />
                 <h2 className="mt-6 text-[32px] font-medium tracking-[-0.045em]">
                   Creating your gate…
                 </h2>
-                <p className="mt-3 max-w-sm text-[14px] leading-[1.7] text-[#6B7280]">
+                <p className="mt-3 max-w-sm text-[14px] leading-[1.7] text-gray-500">
                   Setting up your profile and workspace. You&apos;ll be taken to
                   the Control Room to finish setup.
                 </p>
               </div>
             ) : step === 1 ? (
               <div>
-                <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+                <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
                   Step 1 of 2
                 </p>
 
@@ -187,7 +187,7 @@ export default function OnboardingPage() {
                       value={publicName}
                       onChange={(e) => setPublicName(e.target.value)}
                       placeholder="e.g., Alex Carter"
-                      className="mt-2 h-11 w-full rounded-full border border-[#D8D0C6] bg-white/55 px-4 text-[14px] outline-none focus:border-[#475569]"
+                      className="mt-2 h-11 w-full rounded-full border border-warm-border-soft bg-white/55 px-4 text-[14px] outline-none focus:border-ink-soft"
                     />
                   </label>
 
@@ -203,8 +203,8 @@ export default function OnboardingPage() {
                           onClick={() => setRole(item)}
                           className={
                             role === item
-                              ? "rounded-full border border-[#475569] bg-[#475569] px-4 py-2 text-[13px] text-white"
-                              : "rounded-full border border-[#D8D0C6] px-4 py-2 text-[13px] text-[#2B2B2B] transition hover:border-[#475569]"
+                              ? "rounded-full border border-ink-soft bg-ink-soft px-4 py-2 text-[13px] text-white"
+                              : "rounded-full border border-warm-border-soft px-4 py-2 text-[13px] text-ink transition hover:border-ink-soft"
                           }
                         >
                           {item === "Other" ? "+ Other" : item}
@@ -218,7 +218,7 @@ export default function OnboardingPage() {
                         value={otherRole}
                         onChange={(e) => setOtherRole(e.target.value)}
                         placeholder="Type your professional role…"
-                        className="mt-3 h-11 w-full rounded-full border border-[#D8D0C6] bg-white/55 px-4 text-[14px] outline-none focus:border-[#475569]"
+                        className="mt-3 h-11 w-full rounded-full border border-warm-border-soft bg-white/55 px-4 text-[14px] outline-none focus:border-ink-soft"
                       />
                     )}
                   </div>
@@ -227,7 +227,7 @@ export default function OnboardingPage() {
                   <label className="block">
                     <span className="text-[13px] font-medium">
                       Your Headline{" "}
-                      <span className="text-[#9CA3AF]">(optional)</span>
+                      <span className="text-gray-400">(optional)</span>
                     </span>
 
                     <div className="relative mt-2">
@@ -236,14 +236,14 @@ export default function OnboardingPage() {
                         value={headline}
                         onChange={(e) => setHeadline(e.target.value)}
                         placeholder="e.g., Fractional COO for SaaS companies"
-                        className="h-11 w-full rounded-full border border-[#D8D0C6] bg-white/55 px-4 pr-16 text-[14px] outline-none focus:border-[#475569]"
+                        className="h-11 w-full rounded-full border border-warm-border-soft bg-white/55 px-4 pr-16 text-[14px] outline-none focus:border-ink-soft"
                       />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] text-[#9CA3AF]">
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] text-gray-400">
                         {headline.length}/80
                       </span>
                     </div>
 
-                    <p className="mt-2 text-[12px] text-[#6B7280]">
+                    <p className="mt-2 text-[12px] text-gray-500">
                       This is the first thing qualified leads see. Keep it
                       punchy.
                     </p>
@@ -254,7 +254,7 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={() => setStep(2)}
                   disabled={!canContinue}
-                  className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-full bg-[#475569] px-5 text-[14px] text-white transition hover:bg-[#334155] disabled:opacity-50"
+                  className="mt-8 inline-flex h-11 w-full items-center justify-center rounded-full bg-ink-soft px-5 text-[14px] text-white transition hover:bg-ink-slate disabled:opacity-50"
                 >
                   Continue
                   <ArrowRight className="ml-2 size-4" />
@@ -262,7 +262,7 @@ export default function OnboardingPage() {
               </div>
             ) : (
               <div>
-                <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+                <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
                   Step 2 of 2
                 </p>
 
@@ -270,7 +270,7 @@ export default function OnboardingPage() {
                   What&apos;s your booking goal?
                 </h2>
 
-                <p className="mt-2 text-[13px] text-[#6B7280]">
+                <p className="mt-2 text-[13px] text-gray-500">
                   Choose the style that fits your practice. You can change this
                   at any time.
                 </p>
@@ -287,15 +287,15 @@ export default function OnboardingPage() {
                         onClick={() => setGoal(item.title)}
                         className={
                           selected
-                            ? "rounded-[1.5rem] border border-[#DFA767] bg-[#2B2B2B] p-5 text-left text-[#F3EDE2] shadow-[0_18px_50px_rgba(43,43,43,0.16)]"
-                            : "rounded-[1.5rem] border border-[#D8D0C6] bg-white/50 p-5 text-left transition hover:border-[#475569]"
+                            ? "rounded-[1.5rem] border border-brand-amber bg-ink p-5 text-left text-warm-cream shadow-[0_18px_50px_rgba(43,43,43,0.16)]"
+                            : "rounded-[1.5rem] border border-warm-border-soft bg-white/50 p-5 text-left transition hover:border-ink-soft"
                         }
                       >
                         <Icon
                           className={
                             selected
-                              ? "size-5 text-[#DFA767]"
-                              : "size-5 text-[#475569]"
+                              ? "size-5 text-brand-amber"
+                              : "size-5 text-ink-soft"
                           }
                         />
                         <h3 className="mt-4 text-[16px] font-semibold">
@@ -304,8 +304,8 @@ export default function OnboardingPage() {
                         <p
                           className={
                             selected
-                              ? "mt-2 text-[12px] leading-5 text-[#D8D0C6]"
-                              : "mt-2 text-[12px] leading-5 text-[#6B7280]"
+                              ? "mt-2 text-[12px] leading-5 text-warm-border-soft"
+                              : "mt-2 text-[12px] leading-5 text-gray-500"
                           }
                         >
                           {item.description}
@@ -316,7 +316,7 @@ export default function OnboardingPage() {
                 </div>
 
                 {error && (
-                  <div className="mt-4 rounded-[0.875rem] border border-red-100 bg-red-50 px-4 py-3 text-[12px] text-red-700">
+                  <div className="mt-4 error-banner">
                     {error}
                   </div>
                 )}
@@ -325,7 +325,7 @@ export default function OnboardingPage() {
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-[#D8D0C6] px-5 text-[14px] text-[#2B2B2B] transition hover:border-[#475569]"
+                    className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-warm-border-soft px-5 text-[14px] text-ink transition hover:border-ink-soft"
                   >
                     Back
                   </button>
@@ -334,7 +334,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={handleLaunch}
                     disabled={launching}
-                    className="inline-flex h-11 flex-[1.4] items-center justify-center rounded-full border border-[#DFA767] bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-[#2B2B2B] transition hover:brightness-[1.04] disabled:opacity-60"
+                    className="inline-flex h-11 flex-[1.4] items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
                   >
                     Launch My Gate
                     <ArrowRight className="ml-2 size-4" />

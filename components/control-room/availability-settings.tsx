@@ -244,14 +244,14 @@ export function AvailabilitySettings() {
 
   return (
     <section id="availability" className="space-y-6">
-      <div className="rounded-[1.75rem] border border-[#E7E5E4] bg-white/75 p-6 shadow-[0_18px_50px_rgba(120,100,80,0.06)]">
+      <div className="card-section">
         <div className="flex items-center gap-3">
-          <Calendar className="size-5 text-[#DFA767]" />
+          <Calendar className="size-5 text-brand-amber" />
           <div>
-            <p className="text-[15px] font-medium text-[#2B2B2B]">
+            <p className="text-[15px] font-medium text-ink">
               Weekly Schedule
             </p>
-            <p className="mt-1 text-[12px] text-[#6B7280]">
+            <p className="mt-1 text-[12px] text-gray-500">
               Set which days and hours you accept bookings. Changes take effect
               immediately on your public page.
             </p>
@@ -259,14 +259,14 @@ export function AvailabilitySettings() {
         </div>
       </div>
 
-      <div className="rounded-[1.75rem] border border-[#E7E5E4] bg-white/75 p-6 shadow-[0_18px_50px_rgba(120,100,80,0.06)]">
+      <div className="card-section">
         {error ? (
           <p className="mb-4 text-[13px] text-red-500">{error}</p>
         ) : null}
 
         {isLoading || !days ? (
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="size-5 animate-spin text-[#DFA767]" />
+            <Loader2 className="size-5 animate-spin text-brand-amber" />
           </div>
         ) : (
           <div className="space-y-3">
@@ -279,8 +279,8 @@ export function AvailabilitySettings() {
                   key={weekday.value}
                   className={
                     isEnabled
-                      ? "flex flex-wrap items-center gap-3 rounded-[1.25rem] border border-[#DFA767] bg-[#FFF9F2] px-4 py-3"
-                      : "flex flex-wrap items-center gap-3 rounded-[1.25rem] border border-[#E7E5E4] bg-white/70 px-4 py-3"
+                      ? "flex flex-wrap items-center gap-3 rounded-inner border border-brand-amber bg-brand-amber-faint px-4 py-3"
+                      : "flex flex-wrap items-center gap-3 card-inner px-4 py-3"
                   }
                 >
                   {/* Day toggle */}
@@ -293,8 +293,8 @@ export function AvailabilitySettings() {
                     <span
                       className={
                         isEnabled
-                          ? "relative h-6 w-11 rounded-full bg-[#DFA767]"
-                          : "relative h-6 w-11 rounded-full bg-[#D6D3D1]"
+                          ? "relative h-6 w-11 rounded-full bg-brand-amber"
+                          : "relative h-6 w-11 rounded-full bg-warm-border-lighter"
                       }
                     >
                       <span
@@ -306,7 +306,7 @@ export function AvailabilitySettings() {
                       />
                     </span>
 
-                    <span className="w-[3.5rem] text-left text-[13px] font-medium text-[#2B2B2B]">
+                    <span className="w-[3.5rem] text-left text-[13px] font-medium text-ink">
                       {weekday.label}
                     </span>
                   </button>
@@ -314,7 +314,7 @@ export function AvailabilitySettings() {
                   {/* Time range — only when enabled */}
                   {isEnabled ? (
                     <div className="flex flex-1 items-center gap-2">
-                      <Clock className="size-3.5 text-[#9CA3AF]" />
+                      <Clock className="size-3.5 text-gray-400" />
 
                       <input
                         type="time"
@@ -326,10 +326,10 @@ export function AvailabilitySettings() {
                           void saveTimeWindow(weekday.value, day.startTime, day.endTime)
                         }
                         disabled={day.saving}
-                        className="h-8 rounded-lg border border-[#D8D0C6] bg-white px-2 text-[12px] text-[#2B2B2B] disabled:opacity-60"
+                        className="h-8 rounded-lg border border-warm-border-soft bg-white px-2 text-[12px] text-ink disabled:opacity-60"
                       />
 
-                      <span className="text-[12px] text-[#9CA3AF]">–</span>
+                      <span className="text-[12px] text-gray-400">–</span>
 
                       <input
                         type="time"
@@ -341,15 +341,15 @@ export function AvailabilitySettings() {
                           void saveTimeWindow(weekday.value, day.startTime, day.endTime)
                         }
                         disabled={day.saving}
-                        className="h-8 rounded-lg border border-[#D8D0C6] bg-white px-2 text-[12px] text-[#2B2B2B] disabled:opacity-60"
+                        className="h-8 rounded-lg border border-warm-border-soft bg-white px-2 text-[12px] text-ink disabled:opacity-60"
                       />
 
                       {day.saving ? (
-                        <Loader2 className="size-3.5 animate-spin text-[#DFA767]" />
+                        <Loader2 className="size-3.5 animate-spin text-brand-amber" />
                       ) : null}
                     </div>
                   ) : (
-                    <span className="ml-1 text-[12px] text-[#9CA3AF]">
+                    <span className="ml-1 text-[12px] text-gray-400">
                       Unavailable
                     </span>
                   )}
@@ -359,7 +359,7 @@ export function AvailabilitySettings() {
           </div>
         )}
 
-        <p className="mt-5 text-[12px] text-[#6B7280]">
+        <p className="mt-5 text-[12px] text-gray-500">
           Times are in the timezone set in your profile. Visitors see slots
           converted to their local time.
         </p>

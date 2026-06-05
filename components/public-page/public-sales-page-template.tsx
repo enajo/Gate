@@ -561,7 +561,7 @@ export function PublicSalesPageTemplate({
     >
       <section className="mx-auto max-w-6xl">
         <div
-          className="overflow-hidden rounded-[2rem] border bg-[var(--card-bg)] shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+          className="overflow-hidden rounded-card border bg-[var(--card-bg)] shadow-[0_24px_90px_rgba(15,23,42,0.12)] backdrop-blur-xl"
           style={{ borderColor: "var(--border)" }}
         >
           <div className="grid min-h-[720px] lg:grid-cols-[1.35fr_0.88fr]">
@@ -571,7 +571,7 @@ export function PublicSalesPageTemplate({
             >
               <div className="flex h-full flex-col">
                 <div className="flex items-center gap-4">
-                  <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl bg-[#111827] text-[15px] font-medium text-white">
+                  <div className="flex size-16 items-center justify-center overflow-hidden rounded-2xl bg-ink-deep text-[15px] font-medium text-white">
                     {data.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -753,8 +753,8 @@ export function PublicSalesPageTemplate({
 
                   <label className="mt-8 block">
                     <span className="text-[14px] font-medium">Access Code</span>
-                    <div className="mt-2 flex h-12 items-center gap-3 rounded-full border bg-white/80 px-4 text-[#111827]">
-                      <KeyRound className="size-4 text-[#667085]" />
+                    <div className="mt-2 flex h-12 items-center gap-3 rounded-full border bg-white/80 px-4 text-ink-deep">
+                      <KeyRound className="size-4 text-gray-500" />
                       <input
                         value={accessCode}
                         onChange={(event) => {
@@ -813,7 +813,7 @@ export function PublicSalesPageTemplate({
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
                         placeholder="Jane Smith"
-                        className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-[#111827] outline-none transition focus:border-[#111827]"
+                        className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
                       />
                     </label>
 
@@ -824,7 +824,7 @@ export function PublicSalesPageTemplate({
                         value={guestEmail}
                         onChange={(e) => setGuestEmail(e.target.value)}
                         placeholder="jane@company.com"
-                        className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-[#111827] outline-none transition focus:border-[#111827]"
+                        className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
                       />
                     </label>
                   </div>
@@ -846,7 +846,7 @@ export function PublicSalesPageTemplate({
                             onChange={(event) =>
                               updateAnswer(question.id, event.target.value)
                             }
-                            className="mt-2 min-h-24 w-full rounded-[1.1rem] border bg-white/80 px-4 py-3 text-[14px] text-[#111827] outline-none transition focus:border-[#111827]"
+                            className="mt-2 min-h-24 w-full rounded-[1.1rem] border bg-white/80 px-4 py-3 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
                           />
                         ) : null}
 
@@ -856,7 +856,7 @@ export function PublicSalesPageTemplate({
                             onChange={(event) =>
                               updateAnswer(question.id, event.target.value)
                             }
-                            className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-[#111827] outline-none transition focus:border-[#111827]"
+                            className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
                           />
                         ) : null}
 
@@ -866,7 +866,7 @@ export function PublicSalesPageTemplate({
                             onChange={(event) =>
                               updateAnswer(question.id, event.target.value)
                             }
-                            className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-[#111827] outline-none transition focus:border-[#111827]"
+                            className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
                           >
                             <option value="">Select</option>
                             {question.options?.map((option) => (
@@ -1182,7 +1182,7 @@ export function PublicSalesPageTemplate({
                         value={guestName}
                         onChange={(e) => setGuestName(e.target.value)}
                         placeholder="Jane Smith"
-                        className="mt-2 h-12 w-full rounded-xl border bg-white/80 px-4 text-[14px] text-[#111827] outline-none transition focus:border-[#111827]"
+                        className="mt-2 h-12 w-full rounded-xl border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
                       />
                     </label>
 
@@ -1193,7 +1193,7 @@ export function PublicSalesPageTemplate({
                         value={guestEmail}
                         onChange={(e) => setGuestEmail(e.target.value)}
                         placeholder="jane@company.com"
-                        className="mt-2 h-12 w-full rounded-xl border bg-white/80 px-4 text-[14px] text-[#111827] outline-none transition focus:border-[#111827]"
+                        className="mt-2 h-12 w-full rounded-xl border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
                       />
                     </label>
 
@@ -1204,30 +1204,30 @@ export function PublicSalesPageTemplate({
                       <textarea
                         value={guestNotes}
                         onChange={(e) => setGuestNotes(e.target.value)}
-                        className="mt-2 min-h-24 w-full rounded-xl border bg-white/80 px-4 py-3 text-[14px] text-[#111827] outline-none transition focus:border-[#111827]"
+                        className="mt-2 min-h-24 w-full rounded-xl border bg-white/80 px-4 py-3 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
                       />
                     </label>
                   </div>
 
                   {activeService.paymentRequired ? (
                     <div className="mt-6 space-y-3">
-                      <div className="rounded-2xl border bg-white/80 p-4 text-[#111827]">
+                      <div className="rounded-2xl border bg-white/80 p-4 text-ink-deep">
                         <div className="flex items-center gap-3">
-                          <CreditCard className="size-4 text-[#667085]" />
+                          <CreditCard className="size-4 text-gray-500" />
                           <p className="text-[13px] font-medium">
                             Secure card authorization
                           </p>
                         </div>
 
                         <div className="mt-4 grid gap-3">
-                          <div className="h-11 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[13px] text-[#9CA3AF]">
+                          <div className="h-11 rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] text-gray-400">
                             Card number
                           </div>
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="h-11 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[13px] text-[#9CA3AF]">
+                            <div className="h-11 rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] text-gray-400">
                               MM / YY
                             </div>
-                            <div className="h-11 rounded-xl border border-[#E5E7EB] bg-white px-4 py-3 text-[13px] text-[#9CA3AF]">
+                            <div className="h-11 rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] text-gray-400">
                               CVC
                             </div>
                           </div>

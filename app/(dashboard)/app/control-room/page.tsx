@@ -226,8 +226,8 @@ export default function ControlRoomPage() {
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)]">
-        <div className="flex flex-col items-center gap-3 text-[#6B7280]">
-          <Loader2 className="size-6 animate-spin text-[#DFA767]" />
+        <div className="flex flex-col items-center gap-3 text-gray-500">
+          <Loader2 className="size-6 animate-spin text-brand-amber" />
           <p className="text-[13px]">Loading Control Room…</p>
         </div>
       </main>
@@ -237,17 +237,17 @@ export default function ControlRoomPage() {
   if (!draftProfile) return null;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-[#2B2B2B]">
-      <header className="sticky top-0 z-50 bg-[#F9FAFB]/75 backdrop-blur-xl">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-ink">
+      <header className="sticky top-0 z-50 bg-gray-50/75 backdrop-blur-xl">
         <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 text-[13px]">
           <Link href="/app" className="font-medium tracking-wide">
             GATE
           </Link>
 
-          <div className="hidden items-center gap-7 text-[#6B7280] md:flex">
+          <div className="hidden items-center gap-7 text-gray-500 md:flex">
             <Link href="/app">Dashboard</Link>
 
-            <Link href="/app/control-room" className="text-[#2B2B2B]">
+            <Link href="/app/control-room" className="text-ink">
               Control Room
             </Link>
 
@@ -264,7 +264,7 @@ export default function ControlRoomPage() {
             ) : null}
           </div>
 
-          <div className="flex size-8 items-center justify-center rounded-full bg-[#2B2B2B] text-[12px] text-white">
+          <div className="flex size-8 items-center justify-center rounded-full bg-ink text-[12px] text-white">
             {initials}
           </div>
         </nav>
@@ -272,10 +272,10 @@ export default function ControlRoomPage() {
 
       <section className="mx-auto max-w-5xl px-4 py-10">
         {/* Hero card */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.68),rgba(243,237,226,0.86))] p-8 shadow-[0_28px_90px_rgba(120,100,80,0.14)]">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.68),rgba(243,237,226,0.86))] p-8 shadow-warm-2xl">
           <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
             <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+              <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
                 Control Room
               </p>
 
@@ -283,12 +283,12 @@ export default function ControlRoomPage() {
                 Design access to your time.
               </h1>
 
-              <p className="mt-5 max-w-2xl text-[17px] leading-[1.8] text-[#6B7280]">
+              <p className="mt-5 max-w-2xl text-[17px] leading-[1.8] text-gray-500">
                 Configure your expert profile, services, qualification gates,
                 pricing, access codes, availability exposure, and publish state.
               </p>
 
-              <div className="mt-5 flex flex-wrap gap-3 text-[12px] text-[#6B7280]">
+              <div className="mt-5 flex flex-wrap gap-3 text-[12px] text-gray-500">
                 {savedAt ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1">
                     <CheckCircle2 className="size-3 text-emerald-600" />
@@ -302,7 +302,7 @@ export default function ControlRoomPage() {
                     Published
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 text-[#DFA767]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 text-brand-amber">
                     Draft only — not visible publicly
                   </span>
                 )}
@@ -320,7 +320,7 @@ export default function ControlRoomPage() {
                 type="button"
                 onClick={handleSaveDraft}
                 disabled={isSaving}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-[#D8D0C6] bg-white/70 px-5 text-[14px] text-[#2B2B2B] transition hover:border-[#2B2B2B] disabled:opacity-60"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-warm-border-soft bg-white/70 px-5 text-[14px] text-ink transition hover:border-ink disabled:opacity-60"
               >
                 {isSaving ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />
@@ -334,7 +334,7 @@ export default function ControlRoomPage() {
                 type="button"
                 onClick={handlePublish}
                 disabled={isPublishing || isSaving}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-[#DFA767] bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-[#2B2B2B] transition hover:brightness-[1.04] disabled:opacity-60"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
               >
                 {isPublishing ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />

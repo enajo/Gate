@@ -34,7 +34,7 @@ export function CopyLinkButton({ url }: { url: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex h-10 items-center justify-center rounded-full border border-[#D8D0C6] px-4 text-[13px] text-[#2B2B2B] transition hover:border-[#475569]"
+      className="inline-flex h-10 items-center justify-center rounded-full border border-warm-border-soft px-4 text-[13px] text-ink transition hover:border-ink-soft"
     >
       {copied ? (
         <Check className="mr-2 size-4 text-green-500" />

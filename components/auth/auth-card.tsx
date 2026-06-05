@@ -78,19 +78,19 @@ export function AuthCard({ mode }: AuthCardProps) {
   }
 
   return (
-    <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-[#E4DED4]/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.72),rgba(243,237,226,0.86))] p-7 shadow-[0_24px_80px_rgba(120,100,80,0.13)] backdrop-blur">
-      <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#DFA767]/20 blur-3xl" />
+    <div className="relative w-full max-w-md overflow-hidden card-warm p-7 shadow-warm-xl backdrop-blur">
+      <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-brand-amber/20 blur-3xl" />
 
       <div className="relative">
-        <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+        <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
           {isRegister ? "Create account" : "Welcome back"}
         </p>
 
-        <h1 className="mt-4 text-[30px] font-medium leading-tight tracking-[-0.045em] text-[#2B2B2B]">
+        <h1 className="mt-4 text-[30px] font-medium leading-tight tracking-[-0.045em] text-ink">
           {isRegister ? "Create your GATE account." : "Sign in to GATE."}
         </h1>
 
-        <p className="mt-3 text-[14px] leading-[1.7] text-[#6B7280]">
+        <p className="mt-3 text-[14px] leading-[1.7] text-gray-500">
           {isRegister
             ? "Start protecting your calendar with a premium qualification flow."
             : "Access your expert dashboard and control room."}
@@ -102,7 +102,7 @@ export function AuthCard({ mode }: AuthCardProps) {
               key={provider.id}
               type="button"
               onClick={() => signIn(provider.id, { callbackUrl: "/app" })}
-              className="flex h-11 w-full items-center justify-center rounded-full border border-[#D8D0C6] bg-white/45 px-5 text-[14px] text-[#2B2B2B] transition duration-500 ease-out hover:border-[#475569] hover:bg-white/70"
+              className="flex h-11 w-full items-center justify-center rounded-full border border-warm-border-soft bg-white/45 px-5 text-[14px] text-ink transition duration-500 ease-out hover:border-ink-soft hover:bg-white/70"
             >
               Continue with {provider.name}
             </button>
@@ -110,11 +110,11 @@ export function AuthCard({ mode }: AuthCardProps) {
         </div>
 
         <div className="my-7 flex items-center gap-4">
-          <div className="h-px flex-1 bg-[#D8D0C6]" />
-          <span className="text-xs text-[#6B7280]">
+          <div className="h-px flex-1 bg-warm-border-soft" />
+          <span className="text-xs text-gray-500">
             or sign in with a code
           </span>
-          <div className="h-px flex-1 bg-[#D8D0C6]" />
+          <div className="h-px flex-1 bg-warm-border-soft" />
         </div>
 
         <div className="relative min-h-[172px]">
@@ -124,19 +124,19 @@ export function AuthCard({ mode }: AuthCardProps) {
               className="animate-[fadeIn_450ms_ease-out] space-y-4"
             >
               <label className="block">
-                <span className="text-[13px] font-medium text-[#2B2B2B]">
+                <span className="text-[13px] font-medium text-ink">
                   Email address
                 </span>
 
-                <div className="mt-2 flex h-11 items-center gap-3 rounded-full border border-[#D8D0C6] bg-white/55 px-4">
-                  <Mail className="size-4 text-[#6B7280]" />
+                <div className="mt-2 flex h-11 items-center gap-3 rounded-full border border-warm-border-soft bg-white/55 px-4">
+                  <Mail className="size-4 text-gray-500" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="you@example.com"
-                    className="w-full bg-transparent text-[14px] text-[#2B2B2B] outline-none placeholder:text-[#A19B8F]"
+                    className="w-full bg-transparent text-[14px] text-ink outline-none placeholder:text-warm-gray"
                   />
                 </div>
               </label>
@@ -144,7 +144,7 @@ export function AuthCard({ mode }: AuthCardProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[#475569] bg-[#475569] px-5 text-[14px] text-white transition duration-500 ease-out hover:bg-[#334155] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-ink-soft bg-ink-soft px-5 text-[14px] text-white transition duration-500 ease-out hover:bg-ink-slate disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? "Signing in…" : "Continue with email"}
                 {!loading && <ArrowRight className="ml-2 size-4" />}
@@ -156,10 +156,10 @@ export function AuthCard({ mode }: AuthCardProps) {
               className="animate-[fadeIn_450ms_ease-out] space-y-4"
             >
               <div>
-                <p className="text-[13px] font-medium text-[#2B2B2B]">
+                <p className="text-[13px] font-medium text-ink">
                   Enter your 6-digit code
                 </p>
-                <p className="mt-1 text-[12px] leading-5 text-[#6B7280]">
+                <p className="mt-1 text-[12px] leading-5 text-gray-500">
                   We sent a secure code to {email}.
                 </p>
               </div>
@@ -179,7 +179,7 @@ export function AuthCard({ mode }: AuthCardProps) {
                       handleCodeChange(index, event.target.value)
                     }
                     onKeyDown={(event) => handleKeyDown(index, event)}
-                    className="h-12 rounded-2xl border border-[#D8D0C6] bg-white/55 text-center text-[18px] font-medium text-[#2B2B2B] outline-none transition focus:border-[#475569]"
+                    className="h-12 rounded-2xl border border-warm-border-soft bg-white/55 text-center text-[18px] font-medium text-ink outline-none transition focus:border-ink-soft"
                   />
                 ))}
               </div>
@@ -187,7 +187,7 @@ export function AuthCard({ mode }: AuthCardProps) {
               <button
                 type="submit"
                 disabled={joinedCode.length !== 6}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[#475569] bg-[#475569] px-5 text-[14px] text-white transition duration-500 ease-out hover:bg-[#334155] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full border border-ink-soft bg-ink-soft px-5 text-[14px] text-white transition duration-500 ease-out hover:bg-ink-slate disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Continue
                 <ArrowRight className="ml-2 size-4" />
@@ -199,7 +199,7 @@ export function AuthCard({ mode }: AuthCardProps) {
                   setCodeSent(false);
                   setCode(["", "", "", "", "", ""]);
                 }}
-                className="w-full text-center text-[13px] text-[#6B7280] hover:text-[#2B2B2B]"
+                className="w-full text-center text-[13px] text-gray-500 hover:text-ink"
               >
                 Use a different email
               </button>
@@ -207,11 +207,11 @@ export function AuthCard({ mode }: AuthCardProps) {
           )}
         </div>
 
-        <p className="mt-7 text-center text-[13px] text-[#6B7280]">
+        <p className="mt-7 text-center text-[13px] text-gray-500">
           {isRegister ? "Already have an account?" : "New to GATE?"}{" "}
           <Link
             href={isRegister ? "/login" : "/register"}
-            className="text-[#475569] underline"
+            className="text-ink-soft underline"
           >
             {isRegister ? "Sign in" : "Create account"}
           </Link>

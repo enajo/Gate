@@ -36,21 +36,21 @@ export function ProfileSettings({ profile, setProfile }: ProfileSettingsProps) {
   }
 
   return (
-    <section className="rounded-[1.75rem] border border-[#E7E5E4] bg-white/75 p-6 shadow-[0_18px_50px_rgba(120,100,80,0.06)]">
+    <section className="card-section">
       <div className="flex items-center gap-3">
-        <UserRound className="size-5 text-[#DFA767]" />
+        <UserRound className="size-5 text-brand-amber" />
 
         <div>
-          <p className="text-[15px] font-medium text-[#2B2B2B]">Profile</p>
-          <p className="mt-1 text-[12px] text-[#6B7280]">
+          <p className="text-[15px] font-medium text-ink">Profile</p>
+          <p className="mt-1 text-[12px] text-gray-500">
             Public identity shown across all services.
           </p>
         </div>
       </div>
 
-      <div className="mt-6 rounded-[1.5rem] border border-[#E7E5E4] bg-white/70 p-5">
+      <div className="mt-6 rounded-[1.5rem] border border-warm-border-mid bg-white/70 p-5">
         <div className="flex flex-col gap-5 md:flex-row md:items-center">
-          <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#111827] text-[20px] font-medium text-white">
+          <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-ink-deep text-[20px] font-medium text-white">
             {profile.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -65,14 +65,14 @@ export function ProfileSettings({ profile, setProfile }: ProfileSettingsProps) {
 
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <ImagePlus className="size-4 text-[#6B7280]" />
+              <ImagePlus className="size-4 text-gray-500" />
 
-              <p className="text-[13px] font-medium text-[#2B2B2B]">
+              <p className="text-[13px] font-medium text-ink">
                 Expert Image / Logo
               </p>
             </div>
 
-            <p className="mt-1 max-w-lg text-[12px] leading-6 text-[#6B7280]">
+            <p className="mt-1 max-w-lg text-[12px] leading-6 text-gray-500">
               Upload a professional headshot, brand mark, or company logo. If no
               image is uploaded, GATE automatically uses the expert acronym.
             </p>
@@ -88,7 +88,7 @@ export function ProfileSettings({ profile, setProfile }: ProfileSettingsProps) {
 
               <label
                 htmlFor="avatar-upload"
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-[#D8D0C6] bg-white px-4 text-[13px] font-medium text-[#2B2B2B] transition hover:border-[#2B2B2B]"
+                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-warm-border-soft bg-white px-4 text-[13px] font-medium text-ink transition hover:border-ink"
               >
                 Upload Image
               </label>
@@ -102,7 +102,7 @@ export function ProfileSettings({ profile, setProfile }: ProfileSettingsProps) {
                       avatarUrl: null,
                     }))
                   }
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-[#F1D5D5] bg-[#FFF5F5] px-4 text-[13px] font-medium text-[#B42318] transition hover:bg-[#FEECEC]"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-error-border bg-error-bg-light px-4 text-[13px] font-medium text-error transition hover:bg-error-bg"
                 >
                   Remove
                 </button>
@@ -152,7 +152,7 @@ export function ProfileSettings({ profile, setProfile }: ProfileSettingsProps) {
                 bio: event.target.value,
               }))
             }
-            className="min-h-28 w-full resize-none rounded-[1.25rem] border border-[#D8D0C6] bg-white/80 px-4 py-3 text-[14px] leading-7 outline-none transition focus:border-[#2B2B2B]"
+            className="min-h-28 w-full resize-none rounded-inner border border-warm-border-soft bg-white/80 px-4 py-3 text-[14px] leading-7 outline-none transition focus:border-ink"
             placeholder="Describe your expertise, track record, and who you help."
           />
         </Field>
@@ -170,7 +170,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[12px] font-medium text-[#2B2B2B]">
+      <span className="mb-2 block text-[12px] font-medium text-ink">
         {label}
       </span>
 

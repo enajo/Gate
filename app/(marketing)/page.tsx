@@ -131,12 +131,12 @@ function AuraButton({
 }) {
   const styles = {
     primary:
-      "border-[#475569] bg-[#475569] text-white hover:bg-[#334155] hover:border-[#334155]",
+      "border-ink-soft bg-ink-soft text-white hover:bg-ink-slate hover:border-ink-slate",
     secondary:
-      "border-[#D8D0C6] bg-transparent text-[#2B2B2B] hover:border-[#475569] hover:bg-[#475569] hover:text-white",
+      "border-warm-border-soft bg-transparent text-ink hover:border-ink-soft hover:bg-ink-soft hover:text-white",
     gold:
-      "border-[#DFA767] bg-[linear-gradient(135deg,#DFA767,#E8BC82)] text-[#2B2B2B] hover:brightness-[1.04]",
-    text: "border-transparent bg-transparent px-0 text-[#475569] hover:text-[#2B2B2B]",
+      "border-brand-amber bg-[linear-gradient(135deg,#DFA767,#E8BC82)] text-ink hover:brightness-[1.04]",
+    text: "border-transparent bg-transparent px-0 text-ink-soft hover:text-ink",
   };
 
   return (
@@ -163,20 +163,20 @@ function HeroVisual() {
 
 function GatekeeperVisual() {
   return (
-    <div className="mx-auto mt-20 w-full max-w-5xl rounded-[2.25rem] border border-[#E4DED4]/80 bg-white/60 p-5 shadow-[0_22px_70px_rgba(120,100,80,0.12)] backdrop-blur">
-      <div className="flex h-8 items-center gap-2 border-b border-[#E4DED4] px-2">
-        <span className="size-3 rounded-full bg-[#DFA767]/50" />
-        <span className="size-3 rounded-full bg-[#A19B8F]/35" />
-        <span className="size-3 rounded-full bg-[#CBD5E1]" />
+    <div className="mx-auto mt-20 w-full max-w-5xl rounded-[2.25rem] border border-warm-border/80 bg-white/60 p-5 shadow-warm-lg backdrop-blur">
+      <div className="flex h-8 items-center gap-2 border-b border-warm-border px-2">
+        <span className="size-3 rounded-full bg-brand-amber/50" />
+        <span className="size-3 rounded-full bg-warm-gray/35" />
+        <span className="size-3 rounded-full bg-slate-300" />
       </div>
 
       <div className="grid gap-5 p-6 md:grid-cols-3">
-        <div className="rounded-[2rem] bg-white/85 p-7 text-left shadow-[0_18px_45px_rgba(120,100,80,0.10)] ring-1 ring-[#E4DED4]">
-          <p className="text-sm font-medium text-[#2B2B2B]">
+        <div className="card-glass p-7 text-left">
+          <p className="text-sm font-medium text-ink">
             Qualification Form
           </p>
 
-          <p className="mt-5 text-[13px] leading-5 text-[#6B7280]">
+          <p className="mt-5 text-[13px] leading-5 text-gray-500">
             What is your primary goal for this engagement?
           </p>
 
@@ -189,31 +189,31 @@ function GatekeeperVisual() {
             ].map((item) => (
               <div
                 key={item}
-                className="flex items-center gap-3 rounded-xl border border-[#E5E1D8] px-4 py-3 text-[12px] text-[#6B7280]"
+                className="flex items-center gap-3 rounded-xl border border-warm-stone px-4 py-3 text-[12px] text-gray-500"
               >
-                <span className="size-3 rounded-full border border-[#A19B8F]" />
+                <span className="size-3 rounded-full border border-warm-gray" />
                 {item}
               </div>
             ))}
           </div>
 
-          <div className="mt-6 rounded-xl bg-[#475569] py-3 text-center text-[13px] text-white">
+          <div className="mt-6 rounded-xl bg-ink-soft py-3 text-center text-[13px] text-white">
             Submit
           </div>
         </div>
 
-        <div className="rounded-[2rem] bg-white/85 p-7 text-center shadow-[0_18px_45px_rgba(120,100,80,0.10)] ring-1 ring-[#E4DED4]">
-          <p className="text-sm font-medium text-[#2B2B2B]">
+        <div className="card-glass p-7 text-center">
+          <p className="text-sm font-medium text-ink">
             Qualification Score
           </p>
 
-          <p className="mt-8 text-[64px] font-normal leading-none text-[#166534]">
+          <p className="mt-8 text-[64px] font-normal leading-none text-success">
             92
           </p>
 
-          <p className="mt-2 text-[20px] text-[#166534]">Qualified</p>
+          <p className="mt-2 text-[20px] text-success">Qualified</p>
 
-          <div className="mt-7 space-y-2 text-left text-[12px] text-[#6B7280]">
+          <div className="mt-7 space-y-2 text-left text-[12px] text-gray-500">
             {[
               "Company size",
               "Budget range",
@@ -221,24 +221,24 @@ function GatekeeperVisual() {
               "Decision authority",
             ].map((item) => (
               <p key={item} className="flex items-center gap-2">
-                <CircleCheck className="size-3 text-[#166534]" />
+                <CircleCheck className="size-3 text-success" />
                 {item}
               </p>
             ))}
           </div>
         </div>
 
-        <div className="rounded-[2rem] bg-white/85 p-7 text-left shadow-[0_18px_45px_rgba(120,100,80,0.10)] ring-1 ring-[#E4DED4]">
-          <p className="text-sm font-medium text-[#2B2B2B]">Calendar Access</p>
-          <p className="mt-5 text-[13px] text-[#6B7280]">Select a time</p>
+        <div className="card-glass p-7 text-left">
+          <p className="text-sm font-medium text-ink">Calendar Access</p>
+          <p className="mt-5 text-[13px] text-gray-500">Select a time</p>
 
-          <div className="mt-5 rounded-2xl border border-[#E5E1D8] p-4">
-            <div className="flex items-center justify-between text-[12px] text-[#2B2B2B]">
+          <div className="mt-5 rounded-2xl border border-warm-stone p-4">
+            <div className="flex items-center justify-between text-[12px] text-ink">
               <span>May 2026</span>
               <span>›</span>
             </div>
 
-            <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[11px] text-[#6B7280]">
+            <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[11px] text-gray-500">
               {[
                 "S",
                 "M",
@@ -253,7 +253,7 @@ function GatekeeperVisual() {
                   key={`${day}-${index}`}
                   className={
                     day === "14"
-                      ? "rounded-lg bg-[#DFA767] py-1 text-[#2B2B2B]"
+                      ? "rounded-lg bg-brand-amber py-1 text-ink"
                       : "py-1"
                   }
                 >
@@ -271,13 +271,13 @@ function GatekeeperVisual() {
 function FeatureMockup({ type }: { type: string }) {
   if (type === "qr") {
     return (
-      <div className="mx-auto mt-16 flex h-56 max-w-sm items-center justify-center rounded-[2rem] bg-white/75 shadow-[0_22px_60px_rgba(120,100,80,0.12)]">
+      <div className="mx-auto mt-16 flex h-56 max-w-sm items-center justify-center rounded-card bg-white/75 shadow-warm-lg">
         <div className="grid grid-cols-5 gap-2">
           {Array.from({ length: 25 }, (_, i) => (
             <span
               key={i}
               className={`size-5 ${
-                i % 3 === 0 || i % 7 === 0 ? "bg-[#2B2B2B]" : "bg-[#E5E1D8]"
+                i % 3 === 0 || i % 7 === 0 ? "bg-ink" : "bg-warm-stone"
               }`}
             />
           ))}
@@ -288,39 +288,39 @@ function FeatureMockup({ type }: { type: string }) {
 
   if (type === "code") {
     return (
-      <div className="mx-auto mt-16 max-w-sm rounded-[2rem] bg-white/75 p-8 text-left text-[#2B2B2B] shadow-[0_22px_60px_rgba(120,100,80,0.12)]">
-        <p className="text-[13px] text-[#6B7280]">Access Code</p>
+      <div className="mx-auto mt-16 max-w-sm rounded-card bg-white/75 p-8 text-left text-ink shadow-warm-lg">
+        <p className="text-[13px] text-gray-500">Access Code</p>
 
-        <div className="mt-4 rounded-xl border border-[#E5E1D8] px-4 py-3 font-mono tracking-[0.35em]">
+        <div className="mt-4 rounded-xl border border-warm-stone px-4 py-3 font-mono tracking-[0.35em]">
           GATE2026
         </div>
 
-        <p className="mt-7 text-[13px] text-[#6B7280]">Usage</p>
+        <p className="mt-7 text-[13px] text-gray-500">Usage</p>
 
-        <div className="mt-3 h-2 rounded-full bg-[#E5E1D8]">
-          <div className="h-2 w-1/2 rounded-full bg-[#DFA767]" />
+        <div className="mt-3 h-2 rounded-full bg-warm-stone">
+          <div className="h-2 w-1/2 rounded-full bg-brand-amber" />
         </div>
 
-        <p className="mt-3 text-[13px] text-[#6B7280]">48 / 100</p>
+        <p className="mt-3 text-[13px] text-gray-500">48 / 100</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto mt-16 h-56 max-w-sm rounded-[2rem] bg-white/75 shadow-[0_22px_60px_rgba(120,100,80,0.12)]" />
+    <div className="mx-auto mt-16 h-56 max-w-sm rounded-card bg-white/75 shadow-warm-lg" />
   );
 }
 
 export default function MarketingHomePage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_28%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_25%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_28%,#F3EDE2_58%,#F8F5EF_100%)] text-[#2B2B2B]">
-      <header className="sticky top-0 z-50 bg-[#F9FAFB]/70 backdrop-blur-xl">
-        <nav className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 text-[12px] text-[#2B2B2B]">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_28%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_25%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_28%,#F3EDE2_58%,#F8F5EF_100%)] text-ink">
+      <header className="sticky top-0 z-50 bg-gray-50/70 backdrop-blur-xl">
+        <nav className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 text-[12px] text-ink">
           <Link href="/" className="font-medium tracking-wide">
             GATE
           </Link>
 
-          <div className="hidden items-center gap-8 text-[#6B7280] md:flex">
+          <div className="hidden items-center gap-8 text-gray-500 md:flex">
             <Link href="#gatekeeper">Gatekeeper</Link>
             <Link href="#features">Features</Link>
             <Link href="#pricing">Pricing</Link>
@@ -391,9 +391,9 @@ export default function MarketingHomePage() {
           return (
             <div
               key={card.title}
-              className="min-h-[620px] overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,rgba(255,255,255,0.54),rgba(243,237,226,0.76))] p-12 text-[#2B2B2B] shadow-[0_18px_50px_rgba(120,100,80,0.08)]"
+              className="min-h-[620px] overflow-hidden rounded-card bg-[linear-gradient(145deg,rgba(255,255,255,0.54),rgba(243,237,226,0.76))] p-12 text-ink shadow-warm-sm"
             >
-              <Icon className="size-10 text-[#DFA767]" />
+              <Icon className="size-10 text-brand-amber" />
 
               <h3 className="mt-7 max-w-md text-[34px] font-semibold leading-tight tracking-[-0.04em]">
                 {card.title}
@@ -403,13 +403,13 @@ export default function MarketingHomePage() {
                 {card.subtitle}
               </p>
 
-              <p className="mt-5 max-w-sm text-[15px] leading-6 text-[#6B7280]">
+              <p className="mt-5 max-w-sm text-[15px] leading-6 text-gray-500">
                 {card.body}
               </p>
 
               <Link
                 href="/register"
-                className="mt-6 inline-flex items-center text-[15px] font-normal text-[#475569] hover:underline"
+                className="mt-6 inline-flex items-center text-[15px] font-normal text-ink-soft hover:underline"
               >
                 Learn more <ChevronRight className="size-4" />
               </Link>
@@ -423,7 +423,7 @@ export default function MarketingHomePage() {
       <section id="pricing" className="relative overflow-hidden bg-transparent px-4 py-20">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs uppercase tracking-[0.26em] text-[#DFA767]">
+            <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
               Pricing
             </p>
 
@@ -431,7 +431,7 @@ export default function MarketingHomePage() {
               A private front desk for high-value professionals.
             </h2>
 
-            <p className="mx-auto mt-4 max-w-lg text-[15px] leading-[1.7] text-[#6B7280]">
+            <p className="mx-auto mt-4 max-w-lg text-[15px] leading-[1.7] text-gray-500">
               Simple tiers for protecting your calendar, qualifying prospects,
               and routing the right clients.
             </p>
@@ -447,8 +447,8 @@ export default function MarketingHomePage() {
                   key={tier.name}
                   className={
                     isPro
-                      ? "relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,#171717_0%,#282828_48%,#1B1B1B_100%)] px-7 py-8 text-[#F3EDE2] shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition duration-500 ease-out hover:brightness-[1.03]"
-                      : "relative overflow-hidden rounded-[1.75rem] border border-[#E4DED4]/80 bg-[linear-gradient(145deg,#F6F0E6_0%,#F3EDE2_54%,#FBF9F4_100%)] px-7 py-8 shadow-[0_12px_34px_rgba(120,100,80,0.07)] transition duration-500 ease-out hover:brightness-[1.015]"
+                      ? "relative overflow-hidden rounded-section bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,#171717_0%,#282828_48%,#1B1B1B_100%)] px-7 py-8 text-warm-cream shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition duration-500 ease-out hover:brightness-[1.03]"
+                      : "relative overflow-hidden rounded-section border border-warm-border/80 bg-[linear-gradient(145deg,#F6F0E6_0%,#F3EDE2_54%,#FBF9F4_100%)] px-7 py-8 shadow-[0_12px_34px_rgba(120,100,80,0.07)] transition duration-500 ease-out hover:brightness-[1.015]"
                   }
                 >
                   <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_42%)]" />
@@ -457,8 +457,8 @@ export default function MarketingHomePage() {
                     <p
                       className={
                         isPro
-                          ? "text-[11px] text-[#DFA767]"
-                          : "text-[11px] text-[#6B7280]"
+                          ? "text-[11px] text-brand-amber"
+                          : "text-[11px] text-gray-500"
                       }
                     >
                       {tier.label}
@@ -471,8 +471,8 @@ export default function MarketingHomePage() {
                     <p
                       className={
                         isPro
-                          ? "mt-3 text-[13px] leading-[1.65] text-[#D8D0C6]"
-                          : "mt-3 text-[13px] leading-[1.65] text-[#6B7280]"
+                          ? "mt-3 text-[13px] leading-[1.65] text-warm-border-soft"
+                          : "mt-3 text-[13px] leading-[1.65] text-gray-500"
                       }
                     >
                       {tier.description}
@@ -485,8 +485,8 @@ export default function MarketingHomePage() {
                       <span
                         className={
                           isPro
-                            ? "mb-2 text-sm text-[#D8D0C6]"
-                            : "mb-2 text-sm text-[#6B7280]"
+                            ? "mb-2 text-sm text-warm-border-soft"
+                            : "mb-2 text-sm text-gray-500"
                         }
                       >
                         {tier.suffix}
@@ -496,8 +496,8 @@ export default function MarketingHomePage() {
                     <p
                       className={
                         isPro
-                          ? "mt-1 text-xs text-[#DFA767]"
-                          : "mt-1 text-xs text-[#6B7280]"
+                          ? "mt-1 text-xs text-brand-amber"
+                          : "mt-1 text-xs text-gray-500"
                       }
                     >
                       {tier.fee}
@@ -525,7 +525,7 @@ export default function MarketingHomePage() {
                           key={feature}
                           className="flex gap-2 text-[13px] leading-5"
                         >
-                          <Check className="mt-0.5 size-3.5 shrink-0 text-[#DFA767]" />
+                          <Check className="mt-0.5 size-3.5 shrink-0 text-brand-amber" />
                           <span>{feature}</span>
                         </li>
                       ))}
@@ -540,17 +540,17 @@ export default function MarketingHomePage() {
             <p className="text-[20px] font-normal leading-[1.45] tracking-[-0.035em]">
               Protecting your calendar is not about scarcity.
             </p>
-            <p className="mt-1 text-[14px] leading-[1.7] text-[#6B7280]">
+            <p className="mt-1 text-[14px] leading-[1.7] text-gray-500">
               It is about preserving focus for the right people.
             </p>
           </div>
 
           <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-[1.35fr_0.9fr]">
-            <div className="relative overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_bottom_right,rgba(223,167,103,0.16),transparent_32%),linear-gradient(145deg,#1B1B1B_0%,#252525_45%,#171717_100%)] px-8 py-8 text-[#F3EDE2] shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
+            <div className="relative overflow-hidden rounded-section bg-[radial-gradient(circle_at_bottom_right,rgba(223,167,103,0.16),transparent_32%),linear-gradient(145deg,#1B1B1B_0%,#252525_45%,#171717_100%)] px-8 py-8 text-warm-cream shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_42%)]" />
 
               <div className="relative">
-                <p className="text-xs uppercase tracking-[0.22em] text-[#DFA767]">
+                <p className="text-xs uppercase tracking-[0.22em] text-brand-amber">
                   Savings calculator
                 </p>
 
@@ -572,14 +572,14 @@ export default function MarketingHomePage() {
                       <p className="text-[24px] font-semibold tracking-[-0.05em]">
                         {value}
                       </p>
-                      <p className="mt-1 text-[11px] text-[#D8D0C6]">
+                      <p className="mt-1 text-[11px] text-warm-border-soft">
                         {label}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <p className="mt-5 text-[13px] leading-6 text-[#D8D0C6]">
+                <p className="mt-5 text-[13px] leading-6 text-warm-border-soft">
                   What is one protected hour of your attention worth?
                 </p>
               </div>
@@ -589,12 +589,12 @@ export default function MarketingHomePage() {
               {faqs.map((faq) => (
                 <div
                   key={faq.question}
-                  className="border-b border-[#D8D0C6] pb-5"
+                  className="border-b border-warm-border-soft pb-5"
                 >
                   <h4 className="text-[16px] font-semibold tracking-[-0.03em]">
                     {faq.question}
                   </h4>
-                  <p className="mt-2 text-[13px] leading-[1.65] text-[#6B7280]">
+                  <p className="mt-2 text-[13px] leading-[1.65] text-gray-500">
                     {faq.answer}
                   </p>
                 </div>
@@ -602,13 +602,13 @@ export default function MarketingHomePage() {
             </div>
           </div>
 
-          <div className="mx-auto mt-14 flex max-w-5xl flex-col items-start justify-between gap-5 border-t border-[#D8D0C6] pt-8 md:flex-row md:items-center">
+          <div className="mx-auto mt-14 flex max-w-5xl flex-col items-start justify-between gap-5 border-t border-warm-border-soft pt-8 md:flex-row md:items-center">
             <div>
               <h3 className="text-[24px] font-semibold tracking-[-0.04em]">
                 Want concierge setup?
               </h3>
 
-              <p className="mt-2 max-w-xl text-[14px] leading-[1.7] text-[#6B7280]">
+              <p className="mt-2 max-w-xl text-[14px] leading-[1.7] text-gray-500">
                 For high-traffic experts and teams, request a short setup call
                 and we’ll map your Gatekeeper flow.
               </p>
@@ -621,9 +621,9 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      <footer className="bg-transparent px-4 pb-8 pt-12 text-[12px] text-[#6B7280]">
+      <footer className="bg-transparent px-4 pb-8 pt-12 text-[12px] text-gray-500">
         <div className="mx-auto max-w-6xl">
-          <div className="space-y-3 border-b border-[#D8D0C6] pb-7 leading-5">
+          <div className="space-y-3 border-b border-warm-border-soft pb-7 leading-5">
             <p>
               GATE is built for consultants, coaches, mentors, and service
               providers who treat time as a premium asset.
@@ -636,7 +636,7 @@ export default function MarketingHomePage() {
               Questions? Contact us at{" "}
               <Link
                 href="mailto:hello@expertgatekeeper.com"
-                className="text-[#475569] underline"
+                className="text-ink-soft underline"
               >
                 hello@expertgatekeeper.com
               </Link>
@@ -644,10 +644,10 @@ export default function MarketingHomePage() {
             </p>
           </div>
 
-          <div className="grid gap-8 border-b border-[#D8D0C6] py-8 sm:grid-cols-2 md:grid-cols-4">
+          <div className="grid gap-8 border-b border-warm-border-soft py-8 sm:grid-cols-2 md:grid-cols-4">
             {footerColumns.map((column) => (
               <div key={column.title}>
-                <h4 className="font-semibold text-[#2B2B2B]">
+                <h4 className="font-semibold text-ink">
                   {column.title}
                 </h4>
                 <ul className="mt-3 space-y-2">
@@ -655,7 +655,7 @@ export default function MarketingHomePage() {
                     <li key={link}>
                       <Link
                         href="#"
-                        className="hover:text-[#475569] hover:underline"
+                        className="hover:text-ink-soft hover:underline"
                       >
                         {link}
                       </Link>

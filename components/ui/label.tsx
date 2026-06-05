@@ -15,7 +15,7 @@ function Label({ className, muted, error, ...props }: LabelProps) {
     <LabelPrimitive.Root
       className={cn(
         "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-        muted && "text-[#9CA3AF]",
+        muted && "text-gray-400",
         error && "text-red-500",
         className,
       )}

@@ -80,7 +80,7 @@ export function ControlRoomPreview({ profile }: ControlRoomPreviewProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 items-center justify-center rounded-full border border-[#2B2B2B] bg-[#2B2B2B] px-5 text-[14px] text-white transition duration-500 ease-out hover:bg-[#111111]"
+        className="inline-flex h-10 items-center justify-center rounded-full border border-ink bg-ink px-5 text-[14px] text-white transition duration-500 ease-out hover:bg-ink-deep"
       >
         Preview Public Page
         <Eye className="ml-2 size-4" />
@@ -88,14 +88,14 @@ export function ControlRoomPreview({ profile }: ControlRoomPreviewProps) {
 
       {open ? (
         <div className="fixed inset-0 z-[100] bg-black/55 p-4 backdrop-blur-sm">
-          <div className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden rounded-[2rem] bg-[#F9FAFB] shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#E4DED4] px-5 py-4">
+          <div className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden rounded-card bg-gray-50 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-warm-border px-5 py-4">
               <div>
-                <p className="text-[15px] font-medium text-[#2B2B2B]">
+                <p className="text-[15px] font-medium text-ink">
                   Public Page Preview
                 </p>
 
-                <p className="mt-1 text-[12px] text-[#6B7280]">
+                <p className="mt-1 text-[12px] text-gray-500">
                   Draft changes appear here first. Visitors only see updates
                   after publish. Availability slots shown are mock data.
                 </p>
@@ -104,7 +104,7 @@ export function ControlRoomPreview({ profile }: ControlRoomPreviewProps) {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex size-9 items-center justify-center rounded-full border border-[#D8D0C6] text-[#2B2B2B] transition hover:border-[#2B2B2B]"
+                className="flex size-9 items-center justify-center rounded-full border border-warm-border-soft text-ink transition hover:border-ink"
               >
                 <X className="size-4" />
               </button>
@@ -116,11 +116,11 @@ export function ControlRoomPreview({ profile }: ControlRoomPreviewProps) {
               ) : (
                 <div className="flex min-h-full items-center justify-center px-6 py-20">
                   <div className="max-w-md text-center">
-                    <p className="text-[22px] font-semibold tracking-[-0.04em] text-[#2B2B2B]">
+                    <p className="text-[22px] font-semibold tracking-[-0.04em] text-ink">
                       Preview not ready yet.
                     </p>
 
-                    <p className="mt-3 text-[14px] leading-7 text-[#6B7280]">
+                    <p className="mt-3 text-[14px] leading-7 text-gray-500">
                       Fill in your name, title, and at least one service with a
                       title and duration to see the preview.
                     </p>

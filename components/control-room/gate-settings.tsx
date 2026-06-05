@@ -149,26 +149,26 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
 
   return (
     <section id="gate" className="space-y-6">
-      <div className="rounded-[1.75rem] border border-[#E7E5E4] bg-white/75 p-6 shadow-[0_18px_50px_rgba(120,100,80,0.06)]">
+      <div className="card-section">
         <div className="flex items-center gap-3">
-          <ShieldCheck className="size-5 text-[#DFA767]" />
+          <ShieldCheck className="size-5 text-brand-amber" />
 
           <div>
-            <p className="text-[15px] font-medium text-[#2B2B2B]">
+            <p className="text-[15px] font-medium text-ink">
               Gate Control
             </p>
-            <p className="mt-1 text-[12px] text-[#6B7280]">
+            <p className="mt-1 text-[12px] text-gray-500">
               Configure each service independently.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-[1.75rem] border border-[#E7E5E4] bg-white/75 p-6 shadow-[0_18px_50px_rgba(120,100,80,0.06)]">
+      <div className="card-section">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-[15px] font-medium text-[#2B2B2B]">Services</p>
-            <p className="mt-1 text-[12px] text-[#6B7280]">
+            <p className="text-[15px] font-medium text-ink">Services</p>
+            <p className="mt-1 text-[12px] text-gray-500">
               Each offer can have its own price, access rules, questions, and
               availability exposure.
             </p>
@@ -177,7 +177,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
           <button
             type="button"
             onClick={addService}
-            className="inline-flex h-9 items-center rounded-full border border-[#D8D0C6] px-4 text-[13px] transition hover:border-[#2B2B2B]"
+            className="inline-flex h-9 items-center rounded-full border border-warm-border-soft px-4 text-[13px] transition hover:border-ink"
           >
             <Plus className="mr-2 size-4" />
             Add Service
@@ -196,8 +196,8 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
                   onClick={() => setActiveService(service.id)}
                   className={
                     active
-                      ? "rounded-full bg-[#2B2B2B] px-4 py-2 text-[13px] text-white"
-                      : "rounded-full border border-[#D8D0C6] bg-white/70 px-4 py-2 text-[13px] text-[#57534E] transition hover:border-[#2B2B2B]"
+                      ? "rounded-full bg-ink px-4 py-2 text-[13px] text-white"
+                      : "rounded-full border border-warm-border-soft bg-white/70 px-4 py-2 text-[13px] text-stone-600 transition hover:border-ink"
                   }
                 >
                   {service.title || "Untitled Service"}
@@ -208,16 +208,16 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
         )}
 
         {!activeService ? (
-          <div className="mt-6 rounded-[1.5rem] border border-dashed border-[#D8D0C6] bg-white/50 p-8 text-center">
-            <p className="text-[14px] text-[#6B7280]">No services yet.</p>
-            <p className="mt-1 text-[12px] text-[#9CA3AF]">
+          <div className="mt-6 rounded-[1.5rem] border border-dashed border-warm-border-soft bg-white/50 p-8 text-center">
+            <p className="text-[14px] text-gray-500">No services yet.</p>
+            <p className="mt-1 text-[12px] text-gray-400">
               Click &quot;Add Service&quot; above to create your first offering.
             </p>
           </div>
         ) : (
-        <div className="mt-6 rounded-[1.5rem] border border-[#E7E5E4] bg-white/70 p-5">
+        <div className="mt-6 rounded-[1.5rem] border border-warm-border-mid bg-white/70 p-5">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-[13px] font-medium text-[#2B2B2B]">
+            <p className="text-[13px] font-medium text-ink">
               Editing: {activeService.title || "Untitled Service"}
             </p>
 
@@ -225,7 +225,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
               type="button"
               onClick={() => removeService(activeService.id)}
               title="Delete this service"
-              className="text-[#9CA3AF] transition hover:text-red-500"
+              className="text-gray-400 transition hover:text-red-500"
             >
               <Trash2 className="size-4" />
             </button>
@@ -368,13 +368,13 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
       </div>
 
       {activeService?.qualificationRequired ? (
-        <div className="rounded-[1.75rem] border border-[#E7E5E4] bg-white/75 p-6 shadow-[0_18px_50px_rgba(120,100,80,0.06)]">
+        <div className="card-section">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-[15px] font-medium text-[#2B2B2B]">
+              <p className="text-[15px] font-medium text-ink">
                 Qualification Questions
               </p>
-              <p className="mt-1 text-[12px] text-[#6B7280]">
+              <p className="mt-1 text-[12px] text-gray-500">
                 Questions are tied to the selected service.
               </p>
             </div>
@@ -382,7 +382,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
             <button
               type="button"
               onClick={() => addQuestion(activeService.id)}
-              className="inline-flex h-9 items-center rounded-full border border-[#D8D0C6] px-4 text-[13px] transition hover:border-[#2B2B2B]"
+              className="inline-flex h-9 items-center rounded-full border border-warm-border-soft px-4 text-[13px] transition hover:border-ink"
             >
               <Plus className="mr-2 size-4" />
               Add
@@ -393,10 +393,10 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
             {activeService.questions.map((question, index) => (
               <div
                 key={question.id}
-                className="rounded-[1.25rem] border border-[#E7E5E4] bg-white/70 p-4"
+                className="card-inner p-4"
               >
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-[#6B7280]">
+                  <span className="text-[12px] font-medium text-gray-500">
                     Question {index + 1}
                   </span>
 
@@ -405,7 +405,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
                     onClick={() =>
                       removeQuestion(activeService.id, question.id)
                     }
-                    className="text-[#9CA3AF] transition hover:text-red-500"
+                    className="text-gray-400 transition hover:text-red-500"
                   >
                     <Trash2 className="size-4" />
                   </button>
@@ -427,7 +427,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
             ))}
 
             {!activeService.questions.length ? (
-              <div className="rounded-[1.25rem] border border-dashed border-[#D8D0C6] bg-white/50 p-5 text-[13px] text-[#6B7280]">
+              <div className="rounded-inner border border-dashed border-warm-border-soft bg-white/50 p-5 text-[13px] text-gray-500">
                 No questions yet. Add one to screen visitors before calendar
                 access.
               </div>
@@ -454,17 +454,17 @@ function Toggle({
       onClick={() => onChange(!checked)}
       className={
         checked
-          ? "flex items-center justify-between rounded-[1.25rem] border border-[#DFA767] bg-[#FFF9F2] px-4 py-3"
-          : "flex items-center justify-between rounded-[1.25rem] border border-[#E7E5E4] bg-white/70 px-4 py-3"
+          ? "flex items-center justify-between rounded-inner border border-brand-amber bg-brand-amber-faint px-4 py-3"
+          : "flex items-center justify-between card-inner px-4 py-3"
       }
     >
-      <span className="text-[13px] font-medium text-[#2B2B2B]">{label}</span>
+      <span className="text-[13px] font-medium text-ink">{label}</span>
 
       <span
         className={
           checked
-            ? "relative h-6 w-11 rounded-full bg-[#DFA767]"
-            : "relative h-6 w-11 rounded-full bg-[#D6D3D1]"
+            ? "relative h-6 w-11 rounded-full bg-brand-amber"
+            : "relative h-6 w-11 rounded-full bg-warm-border-lighter"
         }
       >
         <span
@@ -488,7 +488,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[12px] font-medium text-[#2B2B2B]">
+      <span className="mb-2 block text-[12px] font-medium text-ink">
         {label}
       </span>
 

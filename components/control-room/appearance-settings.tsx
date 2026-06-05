@@ -89,16 +89,16 @@ export function AppearanceSettings({
   }
 
   return (
-    <section className="rounded-[1.75rem] border border-[#E7E5E4] bg-white/75 p-6 shadow-[0_18px_50px_rgba(120,100,80,0.06)]">
+    <section className="card-section">
       <div className="flex items-center gap-3">
-        <Paintbrush className="size-5 text-[#DFA767]" />
+        <Paintbrush className="size-5 text-brand-amber" />
 
         <div>
-          <p className="text-[15px] font-medium text-[#2B2B2B]">
+          <p className="text-[15px] font-medium text-ink">
             Appearance
           </p>
 
-          <p className="mt-1 text-[12px] text-[#6B7280]">
+          <p className="mt-1 text-[12px] text-gray-500">
             Choose a preset or set custom colors. Full preview opens above.
           </p>
         </div>
@@ -125,8 +125,8 @@ export function AppearanceSettings({
               }
               className={
                 active
-                  ? "relative rounded-[1.2rem] border-2 border-[#2B2B2B] p-3 text-left"
-                  : "relative rounded-[1.2rem] border border-[#E7E5E4] p-3 text-left transition hover:border-[#A8A29E]"
+                  ? "relative rounded-[1.2rem] border-2 border-ink p-3 text-left"
+                  : "relative rounded-[1.2rem] border border-warm-border-mid p-3 text-left transition hover:border-stone-400"
               }
               style={{ background: preset.backgroundColor }}
             >
@@ -148,7 +148,7 @@ export function AppearanceSettings({
               </p>
 
               {active ? (
-                <div className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-[#111827] text-white">
+                <div className="absolute right-2 top-2 flex size-5 items-center justify-center rounded-full bg-ink-deep text-white">
                   <Check className="size-3" />
                 </div>
               ) : null}
@@ -173,10 +173,10 @@ export function AppearanceSettings({
         </Field>
       </div>
 
-      <div className="mt-5 rounded-[1.25rem] border border-[#E7E5E4] bg-white/70 px-4 py-3">
-        <p className="text-[12px] leading-6 text-[#6B7280]">
+      <div className="mt-5 card-inner px-4 py-3">
+        <p className="text-[12px] leading-6 text-gray-500">
           Contrast mode:{" "}
-          <span className="font-medium text-[#2B2B2B]">
+          <span className="font-medium text-ink">
             {isDark ? "Dark background detected" : "Light background detected"}
           </span>
           . GATE will adjust text and surface contrast automatically in the
@@ -195,7 +195,7 @@ function ColorInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex h-11 items-center gap-3 rounded-full border border-[#D8D0C6] bg-white/80 px-3">
+    <div className="flex h-11 items-center gap-3 rounded-full border border-warm-border-soft bg-white/80 px-3">
       <input
         type="color"
         value={value}
@@ -221,7 +221,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[12px] font-medium text-[#2B2B2B]">
+      <span className="mb-2 block text-[12px] font-medium text-ink">
         {label}
       </span>
 

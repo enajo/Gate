@@ -161,6 +161,76 @@ a {
   color: var(--primary-foreground);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPONENT UTILITIES
+   Repeated multi-class patterns extracted into single named utilities.
+
+   HOW TO USE
+   ──────────
+   card-section  →  replaces  rounded-[1.75rem] border border-[#E7E5E4] bg-white/75 p-6 shadow-[0_18px_50px_rgba(120,100,80,0.06)]
+   card-inner    →  replaces  rounded-[1.25rem] border border-[#E7E5E4] bg-white/70
+   card-warm     →  replaces  rounded-[2rem] border border-[#E4DED4]/80 bg-[linear-gradient(145deg,rgba(255,255,255,0.62),rgba(243,237,226,0.84))] shadow-[0_18px_50px_rgba(120,100,80,0.08)]
+   card-glass    →  replaces  rounded-[2rem] bg-white/85 shadow-[0_18px_45px_rgba(120,100,80,0.10)] ring-1 ring-[#E4DED4]
+   error-banner  →  replaces  rounded-[0.875rem] border border-red-100 bg-red-50 px-4 py-3 text-[12px] text-red-700
+════════════════════════════════════════════════════════════════════════════ */
+
+/* ── card-section ────────────────────────────────────────────────────────────
+   Used for: control-room panel sections  (7 occurrences)
+   Padding p-6 included — override with e.g. p-8 in className if needed     */
+@utility card-section {
+  border-radius: var(--radius-section);
+  border: 1px solid var(--color-warm-border-mid);
+  background-color: rgb(255 255 255 / 0.75);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-warm-sm);
+}
+
+/* ── card-inner ──────────────────────────────────────────────────────────────
+   Used for: inner rows, list items inside a card  (6 occurrences)
+   No padding — caller adds px-4 py-3 / p-4 as needed                       */
+@utility card-inner {
+  border-radius: var(--radius-inner);
+  border: 1px solid var(--color-warm-border-mid);
+  background-color: rgb(255 255 255 / 0.70);
+}
+
+/* ── card-warm ───────────────────────────────────────────────────────────────
+   Used for: dashboard action cards, onboarding card  (5 occurrences)
+   No padding — caller adds p-7. Add overflow-hidden + relative as needed.  */
+@utility card-warm {
+  border-radius: var(--radius-card);
+  border: 1px solid rgba(228, 222, 212, 0.8); /* warm-border / 80 */
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.62),
+    rgba(243, 237, 226, 0.84)
+  );
+  box-shadow: var(--shadow-warm-sm);
+}
+
+/* ── card-glass ──────────────────────────────────────────────────────────────
+   Used for: marketing feature cards with a ring border  (3 occurrences)
+   No padding — caller adds p-7. Add text-left / text-center as needed.     */
+@utility card-glass {
+  border-radius: var(--radius-card);
+  background-color: rgb(255 255 255 / 0.85);
+  /* shadow-warm-md + ring-1 ring-warm-border combined into one declaration  */
+  box-shadow: var(--shadow-warm-md), 0 0 0 1px var(--color-warm-border);
+}
+
+/* ── error-banner ────────────────────────────────────────────────────────────
+   Used for: inline error messages below forms  (3 occurrences)
+   Self-contained — includes padding, colours, and font size                */
+@utility error-banner {
+  border-radius: var(--radius-banner);
+  border: 1px solid #fee2e2; /* red-100 */
+  background-color: #fef2f2; /* red-50  */
+  padding: 0.75rem 1rem;     /* px-4 py-3 */
+  font-size: 0.75rem;        /* text-[12px] */
+  line-height: 1.5;
+  color: #b91c1c;            /* red-700 */
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

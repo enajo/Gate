@@ -1,0 +1,12 @@
+{
+  // Tailwind v4 uses custom at-rules (@utility, @theme, @layer, etc.)
+  // that the built-in CSS validator doesn't recognise — suppress the false warnings.
+  "css.lint.unknownAtRules": "ignore",
+
+  // Use the workspace TypeScript version rather than VS Code's bundled one
+  "typescript.tsdk": "node_modules/typescript/lib",
+
+  // Format on save using the Prettier extension
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true
+}

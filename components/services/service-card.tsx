@@ -29,6 +29,9 @@ export type ServiceCardValue = {
   displayPrice?: string | null;
   durationMinutes: number;
   preparationInstructions?: string | null;
+  idealPersonaDescription?: string | null;
+  gateSetupAnswers?: Record<string, string> | null;
+  qualificationRequired?: boolean;
   active?: boolean;
 };
 

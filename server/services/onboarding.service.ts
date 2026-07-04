@@ -5,7 +5,6 @@ import { accessCodeRepository } from "@/server/repositories/access-code.reposito
 import { availabilityRepository } from "@/server/repositories/availability.repository";
 import { googleRepository } from "@/server/repositories/google.repository";
 import { profileRepository } from "@/server/repositories/profile.repository";
-import { qualificationRepository } from "@/server/repositories/qualification.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
 import { profileService } from "@/server/services/profile.service";
 
@@ -18,8 +17,6 @@ export type OnboardingChecklist = {
   hasBranding: boolean;
   hasSocialLinks: boolean;
   hasAtLeastOneService: boolean;
-  hasQualificationQuestions: boolean;
-  hasQualificationRules: boolean;
   hasAvailabilityRules: boolean;
   hasAccessCodes: boolean;
   hasConnectedCalendars: boolean;
@@ -29,8 +26,6 @@ export type OnboardingChecklist = {
 
 export type OnboardingCounts = {
   services: number;
-  questions: number;
-  rules: number;
   availabilityRules: number;
   accessCodes: number;
   connectedCalendars: number;
@@ -49,7 +44,7 @@ export type OnboardingState = {
   completionPercentage: number;
 };
 
-const TOTAL_CHECKS = 9;
+const TOTAL_CHECKS = 7;
 
 function buildEmptyProfileCompletion(): ProfileCompletionState {
   return {
@@ -80,8 +75,6 @@ function buildEmptyState(): OnboardingState {
       hasBranding: false,
       hasSocialLinks: false,
       hasAtLeastOneService: false,
-      hasQualificationQuestions: false,
-      hasQualificationRules: false,
       hasAvailabilityRules: false,
       hasAccessCodes: false,
       hasConnectedCalendars: false,
@@ -91,8 +84,6 @@ function buildEmptyState(): OnboardingState {
     profileCompletion,
     counts: {
       services: 0,
-      questions: 0,
-      rules: 0,
       availabilityRules: 0,
       accessCodes: 0,
       connectedCalendars: 0,
@@ -108,8 +99,6 @@ function calculateCompletionPercentage(checklist: OnboardingChecklist): number {
     checklist.hasIdentity,
     checklist.hasHeadline,
     checklist.hasAtLeastOneService,
-    checklist.hasQualificationQuestions,
-    checklist.hasQualificationRules,
     checklist.hasAvailabilityRules,
     checklist.hasAccessCodes,
     checklist.hasConnectedCalendars,
@@ -125,8 +114,6 @@ function canPublishFromChecklist(checklist: OnboardingChecklist): boolean {
     checklist.hasIdentity &&
     checklist.hasHeadline &&
     checklist.hasAtLeastOneService &&
-    checklist.hasQualificationQuestions &&
-    checklist.hasQualificationRules &&
     checklist.hasAvailabilityRules &&
     checklist.hasAccessCodes &&
     checklist.hasConnectedCalendars &&
@@ -155,8 +142,6 @@ export const onboardingService = {
     const [
       profileCompletion,
       servicesCount,
-      questionsCount,
-      rulesCount,
       availabilityRulesCount,
       accessCodesCount,
       connectedCalendarsCount,
@@ -165,8 +150,6 @@ export const onboardingService = {
     ] = await Promise.all([
       profileService.getProfileCompletionState(userId),
       serviceRepository.countByProfessionalId(professional.id),
-      qualificationRepository.countQuestionsByProfessionalId(professional.id),
-      qualificationRepository.countRulesByProfessionalId(professional.id),
       availabilityRepository.countAvailabilityRulesByProfessionalId(
         professional.id,
       ),
@@ -187,8 +170,6 @@ export const onboardingService = {
       hasBranding: profileCompletion.hasBranding,
       hasSocialLinks: profileCompletion.hasSocialLinks,
       hasAtLeastOneService: servicesCount > 0,
-      hasQualificationQuestions: questionsCount > 0,
-      hasQualificationRules: rulesCount > 0,
       hasAvailabilityRules: availabilityRulesCount > 0,
       hasAccessCodes: accessCodesCount > 0,
       hasConnectedCalendars: connectedCalendarsCount > 0,
@@ -198,8 +179,6 @@ export const onboardingService = {
 
     const counts: OnboardingCounts = {
       services: servicesCount,
-      questions: questionsCount,
-      rules: rulesCount,
       availabilityRules: availabilityRulesCount,
       accessCodes: accessCodesCount,
       connectedCalendars: connectedCalendarsCount,

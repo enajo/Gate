@@ -10,8 +10,6 @@ import type {
 
 type ServiceWithCountMeta = PrismaService & {
   _count?: {
-    qualificationQuestions?: number;
-    qualificationRules?: number;
     bookings?: number;
   };
 };
@@ -29,6 +27,8 @@ export function mapService(service: PrismaService): Service {
     currency: service.currency,
     durationMinutes: service.durationMinutes,
     preparationInstructions: service.preparationInstructions,
+    idealPersonaDescription: service.idealPersonaDescription,
+    gateSetupAnswers: service.gateSetupAnswers as Record<string, string> | null,
     paymentRequired: service.paymentRequired,
     qualificationRequired: service.qualificationRequired,
     accessCodeRequired: service.accessCodeRequired,
@@ -113,8 +113,6 @@ export function mapServiceListItems(
 export function mapServiceWithMeta(service: ServiceWithCountMeta): ServiceWithMeta {
   return {
     ...mapService(service),
-    questionCount: service._count?.qualificationQuestions ?? 0,
-    ruleCount: service._count?.qualificationRules ?? 0,
     bookingCount: service._count?.bookings ?? 0,
   };
 }

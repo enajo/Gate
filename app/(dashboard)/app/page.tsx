@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
+  AlertTriangle,
   ArrowRight,
   Check,
   ClipboardList,
   ExternalLink,
+  Inbox,
   LockKeyhole,
   Settings2,
   Sparkles,
+  Zap,
 } from "lucide-react";
 
 import { auth } from "@/lib/auth";
@@ -98,6 +101,8 @@ export default async function DashboardPage() {
   // ── Derived values ─────────────────────────────────────────────────────────
 
   const profile = controlRoomState?.profile;
+  const tokenBalance = controlRoomState?.tokenBalance ?? 1000;
+  const lowTokenBalance = tokenBalance <= 100;
   const { checklist, counts, completionPercentage } = onboardingState;
   const isPublished = Boolean(controlRoomState?.publishedAt);
   const slug = onboardingState.slug;
@@ -166,6 +171,14 @@ export default async function DashboardPage() {
       icon: ClipboardList,
       badge: activeHolds.length > 0 ? activeHolds.length : null,
     },
+    {
+      title: "Leads",
+      description:
+        "See every visitor who went through your gate — their conversation and outcome.",
+      href: "/app/leads",
+      icon: Inbox,
+      badge: null as number | null,
+    },
   ];
 
   // Recent activity strings from real bookings
@@ -200,6 +213,7 @@ export default async function DashboardPage() {
               Dashboard
             </Link>
             <Link href="/app/control-room">Control Room</Link>
+            <Link href="/app/leads">Leads</Link>
             {publicUrl && (
               <Link
                 href={publicUrl}
@@ -324,7 +338,7 @@ export default async function DashboardPage() {
         )}
 
         {/* ── Action cards ────────────────────────────────────────────────── */}
-        <div className="mt-8 grid gap-5 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {/* Calendar opens a modal — no page navigation */}
           <CalendarModalCard />
 
@@ -367,6 +381,45 @@ export default async function DashboardPage() {
               </Link>
             );
           })}
+        </div>
+
+        {/* ── AI token balance ────────────────────────────────────────────── */}
+        <div
+          className={`mt-5 flex items-center justify-between gap-4 rounded-[1.5rem] border px-6 py-4 ${
+            lowTokenBalance
+              ? "border-amber-200 bg-amber-50/70"
+              : "border-warm-border-soft bg-white/45"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {lowTokenBalance ? (
+              <AlertTriangle className="size-5 shrink-0 text-amber-500" />
+            ) : (
+              <Zap className="size-5 shrink-0 text-brand-amber" />
+            )}
+            <div>
+              <p className="text-[14px] font-medium">
+                {lowTokenBalance ? "AI token balance is low" : "AI token balance"}
+              </p>
+              <p className="text-[12px] text-gray-500">
+                {lowTokenBalance
+                  ? "Running low — each qualification conversation uses tokens."
+                  : "Used for AI-powered visitor qualification conversations."}
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <p
+              className={`text-[28px] font-semibold tracking-[-0.04em] tabular-nums ${
+                lowTokenBalance ? "text-amber-600" : "text-ink"
+              }`}
+            >
+              {tokenBalance.toLocaleString()}
+            </p>
+            <p className="text-[11px] uppercase tracking-[0.14em] text-gray-400">
+              tokens left
+            </p>
+          </div>
         </div>
 
         {/* ── Activity / metrics ──────────────────────────────────────────── */}

@@ -19,9 +19,6 @@ const controlRoomInclude = Prisma.validator<Prisma.ProfessionalInclude>()({
   services: {
     orderBy: { sortOrder: "asc" },
     include: {
-      qualificationQuestions: {
-        orderBy: { sortOrder: "asc" },
-      },
       accessCodes: {
         where: { isActive: true },
         orderBy: { createdAt: "desc" },
@@ -37,9 +34,6 @@ const publicPageInclude = Prisma.validator<Prisma.ProfessionalInclude>()({
     where: { active: true },
     orderBy: { sortOrder: "asc" },
     include: {
-      qualificationQuestions: {
-        orderBy: { sortOrder: "asc" },
-      },
       accessCodes: {
         where: { isActive: true },
         orderBy: { createdAt: "desc" },
@@ -148,6 +142,7 @@ export const profileRepository = {
       bufferAfterMinutes,
       minimumNoticeMinutes,
       maxBookingsPerDay,
+      industry,
     } = data;
 
     return db.professional.upsert({
@@ -169,6 +164,7 @@ export const profileRepository = {
         bufferAfterMinutes,
         minimumNoticeMinutes,
         maxBookingsPerDay,
+        industry,
       },
       create: {
         userId,
@@ -188,6 +184,7 @@ export const profileRepository = {
         bufferAfterMinutes,
         minimumNoticeMinutes,
         maxBookingsPerDay,
+        industry,
       },
     });
   },
@@ -279,5 +276,28 @@ export const profileRepository = {
 
   async deleteTestimonialById(id: string): Promise<Testimonial> {
     return db.testimonial.delete({ where: { id } });
+  },
+
+  /**
+   * Atomically deduct `amount` tokens from the professional's balance.
+   * Uses `decrement` so concurrent requests don't race.
+   * Returns the updated record so the caller can read the new balance.
+   */
+  async deductTokenBalance(
+    id: string,
+    amount: number,
+  ): Promise<Professional> {
+    return db.professional.update({
+      where: { id },
+      data: { tokenBalance: { decrement: amount } },
+    });
+  },
+
+  async getTokenBalance(id: string): Promise<number | null> {
+    const row = await db.professional.findUnique({
+      where: { id },
+      select: { tokenBalance: true },
+    });
+    return row?.tokenBalance ?? null;
   },
 };

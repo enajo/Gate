@@ -6,6 +6,7 @@ import { Loader2, Save, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShieldCheck, Settings2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -25,6 +26,7 @@ export type ServiceFormValues = {
   displayPrice: string;
   durationMinutes: number;
   preparationInstructions: string;
+  qualificationRequired: boolean;
   active: boolean;
 };
 
@@ -33,6 +35,9 @@ export interface ServiceFormProps {
   initialValues?: Partial<ServiceFormValues>;
   isSubmitting?: boolean;
   submitLabel?: string;
+  isGateConfigured?: boolean;
+  showGateSection?: boolean;
+  onOpenGateSetup?: () => void;
   onSubmit?: (values: ServiceFormValues) => Promise<void> | void;
 }
 
@@ -43,6 +48,7 @@ const defaultValues: ServiceFormValues = {
   displayPrice: "",
   durationMinutes: 30,
   preparationInstructions: "",
+  qualificationRequired: false,
   active: true,
 };
 
@@ -92,6 +98,9 @@ export function ServiceForm({
   initialValues,
   isSubmitting = false,
   submitLabel = "Save service",
+  isGateConfigured = false,
+  showGateSection = false,
+  onOpenGateSetup,
   onSubmit,
   ...props
 }: ServiceFormProps) {
@@ -326,6 +335,47 @@ export function ServiceForm({
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={control}
+                  name="qualificationRequired"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Qualification gate</FormLabel>
+                      <FormControl>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
+                              field.value
+                                ? "border-slate-900 bg-slate-900 text-white"
+                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                            }`}
+                            onClick={() => field.onChange(true)}
+                          >
+                            Required
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
+                              !field.value
+                                ? "border-slate-900 bg-slate-900 text-white"
+                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                            }`}
+                            onClick={() => field.onChange(false)}
+                          >
+                            Off
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        When on, visitors answer AI screening questions before they can book.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
 
@@ -387,6 +437,47 @@ export function ServiceForm({
               </Card>
             </div>
           </div>
+
+          {/* Gate setup section — only in edit mode when serviceId is provided */}
+          {showGateSection && (
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheck className="size-5 text-brand-amber" />
+                  Qualification Gate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isGateConfigured ? (
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Gate is configured</p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Your AI qualification criteria are active. Visitors will be screened before they can book.
+                      </p>
+                    </div>
+                    <Button type="button" variant="outline" onClick={onOpenGateSetup}>
+                      <Settings2 className="size-4" />
+                      Edit gate
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">Gate not configured</p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Set up your AI qualification criteria so the right leads can find their way to your calendar.
+                      </p>
+                    </div>
+                    <Button type="button" onClick={onOpenGateSetup}>
+                      <Sparkles className="size-4" />
+                      Set up gate
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>

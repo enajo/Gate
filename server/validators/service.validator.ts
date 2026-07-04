@@ -47,6 +47,8 @@ export const createServiceSchema = z
     currency: optionalNullableTrimmedString(10),
     durationMinutes: z.coerce.number().int().min(5).max(480),
     preparationInstructions: optionalNullableTrimmedString(2000),
+    idealPersonaDescription: optionalNullableTrimmedString(8000),
+    gateSetupAnswers: z.record(z.string(), z.string()).nullable().optional(),
     paymentRequired: z.boolean().optional(),
     qualificationRequired: z.boolean().optional(),
     accessCodeRequired: z.boolean().optional(),

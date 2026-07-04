@@ -8,6 +8,14 @@ import type {
 } from "@prisma/client";
 import { db } from "@/lib/db";
 
+const leadWithServiceInclude = Prisma.validator<Prisma.LeadInclude>()({
+  service: { select: { id: true, title: true } },
+});
+
+export type LeadWithService = Prisma.LeadGetPayload<{
+  include: typeof leadWithServiceInclude;
+}>;
+
 const bookingListInclude = Prisma.validator<Prisma.BookingInclude>()({
   lead: true,
   service: true,
@@ -63,6 +71,21 @@ export const bookingRepository = {
     return db.lead.findMany({
       where: { professionalId },
       orderBy: [{ createdAt: "desc" }],
+    });
+  },
+
+  async findLeadsWithServiceByProfessionalId(
+    professionalId: string,
+    result?: string,
+  ): Promise<LeadWithService[]> {
+    return db.lead.findMany({
+      where: {
+        professionalId,
+        ...(result ? { qualificationResult: result as Lead["qualificationResult"] } : {}),
+      },
+      include: leadWithServiceInclude,
+      orderBy: [{ createdAt: "desc" }],
+      take: 200,
     });
   },
 

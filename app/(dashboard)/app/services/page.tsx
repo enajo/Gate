@@ -244,15 +244,20 @@ export default function ServicesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         mode={dialogMode}
+        serviceId={selectedService?.id}
         initialValues={selectedService ? {
           ...selectedService,
           slug: selectedService.slug ?? undefined,
           description: selectedService.description ?? undefined,
           displayPrice: selectedService.displayPrice ?? undefined,
           preparationInstructions: selectedService.preparationInstructions ?? undefined,
+          qualificationRequired: selectedService.qualificationRequired ?? false,
+          idealPersonaDescription: selectedService.idealPersonaDescription,
+          gateSetupAnswers: selectedService.gateSetupAnswers,
         } : undefined}
         isSubmitting={isSaving}
         onSubmit={handleSubmit}
+        onGateSaved={() => void loadServices()}
       />
     </PageShell>
   );

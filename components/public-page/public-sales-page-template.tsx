@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -15,6 +15,8 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+
+import { ConversationGate } from "@/components/public-page/conversation-gate";
 
 type GateStep = "access" | "gate" | "processing" | "time" | "details" | "confirmed";
 
@@ -75,6 +77,10 @@ export type PublicService = {
   manualApprovalRequired: boolean;
   availabilityExposure: AvailabilityExposure;
   currentAccessCode?: string;
+  /** When set, marks this as a direct-buy alternative (no calendar). */
+  directPurchaseUrl?: string | null;
+  /** Block A — the expert's plain-English ideal persona / expectations for this service. */
+  idealPersonaDescription?: string | null;
 
   questions: GateQuestion[];
 };
@@ -203,8 +209,6 @@ export function PublicSalesPageTemplate({
     initialService;
 
   const [step, setStep] = useState<GateStep>(getInitialStep(activeService));
-  const [visibleQuestionCount, setVisibleQuestionCount] = useState(1);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [accessCode, setAccessCode] = useState("");
   const [accessCodeError, setAccessCodeError] = useState("");
   const [selectedDateId, setSelectedDateId] = useState(
@@ -303,8 +307,6 @@ export function PublicSalesPageTemplate({
 
     setActiveServiceId(serviceId);
     setStep(getInitialStep(nextService));
-    setVisibleQuestionCount(1);
-    setAnswers({});
     setAccessCode("");
     setAccessCodeError("");
   }
@@ -352,102 +354,6 @@ export function PublicSalesPageTemplate({
       setIsSubmitting(false);
     }
   }
-
-  function updateAnswer(questionId: string, value: string) {
-    setAnswers((current) => ({
-      ...current,
-      [questionId]: value,
-    }));
-
-    const currentIndex = activeService.questions.findIndex(
-      (question) => question.id === questionId,
-    );
-
-    if (currentIndex + 1 >= visibleQuestionCount) {
-      setVisibleQuestionCount((current) =>
-        Math.min(current + 1, activeService.questions.length),
-      );
-    }
-  }
-
-  const unlockAvailability = useCallback(async () => {
-    setSubmitError(null);
-
-    if (activeService.qualificationRequired && data.professionalId) {
-      // Validate required answers first
-      const missing = activeService.questions.find(
-        (q) => q.required && !answers[q.id]?.trim(),
-      );
-      if (missing) {
-        setSubmitError(`Please answer: "${missing.label}"`);
-        return;
-      }
-      if (!guestName.trim() || !guestEmail.trim()) {
-        setSubmitError("Please enter your name and email to continue.");
-        return;
-      }
-
-      setStep("processing");
-      setIsSubmitting(true);
-
-      try {
-        const res = await fetch("/api/public/qualification/submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            professionalId: data.professionalId,
-            serviceId: activeService.id,
-            name: guestName.trim(),
-            email: guestEmail.trim(),
-            answers,
-          }),
-        });
-
-        if (!res.ok) {
-          const payload = (await res.json()) as { error?: string };
-          throw new Error(payload.error ?? "Qualification failed.");
-        }
-
-        const payload = (await res.json()) as {
-          lead: { id: string };
-          evaluation: { result: string };
-        };
-
-        if (payload.evaluation.result === "REJECTED") {
-          setStep("gate");
-          setSubmitError(
-            "Your request doesn't match the criteria for this session.",
-          );
-          return;
-        }
-
-        setLeadId(payload.lead.id);
-        window.setTimeout(() => setStep("time"), 800);
-      } catch (err) {
-        setStep("gate");
-        setSubmitError(
-          err instanceof Error ? err.message : "Something went wrong.",
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      // No qualification required — animate through processing then show time
-      setStep("processing");
-      window.setTimeout(() => setStep("time"), 1200);
-    }
-  }, [
-    activeService,
-    data.professionalId,
-    answers,
-    guestName,
-    guestEmail,
-  ]);
-
-  const visibleQuestions = activeService.questions.slice(
-    0,
-    visibleQuestionCount,
-  );
 
   // ── Hold + booking submission ───────────────────────────────────────────────
 
@@ -788,112 +694,39 @@ export function PublicSalesPageTemplate({
               ) : null}
 
               {step === "gate" ? (
-                <div>
-                  <p
-                    className="text-xs uppercase tracking-[0.24em]"
-                    style={{ color: accentColor }}
-                  >
-                    Qualification
-                  </p>
-
-                  <h2 className="mt-4 text-[28px] font-semibold tracking-[-0.045em]">
-                    Answer a few questions first.
-                  </h2>
-
-                  <p className="mt-3 text-[14px] leading-7 text-[var(--text-secondary)]">
-                    This helps confirm whether the session is a strong fit
-                    before calendar access opens.
-                  </p>
-
-                  {/* Name + email — needed for lead creation */}
-                  <div className="mt-8 space-y-4">
-                    <label className="block">
-                      <span className="text-[14px] font-medium">Your name *</span>
-                      <input
-                        value={guestName}
-                        onChange={(e) => setGuestName(e.target.value)}
-                        placeholder="Jane Smith"
-                        className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
-                      />
-                    </label>
-
-                    <label className="block">
-                      <span className="text-[14px] font-medium">Email *</span>
-                      <input
-                        type="email"
-                        value={guestEmail}
-                        onChange={(e) => setGuestEmail(e.target.value)}
-                        placeholder="jane@company.com"
-                        className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="mt-6 space-y-5">
-                    {visibleQuestions.map((question) => (
-                      <label
-                        key={question.id}
-                        className="block animate-[fadeIn_0.35s_ease-out]"
+                <div className="animate-[fadeIn_0.25s_ease-out]">
+                  {data.professionalId ? (
+                    <ConversationGate
+                      key={activeService.id}
+                      professionalId={data.professionalId}
+                      serviceId={activeService.id}
+                      professionalName={data.name}
+                      accentColor={accentColor}
+                      accentTextColor={accentTextColor}
+                      onQualified={({ leadId, name, email }) => {
+                        setLeadId(leadId);
+                        setGuestName(name);
+                        setGuestEmail(email);
+                        setStep("time");
+                      }}
+                    />
+                  ) : (
+                    /* Preview mode — no backend, skip straight through */
+                    <div className="flex flex-col items-center gap-4 py-12 text-center">
+                      <p className="text-[14px]" style={{ color: "var(--text-secondary)" }}>
+                        Qualification gate — live in published mode.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setStep("time")}
+                        className="inline-flex h-10 items-center gap-2 rounded-full border px-5 text-[14px] font-medium transition hover:brightness-[1.04]"
+                        style={accentButtonStyle}
                       >
-                        <span className="text-[14px] font-medium">
-                          {question.label}
-                          {question.required ? " *" : ""}
-                        </span>
-
-                        {question.type === "textarea" ? (
-                          <textarea
-                            value={answers[question.id] ?? ""}
-                            onChange={(event) =>
-                              updateAnswer(question.id, event.target.value)
-                            }
-                            className="mt-2 min-h-24 w-full rounded-[1.1rem] border bg-white/80 px-4 py-3 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
-                          />
-                        ) : null}
-
-                        {question.type === "text" ? (
-                          <input
-                            value={answers[question.id] ?? ""}
-                            onChange={(event) =>
-                              updateAnswer(question.id, event.target.value)
-                            }
-                            className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
-                          />
-                        ) : null}
-
-                        {question.type === "select" ? (
-                          <select
-                            value={answers[question.id] ?? ""}
-                            onChange={(event) =>
-                              updateAnswer(question.id, event.target.value)
-                            }
-                            className="mt-2 h-12 w-full rounded-full border bg-white/80 px-4 text-[14px] text-ink-deep outline-none transition focus:border-ink-deep"
-                          >
-                            <option value="">Select</option>
-                            {question.options?.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </select>
-                        ) : null}
-                      </label>
-                    ))}
-                  </div>
-
-                  {submitError ? (
-                    <p className="mt-4 text-[13px] text-red-500">{submitError}</p>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={() => void unlockAvailability()}
-                    disabled={isSubmitting}
-                    className="mt-8 inline-flex h-11 items-center justify-center rounded-full border px-6 text-[15px] font-medium transition hover:brightness-[1.04] disabled:opacity-60"
-                    style={accentButtonStyle}
-                  >
-                    {isSubmitting ? "Checking…" : "Unlock Availability"}
-                    {!isSubmitting && <ArrowRight className="ml-2 size-4" />}
-                  </button>
+                        Preview: skip to calendar
+                        <ArrowRight className="size-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : null}
 

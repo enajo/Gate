@@ -7,8 +7,6 @@ import { db } from "@/lib/db";
 const serviceWithMetaInclude = Prisma.validator<Prisma.ServiceInclude>()({
   _count: {
     select: {
-      qualificationQuestions: true,
-      qualificationRules: true,
       bookings: true,
     },
   },
@@ -185,14 +183,8 @@ export const serviceRepository = {
       availabilityExposure: string;
       sortOrder: number;
       active: boolean;
-      questions: Array<{
-        id: string;
-        questionText: string;
-        questionType: string;
-        isRequired: boolean;
-        sortOrder: number;
-        optionsJson?: unknown[] | null;
-      }>;
+      directPurchaseUrl?: string | null;
+      idealPersonaDescription?: string | null;
     }>,
   ): Promise<Service[]> {
     return db.$transaction(async (tx) => {
@@ -232,6 +224,8 @@ export const serviceRepository = {
           availabilityExposure: svc.availabilityExposure as Service["availabilityExposure"],
           sortOrder: svc.sortOrder ?? index,
           active: svc.active,
+          directPurchaseUrl: svc.directPurchaseUrl ?? null,
+          idealPersonaDescription: svc.idealPersonaDescription ?? null,
         };
 
         let savedService: Service;
@@ -253,48 +247,6 @@ export const serviceRepository = {
 
         results.push(savedService);
 
-        // ── Qualification questions diff ──────────────────────────────────────
-        const existingQs = await tx.qualificationQuestion.findMany({
-          where: { serviceId: svc.id },
-          select: { id: true },
-        });
-        const existingQIds = new Set(existingQs.map((q) => q.id));
-        const incomingQIds = new Set(svc.questions.map((q) => q.id));
-
-        const qsToDelete = [...existingQIds].filter((id) => !incomingQIds.has(id));
-        if (qsToDelete.length > 0) {
-          await tx.qualificationQuestion.deleteMany({
-            where: { id: { in: qsToDelete } },
-          });
-        }
-
-        for (const [qIndex, q] of svc.questions.entries()) {
-          const qData = {
-            questionText: q.questionText,
-            questionType: q.questionType as "SHORT_TEXT" | "LONG_TEXT" | "NUMBER" | "MULTIPLE_CHOICE" | "YES_NO",
-            isRequired: q.isRequired,
-            sortOrder: q.sortOrder ?? qIndex,
-            optionsJson: q.optionsJson != null
-              ? (q.optionsJson as Prisma.InputJsonValue)
-              : Prisma.JsonNull,
-          };
-
-          if (existingQIds.has(q.id)) {
-            await tx.qualificationQuestion.update({
-              where: { id: q.id },
-              data: qData,
-            });
-          } else {
-            await tx.qualificationQuestion.create({
-              data: {
-                id: q.id,
-                professionalId,
-                serviceId: svc.id,
-                ...qData,
-              },
-            });
-          }
-        }
       }
 
       return results;

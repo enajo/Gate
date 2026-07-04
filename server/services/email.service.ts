@@ -285,6 +285,46 @@ export const emailService = {
   },
 
   /**
+   * Sent to the professional when a rejected visitor leaves a direct-contact
+   * message via the gate's "reach out directly" form.
+   */
+  async sendRejectedVisitorContactProfessional(params: {
+    to: string;
+    professionalName: string;
+    visitorName: string;
+    visitorEmail: string;
+    serviceTitle: string;
+    message: string;
+    appUrl: string;
+  }): Promise<void> {
+    const leadsUrl = `${params.appUrl}/app`;
+    const subject = `Message from ${params.visitorName} (gate rejection)`;
+    await sendEmail({
+      to: params.to,
+      subject,
+      html: htmlWrapper(
+        subject,
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;">Someone reached out directly</h1>
+         <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
+           <strong style="color:#2B2B2B;">${params.visitorName}</strong>
+           (<a href="mailto:${params.visitorEmail}" style="color:#DFA767;">${params.visitorEmail}</a>)
+           was not a fit for <strong style="color:#2B2B2B;">${params.serviceTitle}</strong> but
+           left you a message:
+         </p>
+         <blockquote style="margin:0 0 24px;padding:16px 20px;background:#FFF9F2;border-left:3px solid #DFA767;border-radius:0 12px 12px 0;font-size:14px;color:#2B2B2B;line-height:1.7;">
+           ${params.message.replace(/\n/g, "<br />")}
+         </blockquote>
+         <p style="margin:0 0 24px;font-size:13px;color:#9CA3AF;">
+           Reply directly to ${params.visitorEmail} if you&apos;d like to follow up.
+         </p>
+         <a href="${leadsUrl}" style="display:inline-block;padding:12px 24px;background:#DFA767;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+           View Dashboard
+         </a>`,
+      ),
+    });
+  },
+
+  /**
    * Sent to the visitor when a professional declines their booking request.
    */
   async sendBookingDeclinedVisitor(params: {

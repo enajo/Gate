@@ -260,3 +260,19 @@ a {
   border-color: var(--color-ink);
   box-shadow: 0 0 0 3px rgba(43, 43, 43, 0.06);
 }
+
+/* ConversationGate — typing indicator */
+.typing-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.4;
+  animation: typingBounce 0.9s ease-in-out infinite;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%            { transform: translateY(-4px); opacity: 1; }
+}

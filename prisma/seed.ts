@@ -1,8 +1,6 @@
 import {
   PrismaClient,
   UserRole,
-  QuestionType,
-  QualificationOutcomeType,
   LeadQualificationResult,
   Weekday,
   CalendarProvider,
@@ -50,8 +48,6 @@ async function main() {
   await prisma.calendarAccount.deleteMany();
   await prisma.blockedDate.deleteMany();
   await prisma.availabilityRule.deleteMany();
-  await prisma.qualificationRule.deleteMany();
-  await prisma.qualificationQuestion.deleteMany();
   await prisma.testimonial.deleteMany();
   await prisma.service.deleteMany();
   await prisma.professional.deleteMany();
@@ -161,6 +157,8 @@ async function main() {
         "A focused strategy call for founders who need clarity on product architecture, roadmap bottlenecks, or technical hiring.",
       displayPrice: "€250",
       durationMinutes: 45,
+      qualificationRequired: true,
+      idealPersonaDescription: "Early-stage SaaS founders with at least €5k MRR who have a specific technical blocker slowing their roadmap.",
       preparationInstructions:
         "Bring your current product stage, main bottleneck, and one technical decision you need clarity on.",
       active: true,
@@ -191,11 +189,16 @@ async function main() {
         "Mock interview and positioning feedback for product candidates preparing for upcoming interviews.",
       displayPrice: "€120",
       durationMinutes: 60,
+      qualificationRequired: true,
+      idealPersonaDescription: "Product candidates actively interviewing or expecting interviews within the next 4 weeks.",
       preparationInstructions:
         "Bring the job description and your current CV or LinkedIn profile.",
       active: true,
     },
   });
+
+  void johnAudit;
+  void sarahInterviewPrep;
 
   // Testimonials
   await prisma.testimonial.createMany({
@@ -229,98 +232,6 @@ async function main() {
           "Sarah completely changed how I told my story in interviews. I landed two final rounds the same week.",
         avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2",
         sortOrder: 1,
-      },
-    ],
-  });
-
-  // Qualification questions
-  const q1 = await prisma.qualificationQuestion.create({
-    data: {
-      professionalId: johnProfessional.id,
-      serviceId: johnStrategySession.id,
-      questionText: "What is your current monthly revenue in EUR?",
-      questionType: QuestionType.NUMBER,
-      helpText: "This helps me understand your stage and whether this session is the right fit.",
-      sortOrder: 1,
-      isRequired: true,
-    },
-  });
-
-  const q2 = await prisma.qualificationQuestion.create({
-    data: {
-      professionalId: johnProfessional.id,
-      serviceId: johnStrategySession.id,
-      questionText: "What is your biggest technical blocker right now?",
-      questionType: QuestionType.LONG_TEXT,
-      helpText: "Be specific. A good answer makes the session much more useful.",
-      sortOrder: 2,
-      isRequired: true,
-    },
-  });
-
-  const q3 = await prisma.qualificationQuestion.create({
-    data: {
-      professionalId: johnProfessional.id,
-      serviceId: johnStrategySession.id,
-      questionText: "How urgent is solving this problem?",
-      questionType: QuestionType.MULTIPLE_CHOICE,
-      optionsJson: ["This week", "This month", "Just exploring"],
-      helpText: "Urgency helps me prioritize whether this should become a direct session or another resource.",
-      sortOrder: 3,
-      isRequired: true,
-    },
-  });
-
-  await prisma.qualificationQuestion.create({
-    data: {
-      professionalId: sarahProfessional.id,
-      serviceId: sarahInterviewPrep.id,
-      questionText: "Do you already have interviews scheduled?",
-      questionType: QuestionType.YES_NO,
-      helpText: "This helps me tailor the session to your current timeline.",
-      sortOrder: 1,
-      isRequired: true,
-    },
-  });
-
-  // Qualification rules
-  await prisma.qualificationRule.createMany({
-    data: [
-      {
-        professionalId: johnProfessional.id,
-        serviceId: johnStrategySession.id,
-        conditionsJson: {
-          all: [
-            { field: q1.id, operator: "gte", value: 5000 },
-            { field: q3.id, operator: "in", value: ["This week", "This month"] },
-          ],
-        },
-        outcomeType: QualificationOutcomeType.ALLOW_BOOKING,
-        outcomeValue: null,
-        priority: 1,
-        active: true,
-      },
-      {
-        professionalId: johnProfessional.id,
-        serviceId: johnStrategySession.id,
-        conditionsJson: {
-          any: [{ field: q1.id, operator: "lt", value: 5000 }],
-        },
-        outcomeType: QualificationOutcomeType.REDIRECT,
-        outcomeValue: "https://example.com/john/resources",
-        priority: 2,
-        active: true,
-      },
-      {
-        professionalId: johnProfessional.id,
-        serviceId: johnStrategySession.id,
-        conditionsJson: {
-          any: [{ field: q2.id, operator: "contains", value: "student" }],
-        },
-        outcomeType: QualificationOutcomeType.REJECT,
-        outcomeValue: "This session is currently reserved for active SaaS founders and operators.",
-        priority: 3,
-        active: true,
       },
     ],
   });
@@ -397,7 +308,7 @@ async function main() {
     },
   });
 
-  // Calendar accounts: multiple calendars for one professional
+  // Calendar accounts
   const johnPrimaryCalendar = await prisma.calendarAccount.create({
     data: {
       professionalId: johnProfessional.id,
@@ -458,7 +369,7 @@ async function main() {
   void johnWorkCalendar;
   void sarahPrimaryCalendar;
 
-  // Access codes (hash stored, not plaintext)
+  // Access codes
   await prisma.accessCode.createMany({
     data: [
       {
@@ -482,7 +393,7 @@ async function main() {
     ],
   });
 
-  // Leads
+  // Leads (AI conversation outcomes)
   const qualifiedLead = await prisma.lead.create({
     data: {
       professionalId: johnProfessional.id,
@@ -490,9 +401,15 @@ async function main() {
       name: "Alex Founder",
       email: "alex.founder@example.com",
       answersJson: {
-        [q1.id]: 12000,
-        [q2.id]: "We are shipping too slowly and our product architecture is blocking roadmap execution.",
-        [q3.id]: "This week",
+        conversationHistory: [
+          { role: "assistant", content: "Hi Alex! Tell me a bit about the technical challenge you're currently facing." },
+          { role: "user", content: "We're struggling with our product architecture — we have a monolith that's becoming a bottleneck at €12k MRR." },
+          { role: "assistant", content: "Got it. Is this blocking a specific roadmap item, or more of a general scaling concern?" },
+          { role: "user", content: "It's blocking our new mobile features — every deploy breaks something." },
+        ],
+        aiDecision: "QUALIFIED",
+        aiMessage: "Sounds like a great fit — let me pull up some available times.",
+        redirectServiceId: null,
       },
       qualificationResult: LeadQualificationResult.QUALIFIED,
     },
@@ -505,9 +422,13 @@ async function main() {
       name: "Lina Explorer",
       email: "lina@example.com",
       answersJson: {
-        [q1.id]: 1800,
-        [q2.id]: "Still validating the idea and exploring possible tech stacks.",
-        [q3.id]: "Just exploring",
+        conversationHistory: [
+          { role: "assistant", content: "Hi Lina! What brings you here today?" },
+          { role: "user", content: "I'm just starting out and exploring tech stacks for my first product idea." },
+        ],
+        aiDecision: "REDIRECT",
+        aiMessage: "It sounds like you're at an early exploration stage — the Strategy Session is best suited for teams already in market. That said, the SaaS Product Systems Audit might be a better starting point for you.",
+        redirectServiceId: johnAudit.id,
       },
       qualificationResult: LeadQualificationResult.REDIRECTED,
     },
@@ -541,7 +462,7 @@ async function main() {
   const retryHold = await prisma.bookingHold.create({
     data: {
       professionalId: johnProfessional.id,
-      serviceId: johnAudit.id,
+      serviceId: johnStrategySession.id,
       leadId: qualifiedLead.id,
       slotStart: setTime(addDays(now, 5), 14, 0),
       slotEnd: setTime(addDays(now, 5), 15, 30),
@@ -571,7 +492,7 @@ async function main() {
   const pendingEventBooking = await prisma.booking.create({
     data: {
       professionalId: johnProfessional.id,
-      serviceId: johnAudit.id,
+      serviceId: johnStrategySession.id,
       leadId: qualifiedLead.id,
       holdId: retryHold.id,
       slotStart: retryHold.slotStart,

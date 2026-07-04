@@ -1,5 +1,4 @@
 import { PublicBookingForm } from "@/components/public-page/public-booking-form";
-import { PublicGatekeeper } from "@/components/public-page/public-gatekeeper";
 import { PublicHero } from "@/components/public-page/public-hero";
 import { PublicServices } from "@/components/public-page/public-services";
 import { PublicSlotPicker } from "@/components/public-page/public-slot-picker";
@@ -75,33 +74,6 @@ const demoTestimonials = [
   },
 ];
 
-const demoQuestions = [
-  {
-    id: "q1",
-    questionText: "What is your current monthly revenue in EUR?",
-    questionType: "NUMBER" as const,
-    helpText:
-      "This helps me understand your stage and whether this session is the right fit.",
-    isRequired: true,
-  },
-  {
-    id: "q2",
-    questionText: "What is your biggest technical blocker right now?",
-    questionType: "LONG_TEXT" as const,
-    helpText: "Be specific. A good answer makes the session much more useful.",
-    isRequired: true,
-  },
-  {
-    id: "q3",
-    questionText: "How urgent is solving this problem?",
-    questionType: "MULTIPLE_CHOICE" as const,
-    optionsJson: ["This week", "This month", "Just exploring"],
-    helpText:
-      "Urgency helps decide whether this should become a direct session or another resource.",
-    isRequired: true,
-  },
-];
-
 const demoSuccess = {
   bookingId: "demo_booking_001",
   professionalName: "John Carter",
@@ -119,7 +91,7 @@ export default function DemoPage() {
       <PublicHero
         professional={demoProfessional}
         ctaLabel="Apply to work with me"
-        ctaHref="#gatekeeper"
+        ctaHref="#booking"
       />
 
       <PublicTestimonials testimonials={demoTestimonials} />
@@ -127,13 +99,6 @@ export default function DemoPage() {
       <PublicServices
         services={demoServices}
         selectedServiceId={demoServices[0].id}
-      />
-
-      <PublicGatekeeper
-        professionalId="demo_professional"
-        serviceId={demoServices[0].id}
-        serviceTitle={demoServices[0].title}
-        questions={demoQuestions}
       />
 
       <PublicSlotPicker

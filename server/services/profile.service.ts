@@ -45,21 +45,6 @@ function parseDurationMinutes(duration: string): number {
   return total > 0 ? total : 30;
 }
 
-function mapQuestionTypeToDb(
-  uiType: "textarea" | "select" | "text",
-): "SHORT_TEXT" | "LONG_TEXT" | "MULTIPLE_CHOICE" {
-  if (uiType === "textarea") return "LONG_TEXT";
-  if (uiType === "select") return "MULTIPLE_CHOICE";
-  return "SHORT_TEXT";
-}
-
-function mapQuestionTypeFromDb(
-  dbType: string,
-): "textarea" | "select" | "text" {
-  if (dbType === "LONG_TEXT") return "textarea";
-  if (dbType === "MULTIPLE_CHOICE" || dbType === "YES_NO") return "select";
-  return "text";
-}
 
 function mapProfessional(
   profile: Awaited<ReturnType<typeof profileRepository.findByUserId>>,
@@ -206,6 +191,7 @@ export const profileService = {
       bufferAfterMinutes: parsed.bufferAfterMinutes ?? 0,
       minimumNoticeMinutes: parsed.minimumNoticeMinutes ?? 0,
       maxBookingsPerDay: parsed.maxBookingsPerDay ?? null,
+      industry: parsed.industry ?? null,
     });
 
     return mapProfessional(profile)!;
@@ -258,7 +244,7 @@ export const profileService = {
    */
   async getControlRoomState(
     userId: string,
-  ): Promise<{ profile: PublicSalesPageTemplateData; publishedAt: string | null }> {
+  ): Promise<{ profile: PublicSalesPageTemplateData; publishedAt: string | null; tokenBalance: number }> {
     const professional =
       await profileRepository.findByUserIdForControlRoom(userId);
 
@@ -277,6 +263,7 @@ export const profileService = {
           availableTimes: [], // Phase 2
         },
         publishedAt: professional.publishedAt?.toISOString() ?? null,
+        tokenBalance: professional.tokenBalance,
       };
     }
 
@@ -304,13 +291,9 @@ export const profileService = {
           availabilityExposure:
             svc.availabilityExposure as PublicSalesPageTemplateData["services"][number]["availabilityExposure"],
           currentAccessCode: activeCode?.codeLabel ?? undefined,
-          questions: svc.qualificationQuestions.map((q) => ({
-            id: q.id,
-            label: q.questionText,
-            type: mapQuestionTypeFromDb(q.questionType),
-            required: q.isRequired,
-            options: (q.optionsJson as string[] | null) ?? [],
-          })),
+          directPurchaseUrl: svc.directPurchaseUrl ?? null,
+          idealPersonaDescription: svc.idealPersonaDescription ?? null,
+          questions: [],
         };
       });
 
@@ -335,6 +318,7 @@ export const profileService = {
     return {
       profile: profileData,
       publishedAt: professional.publishedAt?.toISOString() ?? null,
+      tokenBalance: professional.tokenBalance,
     };
   },
 
@@ -439,14 +423,8 @@ export const profileService = {
         availabilityExposure: svc.availabilityExposure,
         sortOrder: index,
         active: true,
-        questions: svc.questions.map((q, qIndex) => ({
-          id: q.id,
-          questionText: q.label,
-          questionType: mapQuestionTypeToDb(q.type),
-          isRequired: q.required ?? true,
-          sortOrder: qIndex,
-          optionsJson: q.options && q.options.length > 0 ? q.options : null,
-        })),
+        directPurchaseUrl: svc.directPurchaseUrl ?? null,
+        idealPersonaDescription: svc.idealPersonaDescription ?? null,
       }));
 
       await serviceRepository.upsertManyForProfessional(
@@ -499,16 +477,9 @@ export const profileService = {
           manualApprovalRequired: svc.manualApprovalRequired,
           availabilityExposure:
             svc.availabilityExposure as PublicSalesPageTemplateData["services"][number]["availabilityExposure"],
-          // Never expose the code on the public page — it's for display in the
-          // Control Room only. Access code validation happens server-side.
           currentAccessCode: undefined,
-          questions: svc.qualificationQuestions.map((q) => ({
-            id: q.id,
-            label: q.questionText,
-            type: mapQuestionTypeFromDb(q.questionType),
-            required: q.isRequired,
-            options: (q.optionsJson as string[] | null) ?? [],
-          })),
+          directPurchaseUrl: svc.directPurchaseUrl ?? null,
+          questions: [],
         };
       });
 

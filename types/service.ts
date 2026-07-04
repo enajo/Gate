@@ -20,6 +20,8 @@ export type Service = {
   currency?: string | null;
   durationMinutes: number;
   preparationInstructions?: string | null;
+  idealPersonaDescription?: string | null;
+  gateSetupAnswers?: Record<string, string> | null;
   paymentRequired: boolean;
   qualificationRequired: boolean;
   accessCodeRequired: boolean;
@@ -101,8 +103,6 @@ export type ServiceListItem = ServiceSummary & {
 };
 
 export type ServiceWithMeta = Service & {
-  questionCount?: number;
-  ruleCount?: number;
   bookingCount?: number;
 };
 

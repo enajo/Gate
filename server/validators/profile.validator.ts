@@ -97,6 +97,7 @@ export const upsertProfessionalProfileSchema = z
       z.coerce.number().int().min(1).max(100).nullable().optional(),
     ),
     onboardingCompleted: z.boolean().optional(),
+    industry: optionalNullableTrimmedString(100),
   })
   .strict();
 

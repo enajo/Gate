@@ -1,5 +1,6 @@
 import "server-only";
 
+import { Prisma } from "@prisma/client";
 import type {
   CreateServiceInput,
   PublicService,
@@ -196,6 +197,8 @@ export const serviceCatalogService = {
         currency: parsed.currency ?? null,
         durationMinutes: parsed.durationMinutes,
         preparationInstructions: parsed.preparationInstructions ?? null,
+        idealPersonaDescription: parsed.idealPersonaDescription ?? null,
+        gateSetupAnswers: (parsed.gateSetupAnswers ?? Prisma.JsonNull) as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput,
         paymentRequired: parsed.paymentRequired ?? false,
         qualificationRequired: parsed.qualificationRequired ?? false,
         accessCodeRequired: parsed.accessCodeRequired ?? false,
@@ -244,6 +247,8 @@ export const serviceCatalogService = {
       ...(parsed.currency !== undefined ? { currency: parsed.currency ?? null } : {}),
       ...(parsed.durationMinutes !== undefined ? { durationMinutes: parsed.durationMinutes } : {}),
       ...(parsed.preparationInstructions !== undefined ? { preparationInstructions: parsed.preparationInstructions ?? null } : {}),
+      ...(parsed.idealPersonaDescription !== undefined ? { idealPersonaDescription: parsed.idealPersonaDescription ?? null } : {}),
+      ...(parsed.gateSetupAnswers !== undefined ? { gateSetupAnswers: (parsed.gateSetupAnswers ?? Prisma.JsonNull) as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput } : {}),
       ...(parsed.paymentRequired !== undefined ? { paymentRequired: parsed.paymentRequired } : {}),
       ...(parsed.qualificationRequired !== undefined ? { qualificationRequired: parsed.qualificationRequired } : {}),
       ...(parsed.accessCodeRequired !== undefined ? { accessCodeRequired: parsed.accessCodeRequired } : {}),

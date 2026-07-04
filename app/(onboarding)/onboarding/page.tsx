@@ -14,6 +14,21 @@ import {
 
 const roles = ["Consultant", "Coach", "Mentor", "Fractional Executive"];
 
+const industries = [
+  "Technology",
+  "Finance",
+  "Legal",
+  "Healthcare",
+  "Marketing",
+  "Operations",
+  "Sales",
+  "Strategy",
+  "Product",
+  "HR & People",
+  "Real Estate",
+  "Education",
+];
+
 const goals = [
   {
     title: "Paid Consultations",
@@ -47,6 +62,8 @@ export default function OnboardingPage() {
   const [role, setRole] = useState("Consultant");
   const [otherRole, setOtherRole] = useState("");
   const [headline, setHeadline] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [otherIndustry, setOtherIndustry] = useState("");
 
   // Step 2 fields
   const [goal, setGoal] = useState("Qualify Leads");
@@ -75,6 +92,7 @@ export default function OnboardingPage() {
           name: publicName.trim(),
           title: role === "Other" ? otherRole.trim() || "Professional" : role,
           headline: headline.trim() || undefined,
+          industry: industry === "Other" ? otherIndustry.trim() || undefined : industry || undefined,
         }),
       });
 
@@ -218,6 +236,41 @@ export default function OnboardingPage() {
                         value={otherRole}
                         onChange={(e) => setOtherRole(e.target.value)}
                         placeholder="Type your professional role…"
+                        className="mt-3 h-11 w-full rounded-full border border-warm-border-soft bg-white/55 px-4 text-[14px] outline-none focus:border-ink-soft"
+                      />
+                    )}
+                  </div>
+
+                  {/* Industry */}
+                  <div>
+                    <span className="text-[13px] font-medium">Your Industry</span>
+                    <p className="mt-1 text-[12px] text-gray-500">
+                      Helps Gate tailor your qualification gate to your field.
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {[...industries, "Other"].map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setIndustry(item)}
+                          className={
+                            industry === item
+                              ? "rounded-full border border-ink-soft bg-ink-soft px-4 py-2 text-[13px] text-white"
+                              : "rounded-full border border-warm-border-soft px-4 py-2 text-[13px] text-ink transition hover:border-ink-soft"
+                          }
+                        >
+                          {item === "Other" ? "+ Other" : item}
+                        </button>
+                      ))}
+                    </div>
+
+                    {industry === "Other" && (
+                      <input
+                        maxLength={60}
+                        value={otherIndustry}
+                        onChange={(e) => setOtherIndustry(e.target.value)}
+                        placeholder="Type your industry…"
                         className="mt-3 h-11 w-full rounded-full border border-warm-border-soft bg-white/55 px-4 text-[14px] outline-none focus:border-ink-soft"
                       />
                     )}

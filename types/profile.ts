@@ -126,6 +126,7 @@ export type UpsertProfessionalProfileInput = {
   minimumNoticeMinutes?: number;
   maxBookingsPerDay?: number | null;
   onboardingCompleted?: boolean;
+  industry?: string | null;
 };
 
 export type UpdateBrandSettingsInput = BrandSettings;

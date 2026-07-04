@@ -1,4 +1,4 @@
-import type { LeadQualificationResult } from "./qualification";
+import type { LeadQualificationResult } from "@prisma/client";
 
 export type BookingHoldStatus =
   | "ACTIVE"

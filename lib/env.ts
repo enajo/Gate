@@ -31,6 +31,8 @@ const envSchema = z.object({
     .min(1)
     .default("Expert Gatekeeper <noreply@example.com>"),
 
+  OPENAI_API_KEY: z.string().optional(),
+
   ENCRYPTION_KEY: z.string().optional(),
   ACCESS_CODE_PEPPER: z.string().optional(),
 });
@@ -47,6 +49,7 @@ const parsedEnv = envSchema.safeParse({
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM: process.env.EMAIL_FROM,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
   ACCESS_CODE_PEPPER: process.env.ACCESS_CODE_PEPPER,
 });

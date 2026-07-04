@@ -9,6 +9,7 @@ const onboardingInputSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters.").max(100),
   title: z.string().trim().min(1, "Role is required.").max(100),
   headline: z.string().trim().max(120).optional(),
+  industry: z.string().trim().max(100).optional(),
 });
 
 /**
@@ -66,7 +67,8 @@ export async function POST(request: Request) {
       title: input.title,
       headline: input.headline ?? null,
       timezone: "UTC",
-      onboardingCompleted: false, // Not done yet — they still need Control Room setup
+      onboardingCompleted: false,
+      industry: input.industry ?? null,
     });
 
     return NextResponse.json({ ok: true, slug }, { status: 200 });

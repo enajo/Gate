@@ -1,8 +1,10 @@
 "use client";
 
-import { Plus, ShieldCheck, Trash2 } from "lucide-react";
+import * as React from "react";
+import { BotMessageSquare, CheckCircle2, Link2, Plus, Settings2, ShieldCheck, Trash2 } from "lucide-react";
 import type { ProfileState } from "./profile-settings";
 import { ServiceAccessCodes } from "./service-access-codes";
+import { GateSetup, type GateSetupAnswers } from "@/components/services/gate-setup";
 
 interface GateSettingsProps {
   profile: ProfileState;
@@ -22,38 +24,38 @@ function generateAccessCode() {
 }
 
 export function GateSettings({ profile, setProfile }: GateSettingsProps) {
+  const [configuringGateForId, setConfiguringGateForId] = React.useState<string | null>(null);
+
   const activeService =
-    profile.services.find((service) => service.id === profile.activeServiceId) ||
+    profile.services.find((s) => s.id === profile.activeServiceId) ||
     profile.services[0];
 
+  // ── Service helpers ─────────────────────────────────────────────────────────
+
   function setActiveService(serviceId: string) {
-    setProfile((current) => ({
-      ...current,
-      activeServiceId: serviceId,
-    }));
+    setProfile((p) => ({ ...p, activeServiceId: serviceId }));
   }
 
   function updateService(
     serviceId: string,
     key: keyof ProfileState["services"][number],
-    value: string | boolean,
+    value: string | boolean | null,
   ) {
-    setProfile((current) => ({
-      ...current,
-      services: current.services.map((service) =>
-        service.id === serviceId ? { ...service, [key]: value } : service,
+    setProfile((p) => ({
+      ...p,
+      services: p.services.map((s) =>
+        s.id === serviceId ? { ...s, [key]: value } : s,
       ),
     }));
   }
 
   function addService() {
     const id = crypto.randomUUID();
-
-    setProfile((current) => ({
-      ...current,
+    setProfile((p) => ({
+      ...p,
       activeServiceId: id,
       services: [
-        ...current.services,
+        ...p.services,
         {
           id,
           title: "New Service",
@@ -66,7 +68,9 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
           paymentRequired: false,
           accessCodeRequired: false,
           manualApprovalRequired: false,
-          availabilityExposure: "FIVE_DAYS",
+          availabilityExposure: "FIVE_DAYS" as const,
+          directPurchaseUrl: null,
+          idealPersonaDescription: null,
           currentAccessCode: generateAccessCode(),
           questions: [],
         },
@@ -75,102 +79,44 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
   }
 
   function removeService(serviceId: string) {
-    setProfile((current) => {
-      const remainingServices = current.services.filter(
-        (service) => service.id !== serviceId,
-      );
-
+    setProfile((p) => {
+      const remaining = p.services.filter((s) => s.id !== serviceId);
       return {
-        ...current,
-        services: remainingServices,
+        ...p,
+        services: remaining,
         activeServiceId:
-          current.activeServiceId === serviceId
-            ? remainingServices[0]?.id ?? ""
-            : current.activeServiceId,
+          p.activeServiceId === serviceId
+            ? (remaining[0]?.id ?? "")
+            : p.activeServiceId,
       };
     });
   }
 
-  function updateQuestion(serviceId: string, questionId: string, value: string) {
-    setProfile((current) => ({
-      ...current,
-      services: current.services.map((service) =>
-        service.id === serviceId
-          ? {
-              ...service,
-              questions: service.questions.map((question) =>
-                question.id === questionId
-                  ? { ...question, label: value }
-                  : question,
-              ),
-            }
-          : service,
-      ),
-    }));
-  }
-
-  function addQuestion(serviceId: string) {
-    setProfile((current) => ({
-      ...current,
-      services: current.services.map((service) =>
-        service.id === serviceId
-          ? {
-              ...service,
-              questions: [
-                ...service.questions,
-                {
-                  id: crypto.randomUUID(),
-                  label: "",
-                  type: "textarea",
-                  required: true,
-                },
-              ],
-            }
-          : service,
-      ),
-    }));
-  }
-
-  function removeQuestion(serviceId: string, questionId: string) {
-    setProfile((current) => ({
-      ...current,
-      services: current.services.map((service) =>
-        service.id === serviceId
-          ? {
-              ...service,
-              questions: service.questions.filter(
-                (question) => question.id !== questionId,
-              ),
-            }
-          : service,
-      ),
-    }));
-  }
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <section id="gate" className="space-y-6">
+      {/* Section header */}
       <div className="card-section">
         <div className="flex items-center gap-3">
           <ShieldCheck className="size-5 text-brand-amber" />
-
           <div>
-            <p className="text-[15px] font-medium text-ink">
-              Gate Control
-            </p>
+            <p className="text-[15px] font-medium text-ink">Gate Control</p>
             <p className="mt-1 text-[12px] text-gray-500">
-              Configure each service independently.
+              Configure each service and set up the AI qualifier.
             </p>
           </div>
         </div>
       </div>
 
+      {/* ── Services ────────────────────────────────────────────────────────── */}
       <div className="card-section">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-[15px] font-medium text-ink">Services</p>
             <p className="mt-1 text-[12px] text-gray-500">
-              Each offer can have its own price, access rules, questions, and
-              availability exposure.
+              Each offer can have its own price, access rules, and availability
+              exposure.
             </p>
           </div>
 
@@ -184,267 +130,333 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
           </button>
         </div>
 
+        {/* Service tabs */}
         {profile.services.length > 0 && (
           <div className="mt-5 flex flex-wrap gap-2">
-            {profile.services.map((service) => {
-              const active = service.id === activeService?.id;
-
+            {profile.services.map((s) => {
+              const active = s.id === activeService?.id;
               return (
                 <button
-                  key={service.id}
+                  key={s.id}
                   type="button"
-                  onClick={() => setActiveService(service.id)}
+                  onClick={() => setActiveService(s.id)}
                   className={
                     active
                       ? "rounded-full bg-ink px-4 py-2 text-[13px] text-white"
                       : "rounded-full border border-warm-border-soft bg-white/70 px-4 py-2 text-[13px] text-stone-600 transition hover:border-ink"
                   }
                 >
-                  {service.title || "Untitled Service"}
+                  {s.title || "Untitled"}
                 </button>
               );
             })}
           </div>
         )}
 
+        {/* Service editor */}
         {!activeService ? (
           <div className="mt-6 rounded-[1.5rem] border border-dashed border-warm-border-soft bg-white/50 p-8 text-center">
             <p className="text-[14px] text-gray-500">No services yet.</p>
             <p className="mt-1 text-[12px] text-gray-400">
-              Click &quot;Add Service&quot; above to create your first offering.
+              Click &ldquo;Add Service&rdquo; above to create your first offering.
             </p>
           </div>
         ) : (
-        <div className="mt-6 rounded-[1.5rem] border border-warm-border-mid bg-white/70 p-5">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-[13px] font-medium text-ink">
-              Editing: {activeService.title || "Untitled Service"}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => removeService(activeService.id)}
-              title="Delete this service"
-              className="text-gray-400 transition hover:text-red-500"
-            >
-              <Trash2 className="size-4" />
-            </button>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <Field label="Service Title">
-              <input
-                value={activeService.title}
-                onChange={(event) =>
-                  updateService(activeService.id, "title", event.target.value)
-                }
-                className="field-input"
-              />
-            </Field>
-
-            <Field label="Duration">
-              <input
-                value={activeService.duration}
-                onChange={(event) =>
-                  updateService(activeService.id, "duration", event.target.value)
-                }
-                className="field-input"
-                placeholder="30 min"
-              />
-            </Field>
-
-            <Field label="Format">
-              <input
-                value={activeService.format}
-                onChange={(event) =>
-                  updateService(activeService.id, "format", event.target.value)
-                }
-                className="field-input"
-                placeholder="Video call"
-              />
-            </Field>
-
-            <Field label="Price">
-              <div className="grid grid-cols-[76px_1fr] gap-2">
-                <input
-                  value={activeService.currency ?? ""}
-                  onChange={(event) =>
-                    updateService(
-                      activeService.id,
-                      "currency",
-                      event.target.value,
-                    )
-                  }
-                  className="field-input"
-                  placeholder="$"
-                />
-
-                <input
-                  value={activeService.price ?? ""}
-                  onChange={(event) =>
-                    updateService(activeService.id, "price", event.target.value)
-                  }
-                  className="field-input"
-                  placeholder="500"
-                />
-              </div>
-            </Field>
-          </div>
-
-          <div className="mt-4">
-            <Field label="Service Headline">
-              <input
-                value={activeService.headline}
-                onChange={(event) =>
-                  updateService(activeService.id, "headline", event.target.value)
-                }
-                className="field-input"
-                placeholder="High-status promise for this specific offer"
-              />
-            </Field>
-          </div>
-
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
-            <Toggle
-              label="Qualification Required"
-              checked={activeService.qualificationRequired}
-              onChange={(value) =>
-                updateService(activeService.id, "qualificationRequired", value)
-              }
-            />
-
-            <Toggle
-              label="Payment Required"
-              checked={activeService.paymentRequired}
-              onChange={(value) =>
-                updateService(activeService.id, "paymentRequired", value)
-              }
-            />
-
-            <Toggle
-              label="Access Code Required"
-              checked={activeService.accessCodeRequired}
-              onChange={(value) =>
-                updateService(activeService.id, "accessCodeRequired", value)
-              }
-            />
-
-            <Toggle
-              label="Manual Approval Required"
-              checked={activeService.manualApprovalRequired}
-              onChange={(value) =>
-                updateService(activeService.id, "manualApprovalRequired", value)
-              }
-            />
-          </div>
-
-          <div className="mt-6">
-            <Field label="Availability Exposure">
-              <select
-                value={activeService.availabilityExposure}
-                onChange={(event) =>
-                  updateService(
-                    activeService.id,
-                    "availabilityExposure",
-                    event.target.value,
-                  )
-                }
-                className="field-input"
+          <div className="mt-6 rounded-[1.5rem] border border-warm-border-mid bg-white/70 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-[13px] font-medium text-ink">
+                Editing: {activeService.title || "Untitled"}
+              </p>
+              <button
+                type="button"
+                onClick={() => removeService(activeService.id)}
+                title="Delete service"
+                className="text-gray-400 transition hover:text-red-500"
               >
-                {availabilityExposureOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    Show {option.label}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-
-          {activeService.accessCodeRequired ? (
-            <ServiceAccessCodes serviceId={activeService.id} />
-          ) : null}
-        </div>
-        )}
-      </div>
-
-      {activeService?.qualificationRequired ? (
-        <div className="card-section">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[15px] font-medium text-ink">
-                Qualification Questions
-              </p>
-              <p className="mt-1 text-[12px] text-gray-500">
-                Questions are tied to the selected service.
-              </p>
+                <Trash2 className="size-4" />
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => addQuestion(activeService.id)}
-              className="inline-flex h-9 items-center rounded-full border border-warm-border-soft px-4 text-[13px] transition hover:border-ink"
-            >
-              <Plus className="mr-2 size-4" />
-              Add
-            </button>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {activeService.questions.map((question, index) => (
-              <div
-                key={question.id}
-                className="card-inner p-4"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-gray-500">
-                    Question {index + 1}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      removeQuestion(activeService.id, question.id)
-                    }
-                    className="text-gray-400 transition hover:text-red-500"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                </div>
-
+            {/* Core fields */}
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <Field label="Service Title">
                 <input
-                  value={question.label}
-                  onChange={(event) =>
-                    updateQuestion(
-                      activeService.id,
-                      question.id,
-                      event.target.value,
-                    )
+                  value={activeService.title}
+                  onChange={(e) =>
+                    updateService(activeService.id, "title", e.target.value)
                   }
                   className="field-input"
-                  placeholder="Type your qualification question"
+                />
+              </Field>
+
+              <Field label="Duration">
+                <input
+                  value={activeService.duration}
+                  onChange={(e) =>
+                    updateService(activeService.id, "duration", e.target.value)
+                  }
+                  className="field-input"
+                  placeholder="30 min"
+                />
+              </Field>
+
+              <Field label="Format">
+                <input
+                  value={activeService.format}
+                  onChange={(e) =>
+                    updateService(activeService.id, "format", e.target.value)
+                  }
+                  className="field-input"
+                  placeholder="Video call"
+                />
+              </Field>
+
+              <Field label="Price">
+                <div className="grid grid-cols-[76px_1fr] gap-2">
+                  <input
+                    value={activeService.currency ?? ""}
+                    onChange={(e) =>
+                      updateService(
+                        activeService.id,
+                        "currency",
+                        e.target.value,
+                      )
+                    }
+                    className="field-input"
+                    placeholder="$"
+                  />
+                  <input
+                    value={activeService.price ?? ""}
+                    onChange={(e) =>
+                      updateService(activeService.id, "price", e.target.value)
+                    }
+                    className="field-input"
+                    placeholder="500"
+                  />
+                </div>
+              </Field>
+            </div>
+
+            <div className="mt-4">
+              <Field label="Service Headline">
+                <input
+                  value={activeService.headline}
+                  onChange={(e) =>
+                    updateService(activeService.id, "headline", e.target.value)
+                  }
+                  className="field-input"
+                  placeholder="High-status promise for this specific offer"
+                />
+              </Field>
+            </div>
+
+            {/* Direct Purchase URL — marks this service as a direct-buy option */}
+            <div className="mt-4">
+              <Field label="Direct Purchase URL (optional)">
+                <div className="flex items-center gap-2">
+                  <Link2 className="size-3.5 shrink-0 text-gray-400" />
+                  <input
+                    type="url"
+                    value={activeService.directPurchaseUrl ?? ""}
+                    onChange={(e) =>
+                      updateService(
+                        activeService.id,
+                        "directPurchaseUrl",
+                        e.target.value || null,
+                      )
+                    }
+                    placeholder="https://buy.stripe.com/… leave blank for calendar booking"
+                    className="field-input flex-1"
+                  />
+                </div>
+                <p className="mt-1.5 text-[11px] text-gray-400">
+                  Set this if the service doesn&apos;t need a calendar (e.g. a
+                  course, template, or async offer). The AI will recommend it as
+                  an alternative to visitors who aren&apos;t a fit for core
+                  calendar services.
+                </p>
+              </Field>
+            </div>
+
+            {/* ── Gate Rules ──────────────────────────────────────────────── */}
+            <div className="mt-8">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                Gate Rules
+              </p>
+
+              {/* 2 × 2 toggle grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <Toggle
+                  label="Qualification"
+                  description="AI screens visitors"
+                  checked={activeService.qualificationRequired}
+                  onChange={(v) =>
+                    updateService(activeService.id, "qualificationRequired", v)
+                  }
+                />
+                <Toggle
+                  label="Payment"
+                  description="Require payment upfront"
+                  checked={activeService.paymentRequired}
+                  onChange={(v) =>
+                    updateService(activeService.id, "paymentRequired", v)
+                  }
+                />
+                <Toggle
+                  label="Access Code"
+                  description="Invite-only access"
+                  checked={activeService.accessCodeRequired}
+                  onChange={(v) =>
+                    updateService(activeService.id, "accessCodeRequired", v)
+                  }
+                />
+                <Toggle
+                  label="Manual Approval"
+                  description="You review each request"
+                  checked={activeService.manualApprovalRequired}
+                  onChange={(v) =>
+                    updateService(activeService.id, "manualApprovalRequired", v)
+                  }
                 />
               </div>
-            ))}
 
-            {!activeService.questions.length ? (
-              <div className="rounded-inner border border-dashed border-warm-border-soft bg-white/50 p-5 text-[13px] text-gray-500">
-                No questions yet. Add one to screen visitors before calendar
-                access.
+              {/* AI Qualifier — expands below the grid when Qualification is ON */}
+              {activeService.qualificationRequired ? (
+                <div className="mt-3 rounded-[1.25rem] border border-warm-border-mid bg-warm-cream-light p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <BotMessageSquare className="mt-0.5 size-4 shrink-0 text-brand-amber" />
+                      <div>
+                        <p className="text-[13px] font-semibold text-ink">
+                          AI Qualifier
+                        </p>
+                        <p className="mt-0.5 text-[11px] leading-5 text-gray-500">
+                          {activeService.idealPersonaDescription
+                            ? "Your gate is configured and ready to screen visitors."
+                            : "Answer 4 quick questions so your AI gate knows exactly who to qualify."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {activeService.idealPersonaDescription && configuringGateForId !== activeService.id && (
+                      <button
+                        type="button"
+                        onClick={() => setConfiguringGateForId(activeService.id)}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-warm-border-soft bg-white/70 px-3 py-1.5 text-[12px] text-ink transition hover:border-ink"
+                      >
+                        <Settings2 className="size-3.5" />
+                        Edit gate
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Configured state — just show a status badge */}
+                  {activeService.idealPersonaDescription && configuringGateForId !== activeService.id ? (
+                    <div className="mt-4 flex items-center gap-2 rounded-[0.875rem] border border-emerald-100 bg-emerald-50 px-4 py-3">
+                      <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                      <p className="text-[12px] text-emerald-800">
+                        Gate is configured — visitors will be screened before booking.
+                      </p>
+                    </div>
+                  ) : (
+                    /* Chat setup */
+                    <div className="mt-4">
+                      <GateSetup
+                        serviceId={activeService.id}
+                        serviceName={activeService.title}
+                        serviceTitle={activeService.title}
+                        initialPrompt={activeService.idealPersonaDescription}
+                        initialPhase={activeService.idealPersonaDescription ? "edit" : "chat"}
+                        onSave={async (compiledPrompt: string, _answers: GateSetupAnswers) => {
+                          updateService(activeService.id, "idealPersonaDescription", compiledPrompt);
+                          setConfiguringGateForId(null);
+
+                          // Auto-persist so the gate survives a page refresh without
+                          // requiring the expert to also click "Save Draft".
+                          const updatedProfile = {
+                            ...profile,
+                            services: profile.services.map((s) =>
+                              s.id === activeService.id
+                                ? { ...s, idealPersonaDescription: compiledPrompt }
+                                : s,
+                            ),
+                          };
+                          await fetch("/api/app/control-room", {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(updatedProfile),
+                          });
+                        }}
+                        onCancel={
+                          activeService.idealPersonaDescription
+                            ? () => setConfiguringGateForId(null)
+                            : undefined
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {/* Access codes panel */}
+              {activeService.accessCodeRequired ? (
+                <div className="mt-3">
+                  <ServiceAccessCodes serviceId={activeService.id} />
+                </div>
+              ) : null}
+            </div>
+
+            {/* ── Availability ─────────────────────────────────────────────── */}
+            <div className="mt-8">
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                Availability Window
+              </p>
+
+              <div className="flex items-center justify-between rounded-[0.875rem] border border-warm-border-soft bg-white/70 px-4 py-3">
+                <div>
+                  <p className="text-[13px] font-medium text-ink">
+                    Calendar exposure
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-gray-500">
+                    How far ahead visitors can see open slots
+                  </p>
+                </div>
+                <select
+                  value={activeService.availabilityExposure}
+                  onChange={(e) =>
+                    updateService(
+                      activeService.id,
+                      "availabilityExposure",
+                      e.target.value,
+                    )
+                  }
+                  className="rounded-full border border-warm-border-soft bg-white px-3 py-1.5 text-[13px] text-ink outline-none transition focus:border-ink"
+                >
+                  {availabilityExposureOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-            ) : null}
+            </div>
           </div>
-        </div>
-      ) : null}
+        )}
+      </div>
     </section>
   );
 }
 
+// ── Shared primitives ─────────────────────────────────────────────────────────
+
 function Toggle({
   label,
+  description,
   checked,
   onChange,
 }: {
   label: string;
+  description?: string;
   checked: boolean;
   onChange: (value: boolean) => void;
 }) {
@@ -454,24 +466,30 @@ function Toggle({
       onClick={() => onChange(!checked)}
       className={
         checked
-          ? "flex items-center justify-between rounded-inner border border-brand-amber bg-brand-amber-faint px-4 py-3"
-          : "flex items-center justify-between card-inner px-4 py-3"
+          ? "flex items-center justify-between gap-3 rounded-[0.875rem] border border-brand-amber bg-brand-amber-faint px-4 py-3 text-left"
+          : "flex items-center justify-between gap-3 rounded-[0.875rem] border border-warm-border-soft bg-white/60 px-4 py-3 text-left transition hover:border-warm-border-mid"
       }
     >
-      <span className="text-[13px] font-medium text-ink">{label}</span>
+      <div className="min-w-0">
+        <p className="text-[13px] font-medium text-ink">{label}</p>
+        {description ? (
+          <p className="mt-0.5 text-[11px] text-gray-400">{description}</p>
+        ) : null}
+      </div>
 
+      {/* Toggle track */}
       <span
         className={
           checked
-            ? "relative h-6 w-11 rounded-full bg-brand-amber"
-            : "relative h-6 w-11 rounded-full bg-warm-border-lighter"
+            ? "relative inline-flex h-5 w-9 shrink-0 rounded-full bg-brand-amber transition-colors"
+            : "relative inline-flex h-5 w-9 shrink-0 rounded-full bg-warm-border-lighter transition-colors"
         }
       >
         <span
           className={
             checked
-              ? "absolute right-1 top-1 size-4 rounded-full bg-white"
-              : "absolute left-1 top-1 size-4 rounded-full bg-white"
+              ? "absolute right-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm transition-transform"
+              : "absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-sm transition-transform"
           }
         />
       </span>
@@ -491,7 +509,6 @@ function Field({
       <span className="mb-2 block text-[12px] font-medium text-ink">
         {label}
       </span>
-
       {children}
     </label>
   );

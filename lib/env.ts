@@ -39,6 +39,13 @@ const envSchema = z.object({
 
   ENCRYPTION_KEY: z.string().optional(),
   ACCESS_CODE_PEPPER: z.string().optional(),
+
+  // Sentry — optional; Sentry is a no-op when these are absent.
+  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
+  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_ORG: z.string().optional(),
+  SENTRY_PROJECT: z.string().optional(),
+  SENTRY_AUTH_TOKEN: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse({
@@ -58,6 +65,11 @@ const parsedEnv = envSchema.safeParse({
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
   ACCESS_CODE_PEPPER: process.env.ACCESS_CODE_PEPPER,
+  NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  SENTRY_DSN: process.env.SENTRY_DSN,
+  SENTRY_ORG: process.env.SENTRY_ORG,
+  SENTRY_PROJECT: process.env.SENTRY_PROJECT,
+  SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
 });
 
 if (!parsedEnv.success) {

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -6,6 +7,8 @@ const isDev = process.env.NODE_ENV === "development";
 // - 'unsafe-inline' on style-src: required by Tailwind CSS (runtime class injection)
 // - 'unsafe-eval' on script-src (dev only): required by Next.js HMR / Turbopack
 // - accounts.google.com: Google OAuth redirect target
+// - Sentry traffic is proxied through /api/monitoring (tunnelRoute) so no
+//   external *.sentry.io entries are needed in connect-src.
 const csp = [
   `default-src 'self'`,
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
@@ -66,4 +69,27 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Proxy Sentry traffic through our own origin — avoids ad-blocker drops
+  // and keeps connect-src in CSP clean (no external *.sentry.io needed).
+  tunnelRoute: "/api/monitoring",
+
+  // Upload source maps during build so Sentry shows readable stack traces,
+  // but delete the .map files afterwards so they're never served publicly.
+  // Source-map upload requires SENTRY_AUTH_TOKEN; skip silently if not set.
+  sourcemaps: {
+    filesToDeleteAfterUpload: [".next/static/**/*.map"],
+  },
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Tree-shake Sentry's debug logger from production builds.
+  disableLogger: true,
+
+  // Only print Sentry build output in CI to keep local builds quiet.
+  silent: !process.env.CI,
+
+  automaticVercelMonitors: false,
+});

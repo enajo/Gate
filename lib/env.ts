@@ -2,6 +2,12 @@ import "server-only";
 
 import { z } from "zod";
 
+// Empty strings in .env files are treated as "not set" for optional URL fields.
+const optionalUrl = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+  z.string().url().optional(),
+);
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -16,7 +22,7 @@ const envSchema = z.object({
 
   // NextAuth aliases — either form is accepted
   NEXTAUTH_SECRET: z.string().optional(),
-  NEXTAUTH_URL: z.string().url().optional(),
+  NEXTAUTH_URL: optionalUrl,
 
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
   AUTH_GOOGLE_ID: z.string().optional(),
@@ -41,8 +47,10 @@ const envSchema = z.object({
   ACCESS_CODE_PEPPER: z.string().optional(),
 
   // Sentry — optional; Sentry is a no-op when these are absent.
-  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
-  SENTRY_DSN: z.string().url().optional(),
+  // optionalUrl treats "" the same as undefined so .env.example's blank
+  // values don't fail the URL validator at startup.
+  NEXT_PUBLIC_SENTRY_DSN: optionalUrl,
+  SENTRY_DSN: optionalUrl,
   SENTRY_ORG: z.string().optional(),
   SENTRY_PROJECT: z.string().optional(),
   SENTRY_AUTH_TOKEN: z.string().optional(),

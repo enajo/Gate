@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockProfileRepository = vi.hoisted(() => ({
   findById: vi.fn(),
+  findByUserId: vi.fn(),
+  findByIdWithUser: vi.fn(),
 }));
 
 const mockServiceRepository = vi.hoisted(() => ({
@@ -9,19 +11,53 @@ const mockServiceRepository = vi.hoisted(() => ({
 }));
 
 const mockBookingRepository = vi.hoisted(() => ({
-  createHoldForProfessional: vi.fn(),
-  findActiveHoldById: vi.fn(),
-  expireHoldById: vi.fn(),
-  validateAccessCodeForProfessional: vi.fn(),
-  createBookingForProfessional: vi.fn(),
+  findLeadByIdForProfessional: vi.fn(),
+  findBookingHoldByIdForProfessional: vi.fn(),
+  findActiveBookingHold: vi.fn(),
+  createBookingHoldForProfessional: vi.fn(),
+  updateBookingHoldById: vi.fn(),
+  findBookingByHoldId: vi.fn(),
+  createBookingFromHold: vi.fn(),
+  createBooking: vi.fn(),
+  updateBookingById: vi.fn(),
+  findBookingById: vi.fn(),
+  findBookingByIdWithRelations: vi.fn(),
+  findBookingByIdForProfessional: vi.fn(),
+  findBookingsByProfessionalId: vi.fn(),
+  findUpcomingBookingsByProfessionalId: vi.fn(),
   markEventCreationPending: vi.fn(),
   markEventCreated: vi.fn(),
   markEventFailed: vi.fn(),
-  getBookingSuccessPayload: vi.fn(),
+  cancelBooking: vi.fn(),
+  releaseExpiredBookingHolds: vi.fn(),
+  findBookingHoldById: vi.fn(),
+  findActiveHoldsWithRelationsByProfessionalId: vi.fn(),
+  findHoldWithRelationsById: vi.fn(),
+}));
+
+const mockAvailabilityService = vi.hoisted(() => ({
+  getBookableSlotsForService: vi.fn(),
+}));
+
+const mockAccessCodeService = vi.hoisted(() => ({
+  validate: vi.fn(),
+  markUsed: vi.fn(),
+}));
+
+const mockEmailService = vi.hoisted(() => ({
+  sendBookingDeclinedVisitor: vi.fn(),
+  sendBookingConfirmedVisitor: vi.fn(),
+  sendBookingConfirmedProfessional: vi.fn(),
+}));
+
+const mockGoogleRepository = vi.hoisted(() => ({
+  findDefaultEventCalendarByProfessionalId: vi.fn(),
+  createCalendarEventForBooking: vi.fn(),
+  touchLastSyncedAt: vi.fn(),
 }));
 
 const mockGoogleCalendarService = vi.hoisted(() => ({
-  createBookingEventForCalendarAccount: vi.fn(),
+  createCalendarEvent: vi.fn(),
 }));
 
 vi.mock("@/server/repositories/profile.repository", () => ({
@@ -36,240 +72,359 @@ vi.mock("@/server/repositories/booking.repository", () => ({
   bookingRepository: mockBookingRepository,
 }));
 
+vi.mock("@/server/repositories/google.repository", () => ({
+  googleRepository: mockGoogleRepository,
+}));
+
+vi.mock("@/server/services/availability.service", () => ({
+  availabilityService: mockAvailabilityService,
+}));
+
+vi.mock("@/server/services/access-code.service", () => ({
+  accessCodeService: mockAccessCodeService,
+}));
+
+vi.mock("@/server/services/email.service", () => ({
+  emailService: mockEmailService,
+}));
+
 vi.mock("@/server/services/google-calendar.service", () => ({
   googleCalendarService: mockGoogleCalendarService,
 }));
 
-vi.mock("@/server/validators/booking.validator", () => ({
-  createHoldSchema: { parse: vi.fn((value) => value) },
-  confirmBookingSchema: { parse: vi.fn((value) => value) },
-}));
-
 import { bookingService } from "@/server/services/booking.service";
 
-// TODO: service added active-check and findBookingById — update mocks to match
-describe.skip("bookingService", () => {
+const PROFESSIONAL_ID = "professional_1";
+const SERVICE_ID = "service_1";
+const LEAD_ID = "lead_1";
+const HOLD_ID = "hold_1";
+const SLOT_START = new Date("2026-04-10T10:00:00.000Z");
+const SLOT_END = new Date("2026-04-10T10:45:00.000Z");
+const TIMEZONE = "Europe/Berlin";
+const EXPIRES_AT = new Date(Date.now() + 10 * 60 * 1000); // 10 min from now
+
+const BASE_HOLD = {
+  id: HOLD_ID,
+  professionalId: PROFESSIONAL_ID,
+  serviceId: SERVICE_ID,
+  leadId: LEAD_ID,
+  slotStart: SLOT_START,
+  slotEnd: SLOT_END,
+  expiresAt: EXPIRES_AT,
+  status: "ACTIVE",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const BASE_BOOKING = {
+  id: "booking_1",
+  professionalId: PROFESSIONAL_ID,
+  serviceId: SERVICE_ID,
+  leadId: LEAD_ID,
+  holdId: HOLD_ID,
+  slotStart: SLOT_START,
+  slotEnd: SLOT_END,
+  timezone: TIMEZONE,
+  status: "CONFIRMED",
+  codeValidationStatus: "VALID",
+  calendarStatus: "PENDING",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+describe("bookingService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockProfileRepository.findById.mockResolvedValue({
-      id: "professional_1",
+      id: PROFESSIONAL_ID,
       fullName: "John Carter",
-      timezone: "Europe/Berlin",
+      timezone: TIMEZONE,
     });
 
     mockServiceRepository.findByIdForProfessional.mockResolvedValue({
-      id: "service_1",
-      professionalId: "professional_1",
+      id: SERVICE_ID,
+      professionalId: PROFESSIONAL_ID,
       title: "Strategy Session",
       durationMinutes: 45,
+      active: true,
+    });
+
+    mockBookingRepository.findLeadByIdForProfessional.mockResolvedValue({
+      id: LEAD_ID,
+      professionalId: PROFESSIONAL_ID,
+      serviceId: SERVICE_ID,
+      name: "Sarah Founder",
+      email: "sarah@example.com",
+      qualificationResult: "QUALIFIED",
+    });
+
+    // Default: slot is available
+    mockAvailabilityService.getBookableSlotsForService.mockResolvedValue({
+      slots: [{ start: SLOT_START, end: SLOT_END }],
+      blockedRanges: [],
     });
   });
+
+  // ── createHold ─────────────────────────────────────────────────────────────
 
   describe("createHold", () => {
-    it("creates a booking hold for a valid professional/service/lead request", async () => {
-      const expiresAt = new Date("2026-04-08T10:15:00.000Z");
-
-      mockBookingRepository.createHoldForProfessional.mockResolvedValue({
-        id: "hold_1",
-        professionalId: "professional_1",
-        serviceId: "service_1",
-        leadId: "lead_1",
-        slotStart: new Date("2026-04-10T10:00:00.000Z"),
-        slotEnd: new Date("2026-04-10T10:45:00.000Z"),
-        expiresAt,
-        status: "ACTIVE",
-      });
+    it("creates a booking hold when slot is available and lead is qualified", async () => {
+      mockBookingRepository.findActiveBookingHold.mockResolvedValue(null);
+      mockBookingRepository.createBookingHoldForProfessional.mockResolvedValue(BASE_HOLD);
 
       const result = await bookingService.createHold({
-        professionalId: "professional_1",
-        serviceId: "service_1",
-        leadId: "lead_1",
-        slotStart: "2026-04-10T10:00:00.000Z",
-        slotEnd: "2026-04-10T10:45:00.000Z",
-        timezone: "Europe/Berlin",
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        slotStart: SLOT_START.toISOString(),
+        slotEnd: SLOT_END.toISOString(),
+        timezone: TIMEZONE,
       });
 
-      expect(mockBookingRepository.createHoldForProfessional).toHaveBeenCalledWith(
-        "professional_1",
+      expect(mockBookingRepository.createBookingHoldForProfessional).toHaveBeenCalledWith(
+        PROFESSIONAL_ID,
         expect.objectContaining({
-          serviceId: "service_1",
-          leadId: "lead_1",
-          slotStart: new Date("2026-04-10T10:00:00.000Z"),
-          slotEnd: new Date("2026-04-10T10:45:00.000Z"),
-          timezone: "Europe/Berlin",
+          serviceId: SERVICE_ID,
+          leadId: LEAD_ID,
+          slotStart: SLOT_START,
+          slotEnd: SLOT_END,
+          status: "ACTIVE",
         }),
       );
+      expect(result.id).toBe(HOLD_ID);
+      expect(result.status).toBe("ACTIVE");
+    });
 
-      expect(result).toMatchObject({
-        holdId: "hold_1",
-        expiresAt: expiresAt.toISOString(),
+    it("returns the existing hold when the same lead already holds the slot", async () => {
+      mockBookingRepository.findActiveBookingHold.mockResolvedValue(BASE_HOLD);
+
+      const result = await bookingService.createHold({
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        slotStart: SLOT_START.toISOString(),
+        slotEnd: SLOT_END.toISOString(),
+        timezone: TIMEZONE,
       });
+
+      expect(mockBookingRepository.createBookingHoldForProfessional).not.toHaveBeenCalled();
+      expect(result.id).toBe(HOLD_ID);
     });
 
-    it("throws when the service does not belong to the professional", async () => {
-      mockServiceRepository.findByIdForProfessional.mockResolvedValueOnce(null);
+    it("throws when the service is not active", async () => {
+      mockServiceRepository.findByIdForProfessional.mockResolvedValue({
+        id: SERVICE_ID,
+        active: false,
+      });
 
       await expect(
         bookingService.createHold({
-          professionalId: "professional_1",
-          serviceId: "missing_service",
-          leadId: "lead_1",
-          slotStart: "2026-04-10T10:00:00.000Z",
-          slotEnd: "2026-04-10T10:45:00.000Z",
-          timezone: "Europe/Berlin",
+          professionalId: PROFESSIONAL_ID,
+          serviceId: SERVICE_ID,
+          leadId: LEAD_ID,
+          slotStart: SLOT_START.toISOString(),
+          slotEnd: SLOT_END.toISOString(),
+          timezone: TIMEZONE,
         }),
-      ).rejects.toThrow("Service not found.");
-
-      expect(mockBookingRepository.createHoldForProfessional).not.toHaveBeenCalled();
+      ).rejects.toThrow("Service is not active.");
     });
 
-    it("throws when slot end is not after slot start", async () => {
+    it("throws when the selected slot is no longer available", async () => {
+      mockAvailabilityService.getBookableSlotsForService.mockResolvedValue({
+        slots: [],
+        blockedRanges: [],
+      });
+
       await expect(
         bookingService.createHold({
-          professionalId: "professional_1",
-          serviceId: "service_1",
-          leadId: "lead_1",
-          slotStart: "2026-04-10T10:45:00.000Z",
-          slotEnd: "2026-04-10T10:00:00.000Z",
-          timezone: "Europe/Berlin",
+          professionalId: PROFESSIONAL_ID,
+          serviceId: SERVICE_ID,
+          leadId: LEAD_ID,
+          slotStart: SLOT_START.toISOString(),
+          slotEnd: SLOT_END.toISOString(),
+          timezone: TIMEZONE,
         }),
-      ).rejects.toThrow("Slot end must be after slot start.");
+      ).rejects.toThrow("Selected slot is no longer available.");
+    });
 
-      expect(mockBookingRepository.createHoldForProfessional).not.toHaveBeenCalled();
+    it("throws when a different lead has an active hold on the same slot", async () => {
+      mockBookingRepository.findActiveBookingHold.mockResolvedValue({
+        ...BASE_HOLD,
+        id: "other_hold",
+        leadId: "other_lead",
+      });
+
+      await expect(
+        bookingService.createHold({
+          professionalId: PROFESSIONAL_ID,
+          serviceId: SERVICE_ID,
+          leadId: LEAD_ID,
+          slotStart: SLOT_START.toISOString(),
+          slotEnd: SLOT_END.toISOString(),
+          timezone: TIMEZONE,
+        }),
+      ).rejects.toThrow("This slot is temporarily reserved.");
+    });
+
+    it("throws when the lead is not qualified", async () => {
+      mockBookingRepository.findLeadByIdForProfessional.mockResolvedValue({
+        id: LEAD_ID,
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        qualificationResult: "REJECTED",
+      });
+
+      await expect(
+        bookingService.createHold({
+          professionalId: PROFESSIONAL_ID,
+          serviceId: SERVICE_ID,
+          leadId: LEAD_ID,
+          slotStart: SLOT_START.toISOString(),
+          slotEnd: SLOT_END.toISOString(),
+          timezone: TIMEZONE,
+        }),
+      ).rejects.toThrow("Lead is not qualified for booking.");
     });
   });
 
+  // ── confirmBooking ─────────────────────────────────────────────────────────
+
   describe("confirmBooking", () => {
-    it("creates a booking and marks event creation pending when code is valid", async () => {
-      mockBookingRepository.findActiveHoldById.mockResolvedValue({
-        id: "hold_1",
-        professionalId: "professional_1",
-        serviceId: "service_1",
-        leadId: "lead_1",
-        slotStart: new Date("2026-04-10T10:00:00.000Z"),
-        slotEnd: new Date("2026-04-10T10:45:00.000Z"),
-        expiresAt: new Date("2026-04-10T09:55:00.000Z"),
-        status: "ACTIVE",
+    beforeEach(() => {
+      mockBookingRepository.findBookingHoldByIdForProfessional.mockResolvedValue(BASE_HOLD);
+      mockBookingRepository.findBookingByHoldId.mockResolvedValue(null);
+      mockBookingRepository.createBookingFromHold.mockResolvedValue(BASE_BOOKING);
+      mockBookingRepository.updateBookingHoldById.mockResolvedValue({
+        ...BASE_HOLD,
+        status: "CONVERTED",
       });
+    });
 
-      mockBookingRepository.validateAccessCodeForProfessional.mockResolvedValue({
-        id: "code_1",
-        code: "BETA2026",
-        isActive: true,
-      });
-
-      mockBookingRepository.createBookingForProfessional.mockResolvedValue({
-        id: "booking_1",
-        professionalId: "professional_1",
-        serviceId: "service_1",
-        leadId: "lead_1",
-        slotStart: new Date("2026-04-10T10:00:00.000Z"),
-        slotEnd: new Date("2026-04-10T10:45:00.000Z"),
-        timezone: "Europe/Berlin",
-        status: "EVENT_CREATION_PENDING",
-      });
-
-      mockBookingRepository.getBookingSuccessPayload.mockResolvedValue({
-        bookingId: "booking_1",
-        professionalName: "John Carter",
-        serviceTitle: "Strategy Session",
-        slotStart: "2026-04-10T10:00:00.000Z",
-        slotEnd: "2026-04-10T10:45:00.000Z",
-        timezone: "Europe/Berlin",
-        meetingUrl: null,
-        eventUrl: null,
+    it("creates a booking and returns isCodeValid:true when code is valid", async () => {
+      mockAccessCodeService.validate.mockResolvedValue({
+        isValid: true,
+        matchedCodeId: "code_1",
+        codeLabel: "Founder invite",
       });
 
       const result = await bookingService.confirmBooking({
-        professionalId: "professional_1",
-        serviceId: "service_1",
-        leadId: "lead_1",
-        holdId: "hold_1",
-        timezone: "Europe/Berlin",
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        holdId: HOLD_ID,
+        timezone: TIMEZONE,
         accessCode: "BETA2026",
       });
 
-      expect(mockBookingRepository.validateAccessCodeForProfessional).toHaveBeenCalledWith(
-        "professional_1",
-        "BETA2026",
-      );
-
-      expect(mockBookingRepository.createBookingForProfessional).toHaveBeenCalledWith(
-        "professional_1",
+      expect(mockAccessCodeService.validate).toHaveBeenCalledWith({
+        professionalId: PROFESSIONAL_ID,
+        code: "BETA2026",
+      });
+      expect(mockBookingRepository.createBookingFromHold).toHaveBeenCalledWith(
         expect.objectContaining({
-          serviceId: "service_1",
-          leadId: "lead_1",
-          holdId: "hold_1",
-          timezone: "Europe/Berlin",
+          professionalId: PROFESSIONAL_ID,
+          holdId: HOLD_ID,
+          status: "CONFIRMED",
+          codeValidationStatus: "VALID",
         }),
       );
-
-      expect(mockBookingRepository.markEventCreationPending).toHaveBeenCalledWith(
-        "booking_1",
-      );
-
-      expect(result).toMatchObject({
-        isCodeValid: true,
-        eventCreationRequired: true,
-        success: {
-          bookingId: "booking_1",
-          serviceTitle: "Strategy Session",
-        },
-      });
+      expect(result.isCodeValid).toBe(true);
+      expect(result.eventCreationRequired).toBe(true);
     });
 
-    it("throws when the hold is missing or no longer active", async () => {
-      mockBookingRepository.findActiveHoldById.mockResolvedValueOnce(null);
+    it("returns isCodeValid:false when the access code is wrong", async () => {
+      mockAccessCodeService.validate.mockResolvedValue({
+        isValid: false,
+        matchedCodeId: null,
+        codeLabel: null,
+      });
+      mockBookingRepository.createBooking.mockResolvedValue({
+        ...BASE_BOOKING,
+        status: "CODE_INVALID",
+        codeValidationStatus: "INVALID",
+      });
+
+      const result = await bookingService.confirmBooking({
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        holdId: HOLD_ID,
+        timezone: TIMEZONE,
+        accessCode: "WRONGCODE",
+      });
+
+      expect(result.isCodeValid).toBe(false);
+      expect(result.eventCreationRequired).toBe(false);
+      expect(mockBookingRepository.createBookingFromHold).not.toHaveBeenCalled();
+    });
+
+    it("throws when the hold is not found", async () => {
+      mockBookingRepository.findBookingHoldByIdForProfessional.mockResolvedValue(null);
 
       await expect(
         bookingService.confirmBooking({
-          professionalId: "professional_1",
-          serviceId: "service_1",
-          leadId: "lead_1",
-          holdId: "missing_hold",
-          timezone: "Europe/Berlin",
+          professionalId: PROFESSIONAL_ID,
+          serviceId: SERVICE_ID,
+          leadId: LEAD_ID,
+          holdId: "nonexistent",
+          timezone: TIMEZONE,
           accessCode: "BETA2026",
         }),
-      ).rejects.toThrow("Booking hold not found or expired.");
-
-      expect(mockBookingRepository.createBookingForProfessional).not.toHaveBeenCalled();
+      ).rejects.toThrow("Booking hold not found.");
     });
 
-    it("throws when the access code is invalid", async () => {
-      mockBookingRepository.findActiveHoldById.mockResolvedValue({
-        id: "hold_1",
-        professionalId: "professional_1",
-        serviceId: "service_1",
-        leadId: "lead_1",
-        slotStart: new Date("2026-04-10T10:00:00.000Z"),
-        slotEnd: new Date("2026-04-10T10:45:00.000Z"),
-        expiresAt: new Date("2026-04-10T09:55:00.000Z"),
-        status: "ACTIVE",
+    it("throws when the hold has expired", async () => {
+      mockBookingRepository.findBookingHoldByIdForProfessional.mockResolvedValue({
+        ...BASE_HOLD,
+        expiresAt: new Date(Date.now() - 1000),
       });
-
-      mockBookingRepository.validateAccessCodeForProfessional.mockResolvedValue(null);
+      mockBookingRepository.updateBookingHoldById.mockResolvedValue({
+        ...BASE_HOLD,
+        status: "EXPIRED",
+      });
 
       await expect(
         bookingService.confirmBooking({
-          professionalId: "professional_1",
-          serviceId: "service_1",
-          leadId: "lead_1",
-          holdId: "hold_1",
-          timezone: "Europe/Berlin",
-          accessCode: "WRONGCODE",
+          professionalId: PROFESSIONAL_ID,
+          serviceId: SERVICE_ID,
+          leadId: LEAD_ID,
+          holdId: HOLD_ID,
+          timezone: TIMEZONE,
+          accessCode: "BETA2026",
         }),
-      ).rejects.toThrow("Invalid access code.");
+      ).rejects.toThrow("Booking hold has expired.");
+    });
 
-      expect(mockBookingRepository.createBookingForProfessional).not.toHaveBeenCalled();
+    it("short-circuits when an existing valid booking exists for the hold", async () => {
+      mockBookingRepository.findBookingByHoldId.mockResolvedValue({
+        ...BASE_BOOKING,
+        codeValidationStatus: "VALID",
+        calendarStatus: "PENDING",
+      });
+
+      const result = await bookingService.confirmBooking({
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        holdId: HOLD_ID,
+        timezone: TIMEZONE,
+        accessCode: "BETA2026",
+      });
+
+      expect(mockAccessCodeService.validate).not.toHaveBeenCalled();
+      expect(result.isCodeValid).toBe(true);
     });
   });
 
-  describe("event status lifecycle helpers", () => {
-    it("marks event created", async () => {
+  // ── markEventCreated / markEventFailed ─────────────────────────────────────
+
+  describe("markEventCreated", () => {
+    it("marks the calendar status as CREATED", async () => {
+      mockBookingRepository.findBookingById.mockResolvedValue({ id: "booking_1" });
       mockBookingRepository.markEventCreated.mockResolvedValue({
-        id: "booking_1",
-        status: "EVENT_CREATED",
+        ...BASE_BOOKING,
+        calendarStatus: "CREATED",
       });
 
       await bookingService.markEventCreated("booking_1");
@@ -277,16 +432,34 @@ describe.skip("bookingService", () => {
       expect(mockBookingRepository.markEventCreated).toHaveBeenCalledWith("booking_1");
     });
 
-    it("marks event failed", async () => {
+    it("throws when the booking does not exist", async () => {
+      mockBookingRepository.findBookingById.mockResolvedValue(null);
+
+      await expect(
+        bookingService.markEventCreated("nonexistent"),
+      ).rejects.toThrow("Booking not found.");
+    });
+  });
+
+  describe("markEventFailed", () => {
+    it("marks the calendar status as FAILED", async () => {
+      mockBookingRepository.findBookingById.mockResolvedValue({ id: "booking_1" });
       mockBookingRepository.markEventFailed.mockResolvedValue({
-        id: "booking_1",
-        status: "EVENT_CREATION_PENDING",
+        ...BASE_BOOKING,
         calendarStatus: "FAILED",
       });
 
       await bookingService.markEventFailed("booking_1");
 
       expect(mockBookingRepository.markEventFailed).toHaveBeenCalledWith("booking_1");
+    });
+
+    it("throws when the booking does not exist", async () => {
+      mockBookingRepository.findBookingById.mockResolvedValue(null);
+
+      await expect(
+        bookingService.markEventFailed("nonexistent"),
+      ).rejects.toThrow("Booking not found.");
     });
   });
 });

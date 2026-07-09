@@ -20,14 +20,11 @@ export default defineConfig({
         "lib/logger.ts",     // infrastructure, not business logic
         "lib/rate-limit.ts", // infrastructure
       ],
-      // ⚠ Thresholds are intentionally low — 3 unit test suites are skipped
-      // because their mocks no longer match the current service APIs.
-      // Raise these once the TODO: comments in those files are resolved.
       thresholds: {
-        lines:      1,
-        functions:  0,
-        branches:   0,
-        statements: 1,
+        lines:      8,
+        functions:  4,
+        branches:   5,
+        statements: 8,
       },
     },
   },

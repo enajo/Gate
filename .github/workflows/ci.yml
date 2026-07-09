@@ -8,13 +8,21 @@ on:
 
 jobs:
   ci:
-    name: Typecheck · Lint · Test
+    name: Typecheck · Lint · Audit · Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # gitleaks needs full history to scan all commits on a PR
+          fetch-depth: 0
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,6 +38,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
 
       - name: Test with coverage
         run: npm run test:coverage

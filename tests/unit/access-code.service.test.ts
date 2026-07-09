@@ -5,12 +5,26 @@ const mockProfileRepository = vi.hoisted(() => ({
 }));
 
 const mockAccessCodeRepository = vi.hoisted(() => ({
-  findByProfessionalId: vi.fn(),
+  findManyWithServiceByProfessionalId: vi.fn(),
+  findManyByProfessionalAndService: vi.fn(),
+  findActiveByProfessionalId: vi.fn(),
   createForProfessional: vi.fn(),
   findByIdForProfessional: vi.fn(),
   updateById: vi.fn(),
   deleteById: vi.fn(),
-  findValidCodeForProfessional: vi.fn(),
+  findByCodeHashForProfessional: vi.fn(),
+  setActiveState: vi.fn(),
+  countByProfessionalId: vi.fn(),
+  countActiveByProfessionalId: vi.fn(),
+  countStatsByProfessionalAndService: vi.fn(),
+  createManyForProfessional: vi.fn(),
+  markUsed: vi.fn(),
+}));
+
+// hashAccessCode is a real crypto function — stub it to avoid
+// dependency on the ENCRYPTION_KEY / ACCESS_CODE_PEPPER env vars in unit tests.
+vi.mock("@/lib/crypto", () => ({
+  hashAccessCode: vi.fn((code: string) => `hashed:${code.toUpperCase()}`),
 }));
 
 vi.mock("@/server/repositories/profile.repository", () => ({
@@ -21,290 +35,254 @@ vi.mock("@/server/repositories/access-code.repository", () => ({
   accessCodeRepository: mockAccessCodeRepository,
 }));
 
-vi.mock("@/server/validators/access-code.validator", () => ({
-  createAccessCodeSchema: { parse: vi.fn((value) => value) },
-  updateAccessCodeSchema: { parse: vi.fn((value) => value) },
-}));
-
 import { accessCodeService } from "@/server/services/access-code.service";
+import { hashAccessCode } from "@/lib/crypto";
 
-// TODO: service methods were renamed (listAccessCodes → list, etc.) — update these tests
-describe.skip("accessCodeService", () => {
+const PROFESSIONAL_ID = "professional_1";
+const USER_ID = "user_1";
+const NOW = new Date("2026-04-01T12:00:00.000Z");
+
+describe("accessCodeService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockProfileRepository.findByUserId.mockResolvedValue({
-      id: "professional_1",
-      userId: "user_1",
+      id: PROFESSIONAL_ID,
+      userId: USER_ID,
       fullName: "John Carter",
+      timezone: "Europe/Berlin",
     });
   });
 
-  describe("listAccessCodes", () => {
-    it("returns access codes for the current professional", async () => {
-      const accessCodes = [
+  // ── list ────────────────────────────────────────────────────────────────────
+
+  describe("list", () => {
+    it("returns access codes with service name for the professional", async () => {
+      mockAccessCodeRepository.findManyWithServiceByProfessionalId.mockResolvedValue([
         {
           id: "code_1",
-          professionalId: "professional_1",
-          code: "BETA2026",
+          professionalId: PROFESSIONAL_ID,
+          serviceId: "service_1",
+          codeHash: "hashed:BETA2026",
           codeLabel: "Founder beta invite",
           isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          usedAt: null,
+          usedByEmail: null,
+          createdAt: NOW,
+          updatedAt: NOW,
+          service: { title: "Strategy Session" },
         },
-      ];
+      ]);
 
-      mockAccessCodeRepository.findByProfessionalId.mockResolvedValue(accessCodes);
+      const result = await accessCodeService.list(USER_ID);
 
-      const result = await accessCodeService.listAccessCodes("user_1");
-
-      expect(mockProfileRepository.findByUserId).toHaveBeenCalledWith("user_1");
-      expect(mockAccessCodeRepository.findByProfessionalId).toHaveBeenCalledWith(
-        "professional_1",
+      expect(mockAccessCodeRepository.findManyWithServiceByProfessionalId).toHaveBeenCalledWith(
+        PROFESSIONAL_ID,
       );
-      expect(result).toEqual(accessCodes);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "code_1",
+        codeLabel: "Founder beta invite",
+        isActive: true,
+        serviceName: "Strategy Session",
+      });
     });
 
-    it("throws when the professional profile does not exist", async () => {
-      mockProfileRepository.findByUserId.mockResolvedValueOnce(null);
-
-      await expect(accessCodeService.listAccessCodes("user_1")).rejects.toThrow(
-        "Professional profile not found.",
-      );
-
-      expect(
-        mockAccessCodeRepository.findByProfessionalId,
-      ).not.toHaveBeenCalled();
+    it("returns empty array when the professional has no codes", async () => {
+      mockAccessCodeRepository.findManyWithServiceByProfessionalId.mockResolvedValue([]);
+      const result = await accessCodeService.list(USER_ID);
+      expect(result).toEqual([]);
     });
   });
 
-  describe("createAccessCode", () => {
-    it("creates a new access code for the professional", async () => {
-      const createdAccessCode = {
-        id: "code_1",
-        professionalId: "professional_1",
-        code: "BETA2026",
-        codeLabel: "Founder beta invite",
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+  // ── create ──────────────────────────────────────────────────────────────────
 
-      mockAccessCodeRepository.createForProfessional.mockResolvedValue(
-        createdAccessCode,
-      );
-
-      const result = await accessCodeService.createAccessCode("user_1", {
-        code: "BETA2026",
-        codeLabel: "Founder beta invite",
-        isActive: true,
-      });
-
-      expect(mockAccessCodeRepository.createForProfessional).toHaveBeenCalledWith(
-        "professional_1",
-        {
-          code: "BETA2026",
-          codeLabel: "Founder beta invite",
-          isActive: true,
-        },
-      );
-      expect(result).toEqual(createdAccessCode);
-    });
-
-    it("normalizes code input before creating", async () => {
+  describe("create", () => {
+    it("creates a code with a hashed value", async () => {
       mockAccessCodeRepository.createForProfessional.mockResolvedValue({
-        id: "code_1",
-        professionalId: "professional_1",
-        code: "BETA2026",
-        codeLabel: "Founder beta invite",
+        id: "code_new",
+        professionalId: PROFESSIONAL_ID,
+        serviceId: "service_1",
+        codeHash: "hashed:BETA2026",
+        codeLabel: "Founder invite",
         isActive: true,
+        usedAt: null,
+        usedByEmail: null,
+        createdAt: NOW,
+        updatedAt: NOW,
       });
 
-      await accessCodeService.createAccessCode("user_1", {
-        code: "  beta2026  ",
-        codeLabel: "  Founder beta invite  ",
+      const result = await accessCodeService.create(USER_ID, {
+        code: "BETA2026",
+        codeLabel: "Founder invite",
+        serviceId: "service_1",
         isActive: true,
       });
 
       expect(mockAccessCodeRepository.createForProfessional).toHaveBeenCalledWith(
-        "professional_1",
-        {
-          code: "BETA2026",
-          codeLabel: "Founder beta invite",
-          isActive: true,
-        },
-      );
-    });
-
-    it("throws when the code is blank after normalization", async () => {
-      await expect(
-        accessCodeService.createAccessCode("user_1", {
-          code: "   ",
-          codeLabel: "Blank",
+        PROFESSIONAL_ID,
+        expect.objectContaining({
+          codeHash: "hashed:BETA2026",
+          codeLabel: "Founder invite",
+          serviceId: "service_1",
           isActive: true,
         }),
-      ).rejects.toThrow("Access code is required.");
+      );
+      expect(result.id).toBe("code_new");
+    });
 
-      expect(mockAccessCodeRepository.createForProfessional).not.toHaveBeenCalled();
+    it("stores the hash, never the plain code", async () => {
+      mockAccessCodeRepository.createForProfessional.mockResolvedValue({
+        id: "code_2",
+        professionalId: PROFESSIONAL_ID,
+        serviceId: null,
+        codeHash: "hashed:SECRET",
+        codeLabel: null,
+        isActive: true,
+        usedAt: null,
+        usedByEmail: null,
+        createdAt: NOW,
+        updatedAt: NOW,
+      });
+
+      await accessCodeService.create(USER_ID, { code: "SECRET" });
+
+      const [, storedFields] = mockAccessCodeRepository.createForProfessional.mock.calls[0];
+      // codeHash must be the processed hash, never the raw plain code
+      expect(storedFields.codeHash).toBe("hashed:SECRET");
+      expect(storedFields.codeHash).not.toBe("SECRET");
     });
   });
 
-  describe("updateAccessCode", () => {
-    it("updates an existing access code for the professional", async () => {
-      mockAccessCodeRepository.findByIdForProfessional.mockResolvedValue({
-        id: "code_1",
-        professionalId: "professional_1",
-        code: "BETA2026",
-        codeLabel: "Founder beta invite",
-        isActive: true,
+  // ── update ──────────────────────────────────────────────────────────────────
+
+  describe("update", () => {
+    const existing = {
+      id: "code_1",
+      professionalId: PROFESSIONAL_ID,
+      serviceId: null,
+      codeHash: "hashed:OLD",
+      codeLabel: "Old label",
+      isActive: true,
+      usedAt: null,
+      usedByEmail: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+
+    it("updates the label of an existing code", async () => {
+      mockAccessCodeRepository.findByIdForProfessional.mockResolvedValue(existing);
+      mockAccessCodeRepository.updateById.mockResolvedValue({ ...existing, codeLabel: "New label" });
+
+      const result = await accessCodeService.update(USER_ID, "code_1", {
+        codeLabel: "New label",
       });
 
-      mockAccessCodeRepository.updateById.mockResolvedValue({
-        id: "code_1",
-        professionalId: "professional_1",
-        code: "VIP2026",
-        codeLabel: "VIP invite",
-        isActive: false,
-        updatedAt: new Date(),
-      });
-
-      const result = await accessCodeService.updateAccessCode("user_1", "code_1", {
-        code: " vip2026 ",
-        codeLabel: " VIP invite ",
-        isActive: false,
-      });
-
-      expect(
-        mockAccessCodeRepository.findByIdForProfessional,
-      ).toHaveBeenCalledWith("professional_1", "code_1");
-      expect(mockAccessCodeRepository.updateById).toHaveBeenCalledWith("code_1", {
-        code: "VIP2026",
-        codeLabel: "VIP invite",
-        isActive: false,
-      });
-      expect(result).toMatchObject({
-        id: "code_1",
-        code: "VIP2026",
-        codeLabel: "VIP invite",
-        isActive: false,
-      });
+      expect(mockAccessCodeRepository.updateById).toHaveBeenCalledWith(
+        "code_1",
+        expect.objectContaining({ codeLabel: "New label" }),
+      );
+      expect(result.codeLabel).toBe("New label");
     });
 
-    it("throws when the access code does not belong to the professional", async () => {
-      mockAccessCodeRepository.findByIdForProfessional.mockResolvedValueOnce(null);
+    it("hashes the new code value when the code is changed", async () => {
+      mockAccessCodeRepository.findByIdForProfessional.mockResolvedValue(existing);
+      mockAccessCodeRepository.updateById.mockResolvedValue({ ...existing, codeHash: "hashed:NEWCODE" });
+
+      await accessCodeService.update(USER_ID, "code_1", { code: "NEWCODE" });
+
+      expect(mockAccessCodeRepository.updateById).toHaveBeenCalledWith(
+        "code_1",
+        expect.objectContaining({ codeHash: "hashed:NEWCODE" }),
+      );
+    });
+
+    it("throws when the code does not belong to the professional", async () => {
+      mockAccessCodeRepository.findByIdForProfessional.mockResolvedValue(null);
 
       await expect(
-        accessCodeService.updateAccessCode("user_1", "missing_code", {
-          codeLabel: "Updated label",
-        }),
+        accessCodeService.update(USER_ID, "nonexistent", { codeLabel: "x" }),
       ).rejects.toThrow("Access code not found.");
 
       expect(mockAccessCodeRepository.updateById).not.toHaveBeenCalled();
     });
-
-    it("does not require all fields for patch updates", async () => {
-      mockAccessCodeRepository.findByIdForProfessional.mockResolvedValue({
-        id: "code_1",
-        professionalId: "professional_1",
-        code: "BETA2026",
-        codeLabel: "Founder beta invite",
-        isActive: true,
-      });
-
-      mockAccessCodeRepository.updateById.mockResolvedValue({
-        id: "code_1",
-        professionalId: "professional_1",
-        code: "BETA2026",
-        codeLabel: "Updated label",
-        isActive: true,
-      });
-
-      await accessCodeService.updateAccessCode("user_1", "code_1", {
-        codeLabel: " Updated label ",
-      });
-
-      expect(mockAccessCodeRepository.updateById).toHaveBeenCalledWith("code_1", {
-        codeLabel: "Updated label",
-      });
-    });
   });
 
-  describe("deleteAccessCode", () => {
-    it("deletes an access code for the professional", async () => {
+  // ── delete ──────────────────────────────────────────────────────────────────
+
+  describe("delete", () => {
+    it("deletes a code that belongs to the professional", async () => {
       mockAccessCodeRepository.findByIdForProfessional.mockResolvedValue({
         id: "code_1",
-        professionalId: "professional_1",
+        professionalId: PROFESSIONAL_ID,
+        serviceId: null,
+        codeHash: "hashed:BETA",
+        codeLabel: null,
+        isActive: true,
+        usedAt: null,
+        usedByEmail: null,
+        createdAt: NOW,
+        updatedAt: NOW,
       });
+      mockAccessCodeRepository.deleteById.mockResolvedValue(undefined);
 
-      mockAccessCodeRepository.deleteById.mockResolvedValue({
-        id: "code_1",
-      });
+      await accessCodeService.delete(USER_ID, "code_1");
 
-      await accessCodeService.deleteAccessCode("user_1", "code_1");
-
-      expect(
-        mockAccessCodeRepository.findByIdForProfessional,
-      ).toHaveBeenCalledWith("professional_1", "code_1");
       expect(mockAccessCodeRepository.deleteById).toHaveBeenCalledWith("code_1");
     });
 
-    it("throws when deleting a missing access code", async () => {
-      mockAccessCodeRepository.findByIdForProfessional.mockResolvedValueOnce(null);
+    it("throws when the code does not belong to the professional", async () => {
+      mockAccessCodeRepository.findByIdForProfessional.mockResolvedValue(null);
 
       await expect(
-        accessCodeService.deleteAccessCode("user_1", "missing_code"),
+        accessCodeService.delete(USER_ID, "nonexistent"),
       ).rejects.toThrow("Access code not found.");
 
       expect(mockAccessCodeRepository.deleteById).not.toHaveBeenCalled();
     });
   });
 
-  describe("validateAccessCode", () => {
-    it("returns the access code when it is valid and active", async () => {
-      mockAccessCodeRepository.findValidCodeForProfessional.mockResolvedValue({
+  // ── validate ────────────────────────────────────────────────────────────────
+
+  describe("validate", () => {
+    it("returns valid when hash matches an active code", async () => {
+      mockAccessCodeRepository.findByCodeHashForProfessional.mockResolvedValue({
         id: "code_1",
-        professionalId: "professional_1",
-        code: "BETA2026",
-        codeLabel: "Founder beta invite",
+        codeLabel: "Founder invite",
         isActive: true,
       });
 
-      const result = await accessCodeService.validateAccessCode(
-        "professional_1",
-        " beta2026 ",
-      );
-
-      expect(
-        mockAccessCodeRepository.findValidCodeForProfessional,
-      ).toHaveBeenCalledWith("professional_1", "BETA2026");
-      expect(result).toMatchObject({
-        id: "code_1",
+      const result = await accessCodeService.validate({
+        professionalId: PROFESSIONAL_ID,
         code: "BETA2026",
-        isActive: true,
       });
+
+      expect(result.isValid).toBe(true);
+      expect(result.matchedCodeId).toBe("code_1");
+      expect(result.codeLabel).toBe("Founder invite");
     });
 
-    it("returns null when the code is not valid", async () => {
-      mockAccessCodeRepository.findValidCodeForProfessional.mockResolvedValue(null);
+    it("returns invalid when no matching code is found", async () => {
+      mockAccessCodeRepository.findByCodeHashForProfessional.mockResolvedValue(null);
 
-      const result = await accessCodeService.validateAccessCode(
-        "professional_1",
-        "wrong-code",
-      );
+      const result = await accessCodeService.validate({
+        professionalId: PROFESSIONAL_ID,
+        code: "WRONGCODE",
+      });
 
-      expect(result).toBeNull();
+      expect(result.isValid).toBe(false);
+      expect(result.matchedCodeId).toBeNull();
     });
 
-    it("returns null when the input code is blank", async () => {
-      const result = await accessCodeService.validateAccessCode(
-        "professional_1",
-        "   ",
-      );
+    it("normalises the code to uppercase before hashing", async () => {
+      mockAccessCodeRepository.findByCodeHashForProfessional.mockResolvedValue(null);
 
-      expect(result).toBeNull();
-      expect(
-        mockAccessCodeRepository.findValidCodeForProfessional,
-      ).not.toHaveBeenCalled();
+      await accessCodeService.validate({
+        professionalId: PROFESSIONAL_ID,
+        code: "beta2026",
+      });
+
+      expect(hashAccessCode).toHaveBeenCalledWith("BETA2026");
     });
   });
 });

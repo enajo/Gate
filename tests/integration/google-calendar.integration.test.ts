@@ -1,112 +1,118 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockCalendarAccounts = vi.hoisted(() => ({
-  findUnique: vi.fn(),
-  update: vi.fn(),
+// googleCalendarService now uses native fetch + googleRepository directly —
+// no googleapis client. Mock the repository and googleAuthService, then
+// stub the global fetch to control what Google's API returns.
+
+const mockGoogleRepository = vi.hoisted(() => ({
+  findCalendarAccountById: vi.fn(),
+  updateCalendarAccountById: vi.fn(),
+  touchLastSyncedAt: vi.fn(),
 }));
 
-const mockGoogleAccounts = vi.hoisted(() => ({
-  findFirst: vi.fn(),
+const mockGoogleAuthService = vi.hoisted(() => ({
+  decryptToken: vi.fn(() => "fake-access-token"),
+  refreshAccessToken: vi.fn(),
+  encryptOAuthTokens: vi.fn(),
 }));
 
-const mockGoogleBusyRanges = vi.hoisted(() => ({
-  deleteMany: vi.fn(),
-  createMany: vi.fn(),
+vi.mock("@/server/repositories/google.repository", () => ({
+  googleRepository: mockGoogleRepository,
 }));
 
-const mockOAuth2Client = vi.hoisted(() =>
-  vi.fn().mockImplementation(() => ({
-    setCredentials: vi.fn(),
-    refreshAccessToken: vi.fn(),
-  })),
-);
-
-const mockCalendarFreebusyQuery = vi.hoisted(() => vi.fn());
-const mockCalendarEventsInsert = vi.hoisted(() => vi.fn());
-
-vi.mock("@/lib/db", () => ({
-  db: {
-    calendarAccount: mockCalendarAccounts,
-    googleAccount: mockGoogleAccounts,
-    googleBusyRange: mockGoogleBusyRanges,
-  },
-}));
-
-vi.mock("googleapis", () => ({
-  google: {
-    auth: {
-      OAuth2: mockOAuth2Client,
-    },
-    calendar: vi.fn(() => ({
-      freebusy: {
-        query: mockCalendarFreebusyQuery,
-      },
-      events: {
-        insert: mockCalendarEventsInsert,
-      },
-    })),
-  },
+vi.mock("@/server/services/google-auth.service", () => ({
+  // GOOGLE_PROVIDER is a module-level constant imported by google-calendar.service;
+  // it must be present in the mock object or the service will throw on import.
+  GOOGLE_PROVIDER: "GOOGLE",
+  googleAuthService: mockGoogleAuthService,
 }));
 
 import { googleCalendarService } from "@/server/services/google-calendar.service";
 
-// TODO: createBookingEventForCalendarAccount was renamed — update this test
-describe.skip("googleCalendarService integration", () => {
+// ── Shared fixtures ──────────────────────────────────────────────────────────
+
+const CALENDAR_ACCOUNT = {
+  id: "calendar_account_1",
+  professionalId: "professional_1",
+  provider: "GOOGLE",
+  externalCalendarId: "primary",
+  externalAccountId: "google_account_1",
+  calendarName: "Primary Calendar",
+  calendarTimeZone: "Europe/Berlin",
+  providerEmail: "john@example.com",
+  accessTokenEncrypted: "encrypted-access-token",
+  refreshTokenEncrypted: "encrypted-refresh-token",
+  isActive: true,
+  syncStatus: "CONNECTED",
+  lastSyncedAt: new Date("2026-04-01T00:00:00.000Z"),
+  createdAt: new Date("2026-01-01T00:00:00.000Z"),
+  updatedAt: new Date("2026-04-01T00:00:00.000Z"),
+};
+
+function makeFetchResponse(body: unknown, status = 200) {
+  return Promise.resolve(
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+}
+
+describe("googleCalendarService integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockCalendarAccounts.findUnique.mockResolvedValue({
-      id: "calendar_account_1",
-      professionalId: "professional_1",
-      provider: "GOOGLE",
-      externalCalendarId: "primary",
-      calendarName: "Primary",
-      calendarTimeZone: "Europe/Berlin",
-      providerEmail: "john@example.com",
-      isActive: true,
-      syncStatus: "CONNECTED",
-    });
+    mockGoogleRepository.findCalendarAccountById.mockResolvedValue(CALENDAR_ACCOUNT);
+    mockGoogleRepository.touchLastSyncedAt.mockResolvedValue(undefined);
+    mockGoogleAuthService.decryptToken.mockReturnValue("fake-access-token");
 
-    mockGoogleAccounts.findFirst.mockResolvedValue({
-      id: "google_account_1",
-      professionalId: "professional_1",
-      accessToken: "access_token",
-      refreshToken: "refresh_token",
-      expiryDate: new Date(Date.now() + 60 * 60 * 1000),
-      tokenType: "Bearer",
-      scope: "calendar",
-    });
-
-    mockCalendarAccounts.update.mockResolvedValue({
-      id: "calendar_account_1",
-      syncStatus: "CONNECTED",
-    });
-
-    mockGoogleBusyRanges.deleteMany.mockResolvedValue({ count: 0 });
-    mockGoogleBusyRanges.createMany.mockResolvedValue({ count: 2 });
+    vi.stubGlobal("fetch", vi.fn());
   });
 
-  it("fetches busy ranges and persists them for a calendar account", async () => {
-    mockCalendarFreebusyQuery.mockResolvedValue({
-      data: {
-        calendars: {
-          primary: {
-            busy: [
-              {
-                start: "2026-04-10T09:00:00.000Z",
-                end: "2026-04-10T10:00:00.000Z",
-              },
-              {
-                start: "2026-04-10T13:00:00.000Z",
-                end: "2026-04-10T14:00:00.000Z",
-              },
-            ],
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // ── getBusyRangesForCalendarAccount ─────────────────────────────────────────
+
+  describe("getBusyRangesForCalendarAccount", () => {
+    it("returns merged busy ranges from the Google freebusy API", async () => {
+      vi.mocked(fetch).mockReturnValueOnce(
+        makeFetchResponse({
+          calendars: {
+            primary: {
+              busy: [
+                { start: "2026-04-10T09:00:00.000Z", end: "2026-04-10T10:00:00.000Z" },
+                { start: "2026-04-10T13:00:00.000Z", end: "2026-04-10T14:00:00.000Z" },
+              ],
+            },
           },
-        },
-      },
+        }),
+      );
+
+      const result = await googleCalendarService.getBusyRangesForCalendarAccount({
+        calendarAccountId: "calendar_account_1",
+        start: new Date("2026-04-10T00:00:00.000Z"),
+        end: new Date("2026-04-11T00:00:00.000Z"),
+        timezone: "Europe/Berlin",
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        start: new Date("2026-04-10T09:00:00.000Z"),
+        end: new Date("2026-04-10T10:00:00.000Z"),
+      });
+      expect(result[1]).toMatchObject({
+        start: new Date("2026-04-10T13:00:00.000Z"),
+        end: new Date("2026-04-10T14:00:00.000Z"),
+      });
     });
 
-    const result =
+    it("sends the correct freebusy request body to Google", async () => {
+      vi.mocked(fetch).mockReturnValueOnce(
+        makeFetchResponse({ calendars: { primary: { busy: [] } } }),
+      );
+
       await googleCalendarService.getBusyRangesForCalendarAccount({
         calendarAccountId: "calendar_account_1",
         start: new Date("2026-04-10T00:00:00.000Z"),
@@ -114,125 +120,145 @@ describe.skip("googleCalendarService integration", () => {
         timezone: "Europe/Berlin",
       });
 
-    expect(mockCalendarAccounts.findUnique).toHaveBeenCalledWith({
-      where: { id: "calendar_account_1" },
+      const [url, init] = vi.mocked(fetch).mock.calls[0];
+      expect(String(url)).toContain("/freeBusy");
+      expect(init?.method).toBe("POST");
+
+      const body = JSON.parse(init?.body as string);
+      expect(body).toMatchObject({
+        timeMin: "2026-04-10T00:00:00.000Z",
+        timeMax: "2026-04-11T00:00:00.000Z",
+        timeZone: "Europe/Berlin",
+        items: [{ id: "primary" }],
+      });
     });
 
-    expect(mockGoogleAccounts.findFirst).toHaveBeenCalledWith({
-      where: {
-        professionalId: "professional_1",
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
+    it("returns an empty array when the calendar has no busy times", async () => {
+      vi.mocked(fetch).mockReturnValueOnce(
+        makeFetchResponse({ calendars: { primary: { busy: [] } } }),
+      );
 
-    expect(mockCalendarFreebusyQuery).toHaveBeenCalledWith(
-      expect.objectContaining({
-        requestBody: expect.objectContaining({
-          timeMin: "2026-04-10T00:00:00.000Z",
-          timeMax: "2026-04-11T00:00:00.000Z",
-          timeZone: "Europe/Berlin",
-          items: [{ id: "primary" }],
-        }),
-      }),
-    );
-
-    expect(mockGoogleBusyRanges.deleteMany).toHaveBeenCalledWith({
-      where: {
+      const result = await googleCalendarService.getBusyRangesForCalendarAccount({
         calendarAccountId: "calendar_account_1",
-        start: {
-          gte: new Date("2026-04-10T00:00:00.000Z"),
-        },
-        end: {
-          lte: new Date("2026-04-11T00:00:00.000Z"),
-        },
-      },
+        start: new Date("2026-04-10T00:00:00.000Z"),
+        end: new Date("2026-04-11T00:00:00.000Z"),
+        timezone: "Europe/Berlin",
+      });
+
+      expect(result).toEqual([]);
     });
 
-    expect(mockGoogleBusyRanges.createMany).toHaveBeenCalledWith({
-      data: [
-        {
-          calendarAccountId: "calendar_account_1",
-          start: new Date("2026-04-10T09:00:00.000Z"),
-          end: new Date("2026-04-10T10:00:00.000Z"),
-        },
-        {
-          calendarAccountId: "calendar_account_1",
-          start: new Date("2026-04-10T13:00:00.000Z"),
-          end: new Date("2026-04-10T14:00:00.000Z"),
-        },
-      ],
-    });
+    it("touches lastSyncedAt after a successful fetch", async () => {
+      vi.mocked(fetch).mockReturnValueOnce(
+        makeFetchResponse({ calendars: { primary: { busy: [] } } }),
+      );
 
-    expect(mockCalendarAccounts.update).toHaveBeenCalledWith({
-      where: { id: "calendar_account_1" },
-      data: {
-        syncStatus: "CONNECTED",
-        lastSyncedAt: expect.any(Date),
-      },
-    });
+      await googleCalendarService.getBusyRangesForCalendarAccount({
+        calendarAccountId: "calendar_account_1",
+        start: new Date("2026-04-10T00:00:00.000Z"),
+        end: new Date("2026-04-11T00:00:00.000Z"),
+        timezone: "Europe/Berlin",
+      });
 
-    expect(result).toEqual([
-      {
-        start: new Date("2026-04-10T09:00:00.000Z"),
-        end: new Date("2026-04-10T10:00:00.000Z"),
-      },
-      {
-        start: new Date("2026-04-10T13:00:00.000Z"),
-        end: new Date("2026-04-10T14:00:00.000Z"),
-      },
-    ]);
+      expect(mockGoogleRepository.touchLastSyncedAt).toHaveBeenCalledWith(
+        "calendar_account_1",
+        "professional_1",
+      );
+    });
   });
 
-  it("creates a booking event for a calendar account and returns event metadata", async () => {
-    mockCalendarEventsInsert.mockResolvedValue({
-      data: {
-        id: "google_event_1",
-        htmlLink: "https://calendar.google.com/event?eid=google_event_1",
-      },
-    });
+  // ── createCalendarEvent ─────────────────────────────────────────────────────
 
-    const result =
-      await googleCalendarService.createBookingEventForCalendarAccount({
+  describe("createCalendarEvent", () => {
+    it("creates an event and returns the event ID and URL", async () => {
+      vi.mocked(fetch).mockReturnValueOnce(
+        makeFetchResponse({
+          id: "google_event_1",
+          htmlLink: "https://calendar.google.com/event?eid=google_event_1",
+        }),
+      );
+
+      const result = await googleCalendarService.createCalendarEvent({
         calendarAccountId: "calendar_account_1",
         title: "Strategy Session",
         start: new Date("2026-04-10T10:00:00.000Z"),
         end: new Date("2026-04-10T10:45:00.000Z"),
-        timezone: "Europe/Berlin",
-        attendeeEmail: "client@example.com",
-        attendeeName: "Sarah Founder",
-        bookingId: "booking_1",
-        description: "Booking ID: booking_1",
+        timeZone: "Europe/Berlin",
+        attendees: [{ email: "sarah@example.com", displayName: "Sarah Founder" }],
       });
 
-    expect(mockCalendarEventsInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        calendarId: "primary",
-        requestBody: expect.objectContaining({
-          summary: "Strategy Session",
-          description: "Booking ID: booking_1",
-          start: {
-            dateTime: "2026-04-10T10:00:00.000Z",
-            timeZone: "Europe/Berlin",
-          },
-          end: {
-            dateTime: "2026-04-10T10:45:00.000Z",
-            timeZone: "Europe/Berlin",
-          },
-          attendees: [
-            {
-              email: "client@example.com",
-              displayName: "Sarah Founder",
-            },
-          ],
-        }),
-      }),
-    );
+      expect(result.externalEventId).toBe("google_event_1");
+      expect(result.eventUrl).toBe("https://calendar.google.com/event?eid=google_event_1");
+    });
 
-    expect(result).toEqual({
-      externalEventId: "google_event_1",
-      eventUrl: "https://calendar.google.com/event?eid=google_event_1",
+    it("sends the correct event body to the Google Calendar API", async () => {
+      vi.mocked(fetch).mockReturnValueOnce(
+        makeFetchResponse({ id: "google_event_2", htmlLink: null }),
+      );
+
+      await googleCalendarService.createCalendarEvent({
+        calendarAccountId: "calendar_account_1",
+        title: "Strategy Session",
+        description: "Booking ID: booking_1",
+        start: new Date("2026-04-10T10:00:00.000Z"),
+        end: new Date("2026-04-10T10:45:00.000Z"),
+        timeZone: "Europe/Berlin",
+        attendees: [
+          { email: "sarah@example.com", displayName: "Sarah Founder" },
+        ],
+      });
+
+      const [url, init] = vi.mocked(fetch).mock.calls[0];
+      expect(String(url)).toContain("/calendars/primary/events");
+      expect(init?.method).toBe("POST");
+
+      const body = JSON.parse(init?.body as string);
+      expect(body).toMatchObject({
+        summary: "Strategy Session",
+        description: "Booking ID: booking_1",
+        start: { dateTime: "2026-04-10T10:00:00.000Z", timeZone: "Europe/Berlin" },
+        end: { dateTime: "2026-04-10T10:45:00.000Z", timeZone: "Europe/Berlin" },
+        attendees: [{ email: "sarah@example.com", displayName: "Sarah Founder" }],
+      });
+    });
+
+    it("extracts the Google Meet URL when the event has a hangoutLink", async () => {
+      vi.mocked(fetch).mockReturnValueOnce(
+        makeFetchResponse({
+          id: "google_event_3",
+          htmlLink: "https://calendar.google.com/event?eid=google_event_3",
+          hangoutLink: "https://meet.google.com/abc-defg-hij",
+        }),
+      );
+
+      const result = await googleCalendarService.createCalendarEvent({
+        calendarAccountId: "calendar_account_1",
+        title: "Strategy Session",
+        start: new Date("2026-04-10T10:00:00.000Z"),
+        end: new Date("2026-04-10T10:45:00.000Z"),
+        timeZone: "Europe/Berlin",
+        attendees: [],
+        conferenceDataVersion: 1,
+      });
+
+      expect(result.meetingUrl).toBe("https://meet.google.com/abc-defg-hij");
+    });
+
+    it("throws when the Google API returns a non-OK response", async () => {
+      vi.mocked(fetch).mockReturnValueOnce(
+        makeFetchResponse({ error: { message: "Calendar not found" } }, 404),
+      );
+
+      await expect(
+        googleCalendarService.createCalendarEvent({
+          calendarAccountId: "calendar_account_1",
+          title: "Strategy Session",
+          start: new Date("2026-04-10T10:00:00.000Z"),
+          end: new Date("2026-04-10T10:45:00.000Z"),
+          timeZone: "Europe/Berlin",
+          attendees: [],
+        }),
+      ).rejects.toThrow("Calendar not found");
     });
   });
 });

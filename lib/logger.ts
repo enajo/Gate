@@ -1,55 +1,74 @@
 type LogLevel = "debug" | "info" | "warn" | "error";
 
-type LogMeta = Record<string, unknown>;
+type LogContext = Record<string, unknown>;
 
-const isDevelopment = process.env.NODE_ENV === "development";
+const isProd = process.env.NODE_ENV === "production";
 
-function formatMessage(level: LogLevel, message: string, meta?: LogMeta) {
-  const timestamp = new Date().toISOString();
+// ANSI colours — dev only
+const COLOURS: Record<LogLevel, string> = {
+  debug: "\x1b[36m", // cyan
+  info:  "\x1b[32m", // green
+  warn:  "\x1b[33m", // yellow
+  error: "\x1b[31m", // red
+};
+const RESET = "\x1b[0m";
 
-  return {
-    timestamp,
+function write(
+  level: LogLevel,
+  message: string,
+  ctx: LogContext,
+  meta?: LogContext,
+) {
+  if (level === "debug" && isProd) return;
+
+  const entry = {
+    ts: new Date().toISOString(),
     level,
     message,
-    ...(meta ? { meta } : {}),
+    ...ctx,
+    ...(meta ?? {}),
+  };
+
+  if (isProd) {
+    // One JSON line per entry — works with any log aggregator (Datadog, Logtail…)
+    const out = JSON.stringify(entry);
+    level === "error" ? console.error(out) : console.log(out);
+    return;
+  }
+
+  // Dev: coloured, human-readable
+  const colour = COLOURS[level];
+  const prefix = `${colour}[${level.toUpperCase()}]${RESET}`;
+  const extra = { ...ctx, ...(meta ?? {}) };
+  const extraStr = Object.keys(extra).length ? " " + JSON.stringify(extra) : "";
+  const fn =
+    level === "error" ? console.error
+    : level === "warn" ? console.warn
+    : level === "debug" ? console.debug
+    : console.log;
+  fn(`${entry.ts} ${prefix} ${message}${extraStr}`);
+}
+
+function makeLogger(ctx: LogContext = {}) {
+  return {
+    debug(message: string, meta?: LogContext) {
+      write("debug", message, ctx, meta);
+    },
+    info(message: string, meta?: LogContext) {
+      write("info", message, ctx, meta);
+    },
+    warn(message: string, meta?: LogContext) {
+      write("warn", message, ctx, meta);
+    },
+    error(message: string, meta?: LogContext) {
+      write("error", message, ctx, meta);
+    },
+    /** New logger with extra fields bound to every log line (requestId, userId…). */
+    child(extra: LogContext) {
+      return makeLogger({ ...ctx, ...extra });
+    },
   };
 }
 
-function write(level: LogLevel, message: string, meta?: LogMeta) {
-  const payload = formatMessage(level, message, meta);
-
-  switch (level) {
-    case "debug":
-      if (isDevelopment) {
-        console.debug(payload);
-      }
-      break;
-    case "info":
-      console.info(payload);
-      break;
-    case "warn":
-      console.warn(payload);
-      break;
-    case "error":
-      console.error(payload);
-      break;
-  }
-}
-
-export const logger = {
-  debug(message: string, meta?: LogMeta) {
-    write("debug", message, meta);
-  },
-
-  info(message: string, meta?: LogMeta) {
-    write("info", message, meta);
-  },
-
-  warn(message: string, meta?: LogMeta) {
-    write("warn", message, meta);
-  },
-
-  error(message: string, meta?: LogMeta) {
-    write("error", message, meta);
-  },
-};
+export const logger = makeLogger();
+export type Logger = ReturnType<typeof makeLogger>;

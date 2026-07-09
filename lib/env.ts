@@ -14,6 +14,10 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
+  // NextAuth aliases — either form is accepted
+  NEXTAUTH_SECRET: z.string().optional(),
+  NEXTAUTH_URL: z.string().url().optional(),
+
   AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
   AUTH_GOOGLE_ID: z.string().optional(),
   AUTH_GOOGLE_SECRET: z.string().optional(),
@@ -41,6 +45,8 @@ const parsedEnv = envSchema.safeParse({
   NODE_ENV: process.env.NODE_ENV,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   DATABASE_URL: process.env.DATABASE_URL,
+  NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   AUTH_SECRET: process.env.AUTH_SECRET,
   AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
   AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
@@ -55,12 +61,12 @@ const parsedEnv = envSchema.safeParse({
 });
 
 if (!parsedEnv.success) {
-  console.error(
-    "❌ Invalid environment variables:",
-    parsedEnv.error.flatten().fieldErrors,
-  );
-
-  throw new Error("Invalid environment variables");
+  const errors = parsedEnv.error.flatten().fieldErrors;
+  const lines = Object.entries(errors)
+    .map(([key, msgs]) => `  ${key}: ${msgs?.join(", ")}`)
+    .join("\n");
+  console.error(`\n❌ Missing or invalid environment variables:\n${lines}\n`);
+  throw new Error("Server cannot start: fix the environment variables above.");
 }
 
 export const env = parsedEnv.data;

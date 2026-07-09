@@ -4,6 +4,7 @@ import { z, ZodError } from "zod";
 import { DEFAULT_TIMEZONE } from "@/lib/constants";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { getClientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { emailService } from "@/server/services/email.service";
 import { accessCodeService } from "@/server/services/access-code.service";
 import { bookingService } from "@/server/services/booking.service";
@@ -59,7 +60,15 @@ function errorResponse(error: unknown) {
   return NextResponse.json({ error: message }, { status: 400 });
 }
 
+// 5 holds per 10 minutes per IP
+const HOLD_LIMIT  = 5;
+const HOLD_WINDOW = 10 * 60 * 1000;
+
 export async function POST(request: Request) {
+  const ip     = getClientIp(request);
+  const result = rateLimit(`holds:${ip}`, HOLD_LIMIT, HOLD_WINDOW);
+  if (!result.allowed) return tooManyRequests(result.resetAt);
+
   try {
     const json = await request.json();
 

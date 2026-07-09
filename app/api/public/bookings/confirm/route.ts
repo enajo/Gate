@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { logger } from "@/lib/logger";
+import { getClientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { bookingService } from "@/server/services/booking.service";
 import { confirmBookingSchema } from "@/server/validators/booking.validator";
 
@@ -53,7 +54,15 @@ function errorResponse(error: unknown) {
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
+// 5 confirmations per 10 minutes per IP
+const CONFIRM_LIMIT  = 5;
+const CONFIRM_WINDOW = 10 * 60 * 1000;
+
 export async function POST(request: Request) {
+  const ip     = getClientIp(request);
+  const result = rateLimit(`bookings:confirm:${ip}`, CONFIRM_LIMIT, CONFIRM_WINDOW);
+  if (!result.allowed) return tooManyRequests(result.resetAt);
+
   try {
     const json = (await request.json()) as Record<string, unknown>;
 

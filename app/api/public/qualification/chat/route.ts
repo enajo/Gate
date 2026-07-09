@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { z, ZodError } from "zod";
 
 import { logger } from "@/lib/logger";
+import { getClientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { bookingRepository } from "@/server/repositories/booking.repository";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
@@ -59,7 +60,16 @@ function errorResponse(error: unknown, status = 400) {
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
+// 20 messages per 5 minutes per IP — generous for a real conversation,
+// tight enough to block bots burning your OpenAI credits
+const CHAT_LIMIT  = 20;
+const CHAT_WINDOW = 5 * 60 * 1000;
+
 export async function POST(request: Request) {
+  const ip     = getClientIp(request);
+  const result = rateLimit(`qualification:chat:${ip}`, CHAT_LIMIT, CHAT_WINDOW);
+  if (!result.allowed) return tooManyRequests(result.resetAt);
+
   try {
     const json = (await request.json()) as Record<string, unknown>;
     const input = chatSchema.parse(json);

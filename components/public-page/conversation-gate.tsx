@@ -30,6 +30,13 @@ export interface ConversationGateProps {
   professionalName: string;
   accentColor: string;
   accentTextColor: string;
+  /** Referrer + UTM params captured server-side on page load, for lead attribution. */
+  visitorSource?: {
+    referrer?: string | null;
+    utmSource?: string | null;
+    utmMedium?: string | null;
+    utmCampaign?: string | null;
+  };
   onQualified: (params: { leadId: string; name: string; email: string }) => void;
 }
 
@@ -41,6 +48,7 @@ export function ConversationGate({
   professionalName,
   accentColor,
   accentTextColor,
+  visitorSource,
   onQualified,
 }: ConversationGateProps) {
   // Identity form
@@ -111,6 +119,10 @@ export function ConversationGate({
           name: name.trim(),
           email: email.trim(),
           history: currentHistory,
+          referrer: visitorSource?.referrer ?? undefined,
+          utmSource: visitorSource?.utmSource ?? undefined,
+          utmMedium: visitorSource?.utmMedium ?? undefined,
+          utmCampaign: visitorSource?.utmCampaign ?? undefined,
         }),
       });
 
@@ -190,6 +202,9 @@ export function ConversationGate({
     const nextHistory = [...history, userMessage];
     setHistory(nextHistory);
     setInputValue("");
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
 
     void callChat(nextHistory);
   }
@@ -406,12 +421,16 @@ export function ConversationGate({
           <textarea
             ref={inputRef}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={(e) => {
+              setInputValue(e.target.value);
+              e.target.style.height = "auto";
+              e.target.style.height = `${e.target.scrollHeight}px`;
+            }}
             onKeyDown={handleInputKeyDown}
             rows={1}
             placeholder="Type your reply…"
-            className="flex-1 resize-none bg-transparent text-[14px] leading-6 text-ink-deep outline-none"
-            style={{ maxHeight: "96px" }}
+            className="flex-1 resize-none overflow-y-auto bg-transparent text-[14px] leading-6 text-ink-deep outline-none"
+            style={{ maxHeight: "120px" }}
             disabled={isLoading}
           />
           <button

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z, ZodError } from "zod";
 
+import { LOW_TOKEN_BALANCE_THRESHOLD } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { getClientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { bookingRepository } from "@/server/repositories/booking.repository";
@@ -24,12 +25,13 @@ const chatSchema = z
     email: z.string().trim().email().max(320),
     /** Full conversation history so far — empty on the first call. */
     history: z.array(messageSchema).max(40),
+    /** Passive source attribution, captured server-side on page load. */
+    referrer: z.string().trim().max(500).nullish(),
+    utmSource: z.string().trim().max(200).nullish(),
+    utmMedium: z.string().trim().max(200).nullish(),
+    utmCampaign: z.string().trim().max(200).nullish(),
   })
   .strict();
-
-// ── Token thresholds ──────────────────────────────────────────────────────────
-
-const LOW_BALANCE_THRESHOLD = 500;
 
 // ── Error helper ──────────────────────────────────────────────────────────────
 
@@ -114,6 +116,10 @@ export async function POST(request: Request) {
             history: input.history,
           } as Prisma.InputJsonValue,
           qualificationResult: "QUALIFIED",
+          referrer: input.referrer ?? null,
+          utmSource: input.utmSource ?? null,
+          utmMedium: input.utmMedium ?? null,
+          utmCampaign: input.utmCampaign ?? null,
         },
       );
 
@@ -202,6 +208,10 @@ export async function POST(request: Request) {
             redirectServiceId: turn.redirectServiceId ?? null,
           } as Prisma.InputJsonValue,
           qualificationResult,
+          referrer: input.referrer ?? null,
+          utmSource: input.utmSource ?? null,
+          utmMedium: input.utmMedium ?? null,
+          utmCampaign: input.utmCampaign ?? null,
         },
       );
 
@@ -213,7 +223,7 @@ export async function POST(request: Request) {
         leadId: lead.id,
         tokensUsed: turn.tokensUsed,
         tokenBalance: newBalance,
-        lowBalance: newBalance <= LOW_BALANCE_THRESHOLD,
+        lowBalance: newBalance <= LOW_TOKEN_BALANCE_THRESHOLD,
       });
     }
 
@@ -223,7 +233,7 @@ export async function POST(request: Request) {
       message: turn.message,
       tokensUsed: turn.tokensUsed,
       tokenBalance: newBalance,
-      lowBalance: newBalance <= LOW_BALANCE_THRESHOLD,
+      lowBalance: newBalance <= LOW_TOKEN_BALANCE_THRESHOLD,
     });
   } catch (error) {
     return errorResponse(error);

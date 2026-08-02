@@ -80,6 +80,10 @@ export type Lead = {
   email: string;
   answersJson: Record<string, unknown>;
   qualificationResult: LeadQualificationResult;
+  referrer: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
   createdAt: Date;
   updatedAt: Date;
 };

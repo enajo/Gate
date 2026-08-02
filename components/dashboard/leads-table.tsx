@@ -23,6 +23,8 @@ export type LeadRow = {
   qualificationResult: "QUALIFIED" | "REDIRECTED" | "REJECTED" | "PENDING_REVIEW";
   service: { title: string };
   answersJson: unknown;
+  referrer?: string | null;
+  utmSource?: string | null;
   createdAt: Date | string;
 };
 
@@ -53,6 +55,21 @@ function formatDate(value: Date | string) {
     day: "numeric",
     year: "numeric",
   });
+}
+
+/** Best-effort label for where this visitor came from — never fails on a malformed referrer. */
+function getSourceLabel(lead: Pick<LeadRow, "referrer" | "utmSource">) {
+  if (lead.utmSource) return lead.utmSource;
+
+  if (lead.referrer) {
+    try {
+      return new URL(lead.referrer).hostname.replace(/^www\./, "");
+    } catch {
+      // malformed/relative referrer — fall through to "Direct"
+    }
+  }
+
+  return "Direct";
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -135,7 +152,9 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
 
         <div className="hidden shrink-0 text-right sm:block">
           <p className="text-[13px] text-gray-500">{lead.service.title}</p>
-          <p className="mt-0.5 text-[11px] text-gray-400">{formatDate(lead.createdAt)}</p>
+          <p className="mt-0.5 text-[11px] text-gray-400">
+            {formatDate(lead.createdAt)} · via {getSourceLabel(lead)}
+          </p>
         </div>
       </button>
 

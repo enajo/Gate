@@ -1,5 +1,6 @@
 import { addDays } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -18,6 +19,11 @@ import type { BookableSlot } from "@/types/availability";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{
+    utm_source?: string;
+    utm_medium?: string;
+    utm_campaign?: string;
+  }>;
 };
 
 /** Max exposure days — must cover the widest option (TWO_MONTHS = 62). */
@@ -98,8 +104,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default async function PublicProfessionalPage({ params }: PageProps) {
+export default async function PublicProfessionalPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { slug } = await params;
+  const { utm_source, utm_medium, utm_campaign } = await searchParams;
+  const referrer = (await headers()).get("referer");
 
   // 1. Fetch the published profile data (returns null if not published).
   const data = await profileService.getPublicPageData(slug);
@@ -146,6 +157,12 @@ export default async function PublicProfessionalPage({ params }: PageProps) {
     availableDates,
     availableTimes: [], // unused — template reads from slotsPerDate
     slotsPerDate,
+    visitorSource: {
+      referrer,
+      utmSource: utm_source ?? null,
+      utmMedium: utm_medium ?? null,
+      utmCampaign: utm_campaign ?? null,
+    },
   };
 
   return <PublicSalesPageTemplate data={pageData} />;

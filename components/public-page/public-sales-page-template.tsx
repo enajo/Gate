@@ -90,6 +90,13 @@ export type PublicTheme = {
   backgroundColor: string;
 };
 
+export type VisitorSource = {
+  referrer?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+};
+
 export type PublicSalesPageTemplateData = {
   name: string;
   role: string;
@@ -107,6 +114,8 @@ export type PublicSalesPageTemplateData = {
   professionalId?: string;
   metrics?: PublicMetric[];
   featuredReview?: PublicReview | null;
+  /** Referrer + UTM params captured server-side on page load, for lead attribution. */
+  visitorSource?: VisitorSource;
 };
 
 function getYiq(hexColor: string) {
@@ -703,6 +712,7 @@ export function PublicSalesPageTemplate({
                       professionalName={data.name}
                       accentColor={accentColor}
                       accentTextColor={accentTextColor}
+                      visitorSource={data.visitorSource}
                       onQualified={({ leadId, name, email }) => {
                         setLeadId(leadId);
                         setGuestName(name);

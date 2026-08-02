@@ -34,6 +34,10 @@ export function mapLead(lead: PrismaLead): Lead {
     email: lead.email,
     answersJson: lead.answersJson as Record<string, unknown>,
     qualificationResult: lead.qualificationResult,
+    referrer: lead.referrer,
+    utmSource: lead.utmSource,
+    utmMedium: lead.utmMedium,
+    utmCampaign: lead.utmCampaign,
     createdAt: lead.createdAt,
     updatedAt: lead.updatedAt,
   };

@@ -371,6 +371,11 @@ model Lead {
   email               String
   answersJson         Json                    @map("answers_json")
   qualificationResult LeadQualificationResult @map("qualification_result")
+  /** Referrer header captured on the visitor's first hit to the public page (e.g. "https://chatgpt.com/"). */
+  referrer            String?
+  utmSource           String?                 @map("utm_source")
+  utmMedium           String?                 @map("utm_medium")
+  utmCampaign         String?                 @map("utm_campaign")
   createdAt           DateTime                @default(now()) @map("created_at")
   updatedAt           DateTime                @updatedAt @map("updated_at")
 

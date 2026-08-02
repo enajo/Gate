@@ -55,6 +55,8 @@ export default async function LeadsPage({
     qualificationResult: l.qualificationResult as LeadRow["qualificationResult"],
     service: { title: l.service.title },
     answersJson: l.answersJson,
+    referrer: l.referrer,
+    utmSource: l.utmSource,
     createdAt: l.createdAt,
   }));
 

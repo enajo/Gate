@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { auth } from "@/lib/auth";
+import { LOW_TOKEN_BALANCE_THRESHOLD } from "@/lib/constants";
 import { bookingService } from "@/server/services/booking.service";
 import { onboardingService } from "@/server/services/onboarding.service";
 import { profileService } from "@/server/services/profile.service";
@@ -102,7 +103,7 @@ export default async function DashboardPage() {
 
   const profile = controlRoomState?.profile;
   const tokenBalance = controlRoomState?.tokenBalance ?? 1000;
-  const lowTokenBalance = tokenBalance <= 100;
+  const lowTokenBalance = tokenBalance <= LOW_TOKEN_BALANCE_THRESHOLD;
   const { checklist, counts, completionPercentage } = onboardingState;
   const isPublished = Boolean(controlRoomState?.publishedAt);
   const slug = onboardingState.slug;

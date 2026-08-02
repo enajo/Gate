@@ -10,6 +10,7 @@ export const DEFAULT_HOLD_DURATION_MINUTES = 10;
 export const DEFAULT_CALENDAR_SYNC_WINDOW_DAYS = 90;
 export const MAX_QUALIFICATION_QUESTIONS = 5;
 export const DEFAULT_MAX_BOOKINGS_PER_DAY = 10;
+export const LOW_TOKEN_BALANCE_THRESHOLD = 500;
 
 export const ROUTES = {
   home: "/",

@@ -29,6 +29,11 @@
   "lint-staged": {
     "*.{ts,tsx}": "eslint --fix"
   },
+  "overrides": {
+    "postcss": "^8.5.25",
+    "sharp": "^0.35.3",
+    "esbuild": "^0.28.1"
+  },
   "dependencies": {
     "@googleapis/calendar": "14.2.0",
     "@hookform/resolvers": "5.2.2",
@@ -43,13 +48,13 @@
     "date-fns": "4.1.0",
     "date-fns-tz": "3.2.0",
     "lucide-react": "1.7.0",
-    "next": "16.2.2",
+    "next": "^16.2.12",
     "next-auth": "^4.24.14",
     "openai": "^6.42.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "7.72.1",
-    "resend": "6.10.0",
+    "resend": "^6.18.1",
     "tailwind-merge": "3.5.0",
     "zod": "4.3.6"
   },
@@ -63,7 +68,7 @@
     "eslint-config-next": "16.2.2",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
-    "postcss": "8.5.8",
+    "postcss": "^8.5.25",
     "prisma": "^6.19.3",
     "tailwindcss": "4.2.2",
     "tsx": "4.21.0",

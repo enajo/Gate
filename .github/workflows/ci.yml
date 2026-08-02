@@ -40,9 +40,9 @@ jobs:
         run: npm run lint
 
       - name: Audit dependencies
-        # Blocks on critical CVEs only. The uuid/next-auth/resend chain has a
-        # high-severity advisory but no non-breaking fix (resolution requires
-        # downgrading next-auth v4 → v3). Revisit when next-auth ships a patch.
+        # Blocks on critical CVEs. As of the last dependency sweep the tree
+        # audits clean (0 vulnerabilities) via patched next-auth/resend plus
+        # postcss/sharp/esbuild pins in package.json#overrides.
         run: npm audit --audit-level=critical
 
       - name: Test with coverage

@@ -42,6 +42,7 @@ export function proxy(request: NextRequest) {
         headers: new Headers({
           ...Object.fromEntries(request.headers),
           "x-request-id": requestId,
+          "x-pathname": pathname,
         }),
       },
     });

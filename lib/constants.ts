@@ -11,6 +11,7 @@ export const DEFAULT_CALENDAR_SYNC_WINDOW_DAYS = 90;
 export const MAX_QUALIFICATION_QUESTIONS = 5;
 export const DEFAULT_MAX_BOOKINGS_PER_DAY = 10;
 export const LOW_TOKEN_BALANCE_THRESHOLD = 500;
+export const OUTCOME_FOLLOW_UP_DELAY_DAYS = 3;
 
 export const ROUTES = {
   home: "/",

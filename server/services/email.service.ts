@@ -325,6 +325,47 @@ export const emailService = {
   },
 
   /**
+   * Sent to the professional a few days after a confirmed call, asking
+   * whether it turned into a client. One click, no login — the whole point
+   * is to make answering cheaper than ignoring it.
+   */
+  async sendOutcomeFollowUpProfessional(params: {
+    to: string;
+    professionalName: string;
+    visitorName: string;
+    serviceTitle: string;
+    outcomeUrl: string;
+  }): Promise<void> {
+    const firstName = params.professionalName.split(" ")[0];
+    const link = (result: string, label: string) =>
+      `<a href="${params.outcomeUrl}?result=${result}" style="display:inline-block;margin:0 8px 8px 0;padding:10px 20px;background:#2B2B2B;color:#ffffff;text-decoration:none;border-radius:100px;font-size:13px;font-weight:600;">${label}</a>`;
+
+    const subject = `Quick one — did ${params.visitorName} turn into a client?`;
+    await sendEmail({
+      to: params.to,
+      subject,
+      html: htmlWrapper(
+        subject,
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;line-height:1.3;">Did it work out with ${params.visitorName}?</h1>
+         <p style="margin:0 0 20px;font-size:14px;color:#6B7280;">
+           Hi ${firstName}, a few days ago you had a call with
+           <strong style="color:#2B2B2B;">${params.visitorName}</strong>
+           for <strong style="color:#2B2B2B;">${params.serviceTitle}</strong>.
+           Mind letting us know how it went? One click, no login needed.
+         </p>
+         <div>
+           ${link("WON", "Won ✓")}
+           ${link("LOST", "Lost")}
+           ${link("NO_RESPONSE", "Haven't heard back")}
+         </div>
+         <p style="margin:20px 0 0;font-size:12px;color:#9CA3AF;">
+           This helps us understand which leads are actually worth your time.
+         </p>`,
+      ),
+    });
+  },
+
+  /**
    * Sent to the visitor when a professional declines their booking request.
    */
   async sendBookingDeclinedVisitor(params: {

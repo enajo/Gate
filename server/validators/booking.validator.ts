@@ -49,6 +49,11 @@ export const leadCorrectionSchema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 
+export const leadOutcomeSubmissionSchema = z.object({
+  result: z.enum(["WON", "LOST", "NO_RESPONSE"]),
+  value: z.coerce.number().int().positive().max(100_000_000).optional(),
+});
+
 export const createBookingHoldSchema = z
   .object({
     professionalId: z.string().trim().min(1),

@@ -19,6 +19,12 @@ enum LeadQualificationResult {
   PENDING_REVIEW
 }
 
+enum LeadOutcome {
+  WON
+  LOST
+  NO_RESPONSE
+}
+
 enum Weekday {
   MONDAY
   TUESDAY
@@ -380,6 +386,12 @@ model Lead {
   correctedResult     LeadQualificationResult? @map("corrected_result")
   correctionNote      String?                 @map("correction_note")
   correctedAt         DateTime?               @map("corrected_at")
+  /** Real-world outcome, collected via a one-click follow-up email — the verifiability signal behind outcome pricing. */
+  outcome              LeadOutcome? @map("outcome")
+  outcomeValue         Int?         @map("outcome_value")
+  outcomeToken         String?      @unique @map("outcome_token")
+  outcomeRespondedAt   DateTime?    @map("outcome_responded_at")
+  outcomeFollowUpSentAt DateTime?   @map("outcome_follow_up_sent_at")
   createdAt           DateTime                @default(now()) @map("created_at")
   updatedAt           DateTime                @updatedAt @map("updated_at")
 

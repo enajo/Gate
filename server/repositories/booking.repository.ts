@@ -21,6 +21,16 @@ const bookingListInclude = Prisma.validator<Prisma.BookingInclude>()({
   service: true,
 });
 
+const bookingForOutcomeFollowUpInclude = Prisma.validator<Prisma.BookingInclude>()({
+  lead: true,
+  service: true,
+  professional: { include: { user: true } },
+});
+
+export type BookingForOutcomeFollowUp = Prisma.BookingGetPayload<{
+  include: typeof bookingForOutcomeFollowUpInclude;
+}>;
+
 // Holds with lead + service + converted booking, for dashboard inbox
 const holdWithRelationsInclude = Prisma.validator<Prisma.BookingHoldInclude>()({
   lead: true,
@@ -124,6 +134,31 @@ export const bookingRepository = {
     return db.lead.update({
       where: { id },
       data,
+    });
+  },
+
+  /** Confirmed bookings whose call has passed and whose lead hasn't been asked about the outcome yet. */
+  async findBookingsPendingOutcomeFollowUp(
+    cutoff: Date,
+  ): Promise<BookingForOutcomeFollowUp[]> {
+    return db.booking.findMany({
+      where: {
+        status: { in: ["CONFIRMED", "EVENT_CREATION_PENDING", "EVENT_CREATED"] },
+        slotEnd: { lte: cutoff },
+        lead: {
+          outcomeFollowUpSentAt: null,
+          outcome: null,
+        },
+      },
+      include: bookingForOutcomeFollowUpInclude,
+      orderBy: { slotEnd: "asc" },
+    });
+  },
+
+  async findLeadByOutcomeToken(token: string): Promise<LeadWithService | null> {
+    return db.lead.findUnique({
+      where: { outcomeToken: token },
+      include: leadWithServiceInclude,
     });
   },
 

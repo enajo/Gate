@@ -366,6 +366,63 @@ export const emailService = {
   },
 
   /**
+   * Weekly digest for the professional: patterns across recent AI-screened
+   * leads — why people are getting rejected, what objections keep coming up,
+   * and a concrete suggestion for tightening their ideal-client description.
+   */
+  async sendPatternReportProfessional(params: {
+    to: string;
+    professionalName: string;
+    leadCount: number;
+    topRejectionReasons: string[];
+    commonObjections: string[];
+    suggestion: string;
+  }): Promise<void> {
+    const firstName = params.professionalName.split(" ")[0];
+
+    const bulletList = (items: string[]) =>
+      items.length === 0
+        ? ""
+        : `<ul style="margin:0 0 20px;padding-left:20px;font-size:14px;color:#6B7280;line-height:1.8;">
+             ${items.map((item) => `<li>${item}</li>`).join("")}
+           </ul>`;
+
+    const rejectionSection = params.topRejectionReasons.length
+      ? `<h2 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:#2B2B2B;">Why people didn't make it through</h2>
+         ${bulletList(params.topRejectionReasons)}`
+      : "";
+
+    const objectionSection = params.commonObjections.length
+      ? `<h2 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:#2B2B2B;">Objections that kept coming up</h2>
+         ${bulletList(params.commonObjections)}`
+      : "";
+
+    const suggestionSection = params.suggestion
+      ? `<div style="margin:8px 0 0;padding:14px 18px;background:#FFF9F2;border:1px solid #DFA767;border-radius:12px;font-size:14px;color:#2B2B2B;line-height:1.7;">
+           <strong>Worth trying:</strong> ${params.suggestion}
+         </div>`
+      : "";
+
+    const subject = `Your weekly gate report — ${params.leadCount} lead${params.leadCount === 1 ? "" : "s"} screened`;
+    await sendEmail({
+      to: params.to,
+      subject,
+      html: htmlWrapper(
+        subject,
+        `<h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#2B2B2B;line-height:1.3;">This week's patterns</h1>
+         <p style="margin:0 0 8px;font-size:14px;color:#6B7280;">
+           Hi ${firstName}, your gate screened
+           <strong style="color:#2B2B2B;">${params.leadCount}</strong>
+           lead${params.leadCount === 1 ? "" : "s"} this week. Here's what stood out.
+         </p>
+         ${rejectionSection}
+         ${objectionSection}
+         ${suggestionSection}`,
+      ),
+    });
+  },
+
+  /**
    * Sent to the visitor when a professional declines their booking request.
    */
   async sendBookingDeclinedVisitor(params: {

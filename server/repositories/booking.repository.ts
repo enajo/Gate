@@ -155,6 +155,33 @@ export const bookingRepository = {
     });
   },
 
+  /** Professionals with at least `minCount` leads since `since` — the pattern report's audience. */
+  async findProfessionalIdsWithRecentLeads(
+    since: Date,
+    minCount: number,
+  ): Promise<string[]> {
+    const grouped = await db.lead.groupBy({
+      by: ["professionalId"],
+      where: { createdAt: { gte: since } },
+      _count: { professionalId: true },
+      having: {
+        professionalId: { _count: { gte: minCount } },
+      },
+    });
+
+    return grouped.map((g) => g.professionalId);
+  },
+
+  async findLeadsForPatternReport(
+    professionalId: string,
+    since: Date,
+  ): Promise<Lead[]> {
+    return db.lead.findMany({
+      where: { professionalId, createdAt: { gte: since } },
+      orderBy: { createdAt: "desc" },
+    });
+  },
+
   async findLeadByOutcomeToken(token: string): Promise<LeadWithService | null> {
     return db.lead.findUnique({
       where: { outcomeToken: token },

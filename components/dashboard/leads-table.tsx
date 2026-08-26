@@ -16,6 +16,8 @@ type AnswersJson = {
   reason?: string;
 };
 
+type CorrectableResult = "QUALIFIED" | "REDIRECTED" | "REJECTED";
+
 export type LeadRow = {
   id: string;
   name: string;
@@ -25,6 +27,8 @@ export type LeadRow = {
   answersJson: unknown;
   referrer?: string | null;
   utmSource?: string | null;
+  correctedResult?: CorrectableResult | null;
+  correctionNote?: string | null;
   createdAt: Date | string;
 };
 
@@ -121,6 +125,85 @@ function Transcript({ answersJson }: { answersJson: unknown }) {
   );
 }
 
+const CORRECTABLE_OPTIONS: CorrectableResult[] = ["QUALIFIED", "REDIRECTED", "REJECTED"];
+
+/** Lets a professional flag that the AI's decision was wrong — every correction is captured, not lost. */
+function CorrectionControl({ lead }: { lead: LeadRow }) {
+  const [correctedResult, setCorrectedResult] = React.useState(lead.correctedResult ?? null);
+  const [note, setNote] = React.useState(lead.correctionNote ?? "");
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function submitCorrection(result: CorrectableResult) {
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/app/leads/${lead.id}/correction`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ correctedResult: result, note: note.trim() || undefined }),
+      });
+
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Failed to save correction.");
+
+      setCorrectedResult(result);
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save correction.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (correctedResult && !isEditing) {
+    return (
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-[0.85rem] border border-warm-border-soft bg-white/60 px-4 py-3">
+        <p className="text-[12px] text-gray-500">
+          Marked as <span className="font-medium text-ink">{RESULT_STYLES[correctedResult]?.label}</span>
+          {note ? ` — "${note}"` : ""}
+        </p>
+        <button
+          type="button"
+          onClick={() => setIsEditing(true)}
+          className="text-[12px] font-medium text-gray-500 hover:text-ink hover:underline"
+        >
+          Change
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-[0.85rem] border border-warm-border-soft bg-white/60 px-4 py-3">
+      <p className="text-[12px] font-medium text-gray-600">Was this the right call?</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {CORRECTABLE_OPTIONS.map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            disabled={isSaving}
+            onClick={() => void submitCorrection(opt)}
+            className="inline-flex items-center rounded-full border border-warm-border-soft bg-white px-3 py-1 text-[12px] font-medium text-gray-600 transition hover:border-ink/40 disabled:opacity-40"
+          >
+            {RESULT_STYLES[opt]?.label}
+          </button>
+        ))}
+      </div>
+      <input
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Optional note — why?"
+        maxLength={500}
+        className="mt-2 w-full rounded-full border border-warm-border-soft bg-white px-3 py-1.5 text-[12px] outline-none focus:border-ink/40"
+      />
+      {error && <p className="mt-1.5 text-[12px] text-red-500">{error}</p>}
+    </div>
+  );
+}
+
 function LeadRowItem({ lead }: { lead: LeadRow }) {
   const [open, setOpen] = React.useState(false);
   const style = RESULT_STYLES[lead.qualificationResult] ?? RESULT_STYLES.PENDING_REVIEW;
@@ -146,6 +229,11 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
             >
               {style.label}
             </span>
+            {lead.correctedResult && (
+              <span className="inline-flex items-center rounded-full border border-warm-border-soft bg-white px-2.5 py-0.5 text-[11px] font-medium text-gray-500">
+                Reviewed
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-[12px] text-gray-500">{lead.email}</p>
         </div>
@@ -164,6 +252,7 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
             Conversation
           </p>
           <Transcript answersJson={lead.answersJson} />
+          <CorrectionControl lead={lead} />
         </div>
       )}
     </div>

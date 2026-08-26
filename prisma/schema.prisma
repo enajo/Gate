@@ -376,6 +376,10 @@ model Lead {
   utmSource           String?                 @map("utm_source")
   utmMedium           String?                 @map("utm_medium")
   utmCampaign         String?                 @map("utm_campaign")
+  /** Professional's correction of the AI's decision, if they've reviewed it. Null means never reviewed. */
+  correctedResult     LeadQualificationResult? @map("corrected_result")
+  correctionNote      String?                 @map("correction_note")
+  correctedAt         DateTime?               @map("corrected_at")
   createdAt           DateTime                @default(now()) @map("created_at")
   updatedAt           DateTime                @updatedAt @map("updated_at")
 

@@ -57,6 +57,8 @@ export default async function LeadsPage({
     answersJson: l.answersJson,
     referrer: l.referrer,
     utmSource: l.utmSource,
+    correctedResult: l.correctedResult as LeadRow["correctedResult"],
+    correctionNote: l.correctionNote,
     createdAt: l.createdAt,
   }));
 

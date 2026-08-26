@@ -44,6 +44,11 @@ export const leadQualificationResultSchema = z.enum([
   "REDIRECTED",
 ]);
 
+export const leadCorrectionSchema = z.object({
+  correctedResult: leadQualificationResultSchema,
+  note: z.string().trim().max(500).optional(),
+});
+
 export const createBookingHoldSchema = z
   .object({
     professionalId: z.string().trim().min(1),
@@ -214,6 +219,7 @@ export type CalendarStatusInput = z.infer<typeof calendarStatusSchema>;
 export type LeadQualificationResultInput = z.infer<
   typeof leadQualificationResultSchema
 >;
+export type LeadCorrectionInput = z.infer<typeof leadCorrectionSchema>;
 export type CreateBookingHoldInput = z.infer<typeof createBookingHoldSchema>;
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 export type ConfirmBookingInput = z.infer<typeof confirmBookingSchema>;

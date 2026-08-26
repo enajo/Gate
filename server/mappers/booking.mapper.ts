@@ -38,6 +38,9 @@ export function mapLead(lead: PrismaLead): Lead {
     utmSource: lead.utmSource,
     utmMedium: lead.utmMedium,
     utmCampaign: lead.utmCampaign,
+    correctedResult: lead.correctedResult,
+    correctionNote: lead.correctionNote,
+    correctedAt: lead.correctedAt,
     createdAt: lead.createdAt,
     updatedAt: lead.updatedAt,
   };

@@ -84,6 +84,9 @@ export type Lead = {
   utmSource: string | null;
   utmMedium: string | null;
   utmCampaign: string | null;
+  correctedResult: LeadQualificationResult | null;
+  correctionNote: string | null;
+  correctedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 };

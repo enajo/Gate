@@ -13,6 +13,7 @@ import type {
   BookingWithRelations,
   ConfirmBookingInput,
   CreateBookingHoldInput,
+  Lead,
   PublicBookingSuccessPayload,
 } from "@/types/booking";
 import { DEFAULT_TIMEZONE } from "@/lib/constants";
@@ -24,6 +25,7 @@ import { availabilityService } from "@/server/services/availability.service";
 import { emailService } from "@/server/services/email.service";
 import { bookingRepository } from "@/server/repositories/booking.repository";
 import type { HoldWithRelations } from "@/server/repositories/booking.repository";
+import { mapLead } from "@/server/mappers/booking.mapper";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
 import { googleRepository } from "@/server/repositories/google.repository";
@@ -32,6 +34,7 @@ import {
   bookingSlotSelectionSchema,
   confirmBookingSchema,
 } from "@/server/validators/booking.validator";
+import type { LeadCorrectionInput } from "@/server/validators/booking.validator";
 
 const DEFAULT_HOLD_MINUTES = 10;
 
@@ -159,6 +162,9 @@ function mapBookingWithRelations(
       utmSource: booking.lead.utmSource,
       utmMedium: booking.lead.utmMedium,
       utmCampaign: booking.lead.utmCampaign,
+      correctedResult: booking.lead.correctedResult,
+      correctionNote: booking.lead.correctionNote,
+      correctedAt: booking.lead.correctedAt,
       createdAt: booking.lead.createdAt,
       updatedAt: booking.lead.updatedAt,
     },
@@ -763,6 +769,33 @@ export const bookingService = {
     });
 
     return mapBooking(booking)!;
+  },
+
+  /**
+   * Professional records that the AI's original decision on a lead was
+   * wrong, and what it should have been. This is the correction loop: every
+   * override becomes structured feedback instead of disappearing.
+   */
+  async submitLeadCorrection(
+    userId: string,
+    leadId: string,
+    input: LeadCorrectionInput,
+  ): Promise<Lead> {
+    const professional = await requireProfessionalByUserId(userId);
+    const lead = await bookingRepository.findLeadByIdForProfessional(
+      leadId,
+      professional.id,
+    );
+
+    if (!lead) throw new Error("Lead not found.");
+
+    const updated = await bookingRepository.updateLeadById(leadId, {
+      correctedResult: input.correctedResult,
+      correctionNote: input.note ?? null,
+      correctedAt: new Date(),
+    });
+
+    return mapLead(updated);
   },
 
   /**

@@ -70,6 +70,13 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.sub) {
         (session.user as Session["user"] & { id: string }).id = token.sub;
+
+        const user = await db.user.findUnique({
+          where: { id: token.sub },
+          select: { role: true },
+        });
+
+        (session.user as Session["user"] & { role?: string }).role = user?.role;
       }
       return session;
     },
@@ -84,10 +91,12 @@ export { handler as GET, handler as POST };
 
 // Compatibility shim — mimics the NextAuth v5 `auth()` call used across API routes.
 // Returns the session or null, with user.id populated from the JWT sub claim.
-export async function auth(): Promise<(Session & { user: { id: string } }) | null> {
+export async function auth(): Promise<
+  (Session & { user: { id: string; role?: string } }) | null
+> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
-  return session as Session & { user: { id: string } };
+  return session as Session & { user: { id: string; role?: string } };
 }
 
 // Kept for completeness — not used directly outside of route handlers.

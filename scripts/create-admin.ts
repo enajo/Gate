@@ -14,10 +14,12 @@ async function main() {
     },
     update: {
       name,
+      role: "ADMIN",
     },
     create: {
       email,
       name,
+      role: "ADMIN",
     },
   });
 
@@ -38,7 +40,6 @@ async function main() {
       headline: "Internal admin account",
       bio: "Administrative account for managing the platform.",
       timezone: "Europe/Berlin",
-      ctaText: "Contact admin",
       onboardingCompleted: true,
       brandSettings: {
         theme: "light",

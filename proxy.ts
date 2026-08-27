@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 
 const AUTH_ROUTES = ["/login", "/register"];
-const PROTECTED_PREFIXES = ["/app"];
+const PROTECTED_PREFIXES = ["/app", "/admin"];
 
 function hasSessionCookie(request: NextRequest) {
   const possibleSessionCookies = [
@@ -63,5 +63,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/login", "/register"],
+  matcher: ["/app/:path*", "/admin/:path*", "/login", "/register"],
 };

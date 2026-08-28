@@ -136,7 +136,7 @@ function getMeetingUrl(event: GoogleEventResponse): string | null {
   return videoEntryPoint?.uri ?? null;
 }
 
-function mergeBusyRanges(ranges: MergedBusyRange[]): MergedBusyRange[] {
+export function mergeBusyRanges(ranges: MergedBusyRange[]): MergedBusyRange[] {
   if (ranges.length === 0) {
     return [];
   }

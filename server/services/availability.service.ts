@@ -35,16 +35,47 @@ import {
   combineDateAndTime,
   fromUtc,
 } from "@/lib/dates";
+import { logger } from "@/lib/logger";
 import { availabilityRepository } from "@/server/repositories/availability.repository";
 import { bookingRepository } from "@/server/repositories/booking.repository";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
+import { calendarProviderService } from "@/server/services/calendar-provider.service";
 import {
   createAvailabilityRuleSchema,
   createBlockedDateSchema,
   updateAvailabilityRuleSchema,
   updateBlockedDateSchema,
 } from "@/server/validators/availability.validator";
+
+/**
+ * Real calendar conflicts across every provider a professional has
+ * connected. Fails open on error — a broken calendar sync should never be
+ * the reason a visitor can't book, it should just mean conflicts against
+ * that calendar aren't checked for this request.
+ */
+async function fetchExternalBusyRanges(params: {
+  professionalId: string;
+  start: Date;
+  end: Date;
+  timezone: string;
+}): Promise<BusyTimeRange[]> {
+  try {
+    const merged = await calendarProviderService.getMergedBusyRanges(params);
+
+    return merged.map((range) => ({
+      start: range.start,
+      end: range.end,
+      source: range.sources[0]?.calendarName ?? range.sources[0]?.provider,
+    }));
+  } catch (error) {
+    logger.error("availabilityService: failed to fetch external busy ranges", {
+      professionalId: params.professionalId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return [];
+  }
+}
 
 function mapAvailabilityRule(
   rule: PrismaAvailabilityRule | null,
@@ -624,16 +655,30 @@ export const availabilityService = {
         rangesOverlap(hold.slotStart, hold.slotEnd, start, end),
     );
 
+    const timezone = params.timezone ?? professional.timezone ?? DEFAULT_TIMEZONE;
+
+    // Real calendar conflicts, across every provider connected — not just
+    // whatever was passed in explicitly. Callers can still override with
+    // externalBusyRanges (e.g. a preview that shouldn't hit real calendars).
+    const externalBusyRanges =
+      params.externalBusyRanges ??
+      (await fetchExternalBusyRanges({
+        professionalId: professional.id,
+        start,
+        end,
+        timezone,
+      }));
+
     return this.generateSlots({
       professionalId: professional.id,
       serviceDurationMinutes: service.durationMinutes,
       startDate: start,
       endDate: end,
-      timezone: params.timezone ?? professional.timezone ?? DEFAULT_TIMEZONE,
+      timezone,
       rules: rules.map((rule) => mapAvailabilityRule(rule)!),
       blockedDates: blockedDates.map((item) => mapBlockedDate(item)!),
-      busyRanges: params.externalBusyRanges ?? [],
-      externalBusyRanges: params.externalBusyRanges ?? [],
+      busyRanges: externalBusyRanges,
+      externalBusyRanges,
       bufferBeforeMinutes: professional.bufferBeforeMinutes,
       bufferAfterMinutes: professional.bufferAfterMinutes,
       minimumNoticeMinutes: professional.minimumNoticeMinutes,

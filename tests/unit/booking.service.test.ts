@@ -56,8 +56,9 @@ const mockGoogleRepository = vi.hoisted(() => ({
   touchLastSyncedAt: vi.fn(),
 }));
 
-const mockGoogleCalendarService = vi.hoisted(() => ({
-  createCalendarEvent: vi.fn(),
+const mockCalendarProviderService = vi.hoisted(() => ({
+  createEvent: vi.fn(),
+  getMergedBusyRanges: vi.fn(),
 }));
 
 vi.mock("@/server/repositories/profile.repository", () => ({
@@ -88,8 +89,8 @@ vi.mock("@/server/services/email.service", () => ({
   emailService: mockEmailService,
 }));
 
-vi.mock("@/server/services/google-calendar.service", () => ({
-  googleCalendarService: mockGoogleCalendarService,
+vi.mock("@/server/services/calendar-provider.service", () => ({
+  calendarProviderService: mockCalendarProviderService,
 }));
 
 import { bookingService } from "@/server/services/booking.service";

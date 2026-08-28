@@ -29,7 +29,7 @@ import { mapLead } from "@/server/mappers/booking.mapper";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
 import { googleRepository } from "@/server/repositories/google.repository";
-import { googleCalendarService } from "@/server/services/google-calendar.service";
+import { calendarProviderService } from "@/server/services/calendar-provider.service";
 import {
   bookingSlotSelectionSchema,
   confirmBookingSchema,
@@ -868,7 +868,7 @@ export const bookingService = {
           );
 
         if (calendarAccount) {
-          const event = await googleCalendarService.createCalendarEvent({
+          const event = await calendarProviderService.createEvent(calendarAccount, {
             calendarAccountId: calendarAccount.id,
             title: `${booking.service.title} with ${booking.lead.name}`,
             start: booking.slotStart,

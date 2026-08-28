@@ -670,9 +670,9 @@ export default function MarketingHomePage() {
             <p>© 2026 GATE. All rights reserved.</p>
 
             <div className="flex flex-wrap gap-3">
-              <Link href="#">Privacy Policy</Link>
+              <Link href="/privacy">Privacy Policy</Link>
               <span>|</span>
-              <Link href="#">Terms of Use</Link>
+              <Link href="/terms">Terms of Use</Link>
               <span>|</span>
               <Link href="#">Legal</Link>
               <span>|</span>

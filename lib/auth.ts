@@ -44,8 +44,10 @@ export const authOptions: NextAuthOptions = {
   secret: env.AUTH_SECRET,
 
   providers: [
-    // Dev-only: sign in with just an email — no password, no OTP needed
-    devCredentialsProvider,
+    // Dev-only: sign in with just an email — no password, no OTP needed.
+    // Never include this outside development — it accepts any email with
+    // zero verification, which would let anyone log in as anyone.
+    ...(env.NODE_ENV !== "production" ? [devCredentialsProvider] : []),
 
     // Production: Google OAuth (requires AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET in .env)
     ...(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET

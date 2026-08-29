@@ -18,6 +18,14 @@ type AnswersJson = {
 
 type CorrectableResult = "QUALIFIED" | "REDIRECTED" | "REJECTED";
 
+export type VisitRow = {
+  id: string;
+  referrer?: string | null;
+  utmSource?: string | null;
+  landingPath?: string | null;
+  createdAt: Date | string;
+};
+
 export type LeadRow = {
   id: string;
   name: string;
@@ -30,6 +38,7 @@ export type LeadRow = {
   correctedResult?: CorrectableResult | null;
   correctionNote?: string | null;
   createdAt: Date | string;
+  visits?: VisitRow[];
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -58,6 +67,15 @@ function formatDate(value: Date | string) {
     month: "short",
     day: "numeric",
     year: "numeric",
+  });
+}
+
+function formatDateTime(value: Date | string) {
+  return new Date(value).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
@@ -204,6 +222,35 @@ function CorrectionControl({ lead }: { lead: LeadRow }) {
   );
 }
 
+/** Every recorded hit from this visitor before they became a lead — the "how did they get here" trail. */
+function VisitPath({ visits }: { visits: VisitRow[] }) {
+  if (visits.length === 0) return null;
+
+  return (
+    <div className="mb-5">
+      <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-gray-400">
+        Path to this lead
+      </p>
+      <div className="space-y-2">
+        {visits.map((visit, i) => (
+          <div
+            key={visit.id}
+            className="flex items-center justify-between gap-3 rounded-[0.75rem] border border-warm-border-soft bg-white/60 px-3.5 py-2 text-[12px]"
+          >
+            <span className="text-gray-500">
+              {i + 1}. via <span className="font-medium text-ink">{getSourceLabel(visit)}</span>
+              {visit.landingPath ? (
+                <span className="text-gray-400"> · {visit.landingPath}</span>
+              ) : null}
+            </span>
+            <span className="shrink-0 text-gray-400">{formatDateTime(visit.createdAt)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LeadRowItem({ lead }: { lead: LeadRow }) {
   const [open, setOpen] = React.useState(false);
   const style = RESULT_STYLES[lead.qualificationResult] ?? RESULT_STYLES.PENDING_REVIEW;
@@ -248,6 +295,7 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
 
       {open && (
         <div className="border-t border-warm-border-soft/60 bg-warm-cream/40 px-5 py-5">
+          {lead.visits && lead.visits.length > 0 && <VisitPath visits={lead.visits} />}
           <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-gray-400">
             Conversation
           </p>

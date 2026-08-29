@@ -60,6 +60,13 @@ export default async function LeadsPage({
     correctedResult: l.correctedResult as LeadRow["correctedResult"],
     correctionNote: l.correctionNote,
     createdAt: l.createdAt,
+    visits: l.visits.map((v) => ({
+      id: v.id,
+      referrer: v.referrer,
+      utmSource: v.utmSource,
+      landingPath: v.landingPath,
+      createdAt: v.createdAt,
+    })),
   }));
 
   return (

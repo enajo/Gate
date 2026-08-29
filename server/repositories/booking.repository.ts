@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 
 const leadWithServiceInclude = Prisma.validator<Prisma.LeadInclude>()({
   service: { select: { id: true, title: true } },
+  visits: { orderBy: { createdAt: "asc" } },
 });
 
 export type LeadWithService = Prisma.LeadGetPayload<{

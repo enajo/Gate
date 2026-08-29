@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z, ZodError } from "zod";
@@ -8,7 +9,27 @@ import { getClientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { bookingRepository } from "@/server/repositories/booking.repository";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
+import { visitRepository } from "@/server/repositories/visit.repository";
 import { aiConversationService } from "@/server/services/ai-conversation.service";
+
+const VISITOR_COOKIE = "gate_visitor_id";
+
+/** Best-effort — a visitor without the cookie (blocked cookies, first-party mismatch) just doesn't get stitched. */
+async function linkVisitsIfPossible(professionalId: string, leadId: string) {
+  try {
+    const cookieStore = await cookies();
+    const visitorId = cookieStore.get(VISITOR_COOKIE)?.value;
+    if (!visitorId) return;
+
+    await visitRepository.linkVisitsToLead({ professionalId, visitorId, leadId });
+  } catch (error) {
+    logger.error("qualification/chat: failed to link visits to lead", {
+      error: error instanceof Error ? error.message : String(error),
+      professionalId,
+      leadId,
+    });
+  }
+}
 
 // ── Input schema ──────────────────────────────────────────────────────────────
 
@@ -123,6 +144,8 @@ export async function POST(request: Request) {
         },
       );
 
+      await linkVisitsIfPossible(input.professionalId, lead.id);
+
       return NextResponse.json({
         type: "final",
         decision: "QUALIFIED",
@@ -214,6 +237,8 @@ export async function POST(request: Request) {
           utmCampaign: input.utmCampaign ?? null,
         },
       );
+
+      await linkVisitsIfPossible(input.professionalId, lead.id);
 
       return NextResponse.json({
         type: "final",

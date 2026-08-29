@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -248,6 +248,29 @@ export function PublicSalesPageTemplate({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
+
+  // Log this hit for visit stitching — fire-and-forget, once per mount, real
+  // pages only. The server pairs it with an anonymous cookie and links it to
+  // a Lead later if this visitor ever qualifies.
+  useEffect(() => {
+    if (preview || !data.professionalId) return;
+
+    fetch("/api/public/visits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        professionalId: data.professionalId,
+        referrer: data.visitorSource?.referrer,
+        utmSource: data.visitorSource?.utmSource,
+        utmMedium: data.visitorSource?.utmMedium,
+        utmCampaign: data.visitorSource?.utmCampaign,
+        landingPath: window.location.pathname,
+      }),
+    }).catch(() => {
+      // Fail open — visit logging must never affect the visitor experience.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, data.professionalId]);
 
   // Times for the currently selected date — use per-date map when real slots
   // are present, otherwise fall back to the flat list (preview / mock mode).

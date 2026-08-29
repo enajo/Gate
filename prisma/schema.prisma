@@ -225,6 +225,7 @@ model Professional {
   leads                  Lead[]
   bookingHolds           BookingHold[]
   bookings               Booking[]
+  visits                 Visit[]
 
   @@map("professionals")
 }
@@ -399,10 +400,32 @@ model Lead {
   service      Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   bookingHolds BookingHold[]
   bookings     Booking[]
+  visits       Visit[]
 
   @@index([professionalId, createdAt])
   @@index([serviceId, createdAt])
   @@map("leads")
+}
+
+/** One anonymous hit on a professional's public page, before (or without) ever becoming a Lead. */
+model Visit {
+  id             String   @id @default(cuid())
+  professionalId String   @map("professional_id")
+  visitorId      String   @map("visitor_id")
+  leadId         String?  @map("lead_id")
+  referrer       String?
+  utmSource      String?  @map("utm_source")
+  utmMedium      String?  @map("utm_medium")
+  utmCampaign    String?  @map("utm_campaign")
+  landingPath    String?  @map("landing_path")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  lead         Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([professionalId, visitorId])
+  @@index([leadId])
+  @@map("visits")
 }
 
 model BookingHold {

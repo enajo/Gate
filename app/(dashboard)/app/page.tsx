@@ -215,6 +215,7 @@ export default async function DashboardPage() {
             </Link>
             <Link href="/app/control-room">Control Room</Link>
             <Link href="/app/leads">Leads</Link>
+            <Link href="/app/embed">Embed</Link>
             {publicUrl && (
               <Link
                 href={publicUrl}

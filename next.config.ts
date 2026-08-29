@@ -9,22 +9,27 @@ const isDev = process.env.NODE_ENV === "development";
 // - accounts.google.com: Google OAuth redirect target
 // - Sentry traffic is proxied through /api/monitoring (tunnelRoute) so no
 //   external *.sentry.io entries are needed in connect-src.
-const csp = [
-  `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-  `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: blob: https://images.unsplash.com`,
-  `font-src 'self'`,
-  `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
-  `frame-src 'none'`,
-  `frame-ancestors 'none'`,
-  `form-action 'self' https://accounts.google.com`,
-  `base-uri 'self'`,
-  `object-src 'none'`,
-  `upgrade-insecure-requests`,
-]
-  .join("; ")
-  .trim();
+// frameAncestors is parameterized: everywhere in the app forbids being
+// iframed ('none') except /embed/[slug], which exists specifically to be
+// iframed from a professional's own website (the embeddable booking widget).
+function buildCsp(frameAncestors: string): string {
+  return [
+    `default-src 'self'`,
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+    `style-src 'self' 'unsafe-inline'`,
+    `img-src 'self' data: blob: https://images.unsplash.com`,
+    `font-src 'self'`,
+    `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
+    `frame-src 'none'`,
+    `frame-ancestors ${frameAncestors}`,
+    `form-action 'self' https://accounts.google.com`,
+    `base-uri 'self'`,
+    `object-src 'none'`,
+    `upgrade-insecure-requests`,
+  ]
+    .join("; ")
+    .trim();
+}
 
 const securityHeaders = [
   // Prevent clickjacking — no iframing this app
@@ -46,7 +51,28 @@ const securityHeaders = [
   // Tell browsers not to expose this as an XSS vector
   { key: "X-XSS-Protection", value: "1; mode=block" },
   // CSP
-  { key: "Content-Security-Policy", value: csp },
+  { key: "Content-Security-Policy", value: buildCsp("'none'") },
+];
+
+// Deliberately no X-Frame-Options here — this route is meant to be iframed
+// from arbitrary third-party sites via the embeddable booking widget
+// (public/embed.js), and XFO has no wildcard "allow any origin" value.
+// Per the CSP spec, frame-ancestors supersedes X-Frame-Options wherever a
+// policy defines it, so this route is still fully governed by CSP below —
+// nothing here weakens the DENY every other route gets.
+const embedSecurityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=31536000; includeSubDomains",
+  },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=()",
+  },
+  { key: "X-XSS-Protection", value: "1; mode=block" },
+  { key: "Content-Security-Policy", value: buildCsp("*") },
 ];
 
 const nextConfig: NextConfig = {
@@ -61,9 +87,14 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Apply to every route
-        source: "/(.*)",
+        // Every route except /embed/* — kept mutually exclusive with the
+        // rule below so there's no ambiguity about which CSP applies.
+        source: "/:path((?!embed/).*)",
         headers: securityHeaders,
+      },
+      {
+        source: "/embed/:path*",
+        headers: embedSecurityHeaders,
       },
     ];
   },

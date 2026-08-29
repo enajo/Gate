@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { PublicSalesPageTemplate } from "@/components/public-page/public-sales-page-template";
-import { profileService } from "@/server/services/profile.service";
 import { getPublicSalesPageData } from "@/server/services/public-sales-page.service";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -19,26 +18,20 @@ type PageProps = {
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const profile = await profileService.getPublicProfileBySlug(slug);
-
-  if (!profile) return { title: "Not Found" };
-
-  return {
-    title: `${profile.fullName} — Gate`,
-    description: profile.headline ?? profile.bio ?? undefined,
-    openGraph: {
-      title: `${profile.fullName} — Gate`,
-      description: profile.headline ?? profile.bio ?? undefined,
-      images: profile.avatarUrl ? [profile.avatarUrl] : [],
-    },
-  };
-}
+// Same content lives at /[slug] — keep search engines pointed there, not here.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default async function PublicProfessionalPage({
+/**
+ * Iframe target for the embeddable booking widget (see public/embed.js).
+ * Identical rendering to /[slug] — the only difference is this path gets
+ * relaxed frame-ancestors headers (next.config.ts) so a professional's own
+ * website can embed it, which /[slug] deliberately does not get.
+ */
+export default async function EmbedProfessionalPage({
   params,
   searchParams,
 }: PageProps) {
@@ -48,7 +41,7 @@ export default async function PublicProfessionalPage({
 
   const pageData = await getPublicSalesPageData(slug, {
     referrer,
-    utmSource: utm_source,
+    utmSource: utm_source ?? "embed",
     utmMedium: utm_medium,
     utmCampaign: utm_campaign,
   });

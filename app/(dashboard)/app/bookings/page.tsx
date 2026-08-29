@@ -20,10 +20,38 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+type RawBooking = {
+  id: string;
+  leadId?: string | null;
+  slotStart: string;
+  slotEnd: string;
+  timezone?: string | null;
+  status: BookingsTableValue["status"];
+  calendarStatus?: "PENDING" | "CREATED" | "FAILED" | null;
+  lead?: { id?: string; name?: string | null; email?: string | null } | null;
+  service?: { title?: string | null } | null;
+};
+
 type BookingsResponse = {
-  bookings?: BookingsTableValue[];
+  bookings?: RawBooking[];
   error?: string;
 };
+
+/** The API returns Lead/Service as nested objects — flatten to what the table/summary UI expects. */
+function rawBookingToTableValue(b: RawBooking): BookingsTableValue {
+  return {
+    id: b.id,
+    leadId: b.leadId ?? b.lead?.id ?? null,
+    serviceTitle: b.service?.title ?? null,
+    clientName: b.lead?.name ?? null,
+    clientEmail: b.lead?.email ?? null,
+    slotStart: b.slotStart,
+    slotEnd: b.slotEnd,
+    timezone: b.timezone,
+    status: b.status,
+    calendarStatus: b.calendarStatus,
+  };
+}
 
 type HoldsResponse = {
   holds?: RawHold[];
@@ -90,7 +118,7 @@ export default function BookingsPage() {
         throw new Error(bookingsData?.error ?? "Failed to load bookings.");
       }
 
-      setBookings(bookingsData.bookings ?? []);
+      setBookings((bookingsData.bookings ?? []).map(rawBookingToTableValue));
 
       // Holds endpoint is best-effort — don't fail the whole page
       if (holdsRes.ok) {
@@ -123,7 +151,9 @@ export default function BookingsPage() {
     setHolds((prev) => prev.filter((h) => h.id !== holdId));
     const bookingsRes = await fetch("/api/app/bookings", { cache: "no-store" });
     const bookingsData = (await bookingsRes.json()) as BookingsResponse;
-    if (bookingsRes.ok) setBookings(bookingsData.bookings ?? []);
+    if (bookingsRes.ok) {
+      setBookings((bookingsData.bookings ?? []).map(rawBookingToTableValue));
+    }
   }
 
   async function handleDecline(holdId: string) {
@@ -148,6 +178,7 @@ export default function BookingsPage() {
     if (!booking) return null;
     return {
       id: booking.id,
+      leadId: booking.leadId ?? null,
       serviceTitle: booking.serviceTitle ?? null,
       clientName: booking.clientName ?? null,
       clientEmail: booking.clientEmail ?? null,

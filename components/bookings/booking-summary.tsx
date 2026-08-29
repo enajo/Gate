@@ -2,9 +2,11 @@ import * as React from "react";
 import { CalendarDays, Clock3, User2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PreCallBriefingCard } from "@/components/bookings/pre-call-briefing-card";
 
 export type BookingSummaryValue = {
   id: string;
+  leadId?: string | null;
   serviceTitle?: string | null;
   clientName?: string | null;
   clientEmail?: string | null;
@@ -134,6 +136,12 @@ export function BookingSummary({
           </p>
         </div>
       </CardContent>
+
+      {booking.leadId && booking.status !== "CANCELLED" && (
+        <CardContent className="pt-0">
+          <PreCallBriefingCard leadId={booking.leadId} />
+        </CardContent>
+      )}
     </Card>
   );
 }

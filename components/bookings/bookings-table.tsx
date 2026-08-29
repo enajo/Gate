@@ -17,6 +17,7 @@ import {
 
 export type BookingsTableValue = {
   id: string;
+  leadId?: string | null;
   serviceTitle?: string | null;
   clientName?: string | null;
   clientEmail?: string | null;

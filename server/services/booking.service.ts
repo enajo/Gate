@@ -1,6 +1,7 @@
 import "server-only";
 
 import { addMinutes, endOfDay, startOfDay } from "date-fns";
+import { Prisma } from "@prisma/client";
 import type {
   Booking as PrismaBooking,
   BookingHold as PrismaBookingHold,
@@ -30,6 +31,7 @@ import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
 import { googleRepository } from "@/server/repositories/google.repository";
 import { calendarProviderService } from "@/server/services/calendar-provider.service";
+import { preCallBriefingService } from "@/server/services/pre-call-briefing.service";
 import {
   bookingSlotSelectionSchema,
   confirmBookingSchema,
@@ -37,6 +39,14 @@ import {
 import type { LeadCorrectionInput } from "@/server/validators/booking.validator";
 
 const DEFAULT_HOLD_MINUTES = 10;
+
+type StoredBriefing = {
+  summary: string;
+  keyPoints: string[];
+  suggestedOpening: string;
+};
+
+export type PreCallBriefingResult = StoredBriefing & { generatedAt: Date };
 
 function mapBooking(
   booking: PrismaBooking | null,
@@ -796,6 +806,60 @@ export const bookingService = {
     });
 
     return mapLead(updated);
+  },
+
+  /**
+   * Pre-call briefing — a short AI summary of a lead's qualification
+   * transcript, generated once and cached on the Lead. Regenerating on every
+   * dialog open would burn tokens for a conversation that never changes.
+   */
+  async getPreCallBriefing(
+    userId: string,
+    leadId: string,
+  ): Promise<PreCallBriefingResult> {
+    const professional = await requireProfessionalByUserId(userId);
+    const lead = await bookingRepository.findLeadWithServiceByIdForProfessional(
+      leadId,
+      professional.id,
+    );
+
+    if (!lead) throw new Error("Lead not found.");
+
+    if (lead.briefingGeneratedAt && lead.briefingSummary) {
+      return {
+        ...(lead.briefingSummary as StoredBriefing),
+        generatedAt: lead.briefingGeneratedAt,
+      };
+    }
+
+    const answers = lead.answersJson as {
+      conversationHistory?: Array<{ role: string; content: string }>;
+      history?: Array<{ role: string; content: string }>;
+    } | null;
+
+    const briefing = await preCallBriefingService.generate({
+      clientName: lead.name,
+      serviceName: lead.service.title,
+      conversationHistory: answers?.conversationHistory ?? answers?.history ?? [],
+    });
+
+    if (briefing.tokensUsed > 0) {
+      await profileRepository.deductTokenBalance(professional.id, briefing.tokensUsed);
+    }
+
+    const stored: StoredBriefing = {
+      summary: briefing.summary,
+      keyPoints: briefing.keyPoints,
+      suggestedOpening: briefing.suggestedOpening,
+    };
+    const generatedAt = new Date();
+
+    await bookingRepository.updateLeadById(leadId, {
+      briefingSummary: stored as unknown as Prisma.InputJsonValue,
+      briefingGeneratedAt: generatedAt,
+    });
+
+    return { ...stored, generatedAt };
   },
 
   /**

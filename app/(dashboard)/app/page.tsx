@@ -184,8 +184,8 @@ export default async function DashboardPage() {
 
   // Recent activity strings from real bookings
   type ActivityBooking = {
-    clientName?: string | null;
-    serviceTitle?: string | null;
+    lead?: { name?: string | null } | null;
+    service?: { title?: string | null } | null;
     slotStart: string | Date;
   };
   const recentActivity = (upcomingBookings as ActivityBooking[])
@@ -195,8 +195,8 @@ export default async function DashboardPage() {
         month: "short",
         day: "numeric",
       });
-      const who = b.clientName ?? "A lead";
-      const service = b.serviceTitle ? ` · ${b.serviceTitle}` : "";
+      const who = b.lead?.name ?? "A lead";
+      const service = b.service?.title ? ` · ${b.service.title}` : "";
       return `${who} booked a session${service} on ${date}.`;
     });
 

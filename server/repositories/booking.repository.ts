@@ -183,6 +183,16 @@ export const bookingRepository = {
     });
   },
 
+  async findLeadWithServiceByIdForProfessional(
+    id: string,
+    professionalId: string,
+  ): Promise<LeadWithService | null> {
+    return db.lead.findFirst({
+      where: { id, professionalId },
+      include: leadWithServiceInclude,
+    });
+  },
+
   async findLeadByOutcomeToken(token: string): Promise<LeadWithService | null> {
     return db.lead.findUnique({
       where: { outcomeToken: token },

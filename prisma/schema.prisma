@@ -393,6 +393,9 @@ model Lead {
   outcomeToken         String?      @unique @map("outcome_token")
   outcomeRespondedAt   DateTime?    @map("outcome_responded_at")
   outcomeFollowUpSentAt DateTime?   @map("outcome_follow_up_sent_at")
+  /** AI-generated pre-call prep, cached from the qualification transcript — regenerated only if never run. */
+  briefingSummary      Json?        @map("briefing_summary")
+  briefingGeneratedAt  DateTime?    @map("briefing_generated_at")
   createdAt           DateTime                @default(now()) @map("created_at")
   updatedAt           DateTime                @updatedAt @map("updated_at")
 

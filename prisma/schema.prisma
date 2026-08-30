@@ -25,6 +25,12 @@ enum LeadOutcome {
   NO_RESPONSE
 }
 
+enum PlanTier {
+  FREE
+  PRO
+  BUSINESS
+}
+
 enum Weekday {
   MONDAY
   TUESDAY
@@ -210,7 +216,9 @@ model Professional {
   bufferAfterMinutes         Int       @default(0) @map("buffer_after_minutes")
   minimumNoticeMinutes       Int       @default(0) @map("minimum_notice_minutes")
   maxBookingsPerDay          Int?      @map("max_bookings_per_day")
-  tokenBalance               Int       @default(10000) @map("token_balance")
+  planTier                   PlanTier  @default(FREE) @map("plan_tier")
+  tokenBalance               Int       @default(15000) @map("token_balance")
+  tokenBalanceResetAt        DateTime? @map("token_balance_reset_at")
   industry                   String?   @map("industry")
   createdAt                  DateTime  @default(now()) @map("created_at")
   updatedAt                  DateTime  @updatedAt @map("updated_at")

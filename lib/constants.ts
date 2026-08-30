@@ -13,6 +13,17 @@ export const DEFAULT_MAX_BOOKINGS_PER_DAY = 10;
 export const LOW_TOKEN_BALANCE_THRESHOLD = 500;
 export const OUTCOME_FOLLOW_UP_DELAY_DAYS = 3;
 
+// Plan tiers — limits live in code, not the database, so pricing can change
+// without a migration. maxActiveServices: null means unlimited.
+export const PLAN_TIER_LIMITS: Record<
+  "FREE" | "PRO" | "BUSINESS",
+  { label: string; maxActiveServices: number | null; monthlyTokenAllowance: number; priceUsd: number }
+> = {
+  FREE: { label: "Free", maxActiveServices: 1, monthlyTokenAllowance: 15_000, priceUsd: 0 },
+  PRO: { label: "Pro", maxActiveServices: null, monthlyTokenAllowance: 150_000, priceUsd: 29 },
+  BUSINESS: { label: "Business", maxActiveServices: null, monthlyTokenAllowance: 750_000, priceUsd: 79 },
+};
+
 export const ROUTES = {
   home: "/",
   howItWorks: "/how-it-works",

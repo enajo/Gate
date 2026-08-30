@@ -293,6 +293,25 @@ export const profileRepository = {
     });
   },
 
+  async setTokenBalance(
+    id: string,
+    amount: number,
+    resetAt: Date,
+  ): Promise<Professional> {
+    return db.professional.update({
+      where: { id },
+      data: { tokenBalance: amount, tokenBalanceResetAt: resetAt },
+    });
+  },
+
+  async findAllForTokenReset(): Promise<
+    Array<{ id: string; planTier: Professional["planTier"] }>
+  > {
+    return db.professional.findMany({
+      select: { id: true, planTier: true },
+    });
+  },
+
   async getTokenBalance(id: string): Promise<number | null> {
     const row = await db.professional.findUnique({
       where: { id },

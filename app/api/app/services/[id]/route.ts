@@ -49,6 +49,10 @@ function errorResponse(error: unknown) {
     return NextResponse.json({ error: message }, { status: 409 });
   }
 
+  if (message.startsWith("Your plan allows")) {
+    return NextResponse.json({ error: message }, { status: 403 });
+  }
+
   return NextResponse.json({ error: message }, { status: 400 });
 }
 

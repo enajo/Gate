@@ -1,6 +1,8 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
+import type { Professional } from "@prisma/client";
+import { PLAN_TIER_LIMITS } from "@/lib/constants";
 import type {
   CreateServiceInput,
   PublicService,
@@ -97,6 +99,26 @@ async function assertSlugAvailable(params: {
   }
 }
 
+/** Enforces the plan tier's active-service cap — a no-op for unlimited tiers. */
+async function assertCanActivateService(
+  professional: Professional,
+  excludeServiceId?: string,
+) {
+  const limit = PLAN_TIER_LIMITS[professional.planTier].maxActiveServices;
+  if (limit === null) return;
+
+  const activeServices = await serviceRepository.findActiveByProfessionalId(
+    professional.id,
+  );
+  const activeCount = activeServices.filter((s) => s.id !== excludeServiceId).length;
+
+  if (activeCount >= limit) {
+    throw new Error(
+      `Your plan allows ${limit} active service${limit === 1 ? "" : "s"}. Upgrade to add more.`,
+    );
+  }
+}
+
 export const serviceCatalogService = {
   async getServiceById(userId: string, serviceId: string): Promise<Service | null> {
     const professional = await requireProfessional(userId);
@@ -185,6 +207,10 @@ export const serviceCatalogService = {
       slug: parsed.slug ?? null,
     });
 
+    if (parsed.active ?? true) {
+      await assertCanActivateService(professional);
+    }
+
     const service = await serviceRepository.createForProfessional(
       professional.id,
       {
@@ -237,6 +263,10 @@ export const serviceCatalogService = {
       });
     }
 
+    if (parsed.active === true && !existing.active) {
+      await assertCanActivateService(professional, existing.id);
+    }
+
     const updated = await serviceRepository.updateById(existing.id, {
       ...(parsed.title !== undefined ? { title: parsed.title } : {}),
       ...(parsed.slug !== undefined ? { slug: parsed.slug ?? null } : {}),
@@ -274,6 +304,10 @@ export const serviceCatalogService = {
 
     if (!existing) {
       throw new Error("Service not found.");
+    }
+
+    if (active && !existing.active) {
+      await assertCanActivateService(professional, existing.id);
     }
 
     const updated = await serviceRepository.setActiveState(

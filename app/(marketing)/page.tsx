@@ -62,45 +62,51 @@ const cards = [
 
 const pricingTiers = [
   {
-    name: "Solo Expert",
+    name: "Free",
     label: "Start here",
     price: "$0",
     suffix: "/mo",
-    fee: "5% transaction fee",
+    fee: "1 active service · ~10 AI qualifications/mo",
     description:
-      "For independent experts who want to stop noisy, low-fit calls without a monthly commitment.",
+      "For independent experts who want to try the AI gatekeeper before committing to anything.",
     features: [
-      "Unlimited Gatekeeper forms",
-      "Standard expert page",
-      "Lead qualification rules",
+      "1 active service",
+      "Unlimited bookings",
+      "~10 AI-qualified conversations/mo",
+      "Google Calendar sync",
     ],
     highlighted: false,
   },
   {
-    name: "Fractional Pro",
+    name: "Pro",
     label: "Sweet spot",
-    price: "$49",
+    price: "$29",
     suffix: "/mo",
-    fee: "1% transaction fee",
+    fee: "Unlimited services · ~100 AI qualifications/mo",
     description:
-      "For premium consultants and fractional leaders who want revenue control, status, and trust.",
+      "For consultants and fractional leaders running a real practice who need more room to screen prospects.",
     features: [
-      "Custom domain",
-      "No Gate branding",
-      "Escrow and refund logic",
-      "Priority booking workflows",
+      "Unlimited services",
+      "Unlimited bookings",
+      "~100 AI-qualified conversations/mo",
+      "Pre-call briefings",
+      "AI pattern reports",
     ],
     highlighted: true,
   },
   {
-    name: "Elite Agency",
-    label: "White glove",
-    price: "Custom",
-    suffix: "",
-    fee: "Starting at volume pricing",
+    name: "Business",
+    label: "High volume",
+    price: "$79",
+    suffix: "/mo",
+    fee: "Unlimited services · ~500 AI qualifications/mo",
     description:
-      "For teams and multi-mentor businesses managing high-value demand at scale.",
-    features: ["Multi-mentor dashboards", "CRM/API access", "Priority support"],
+      "For busy practices with steady inbound who don't want to think about limits.",
+    features: [
+      "Everything in Pro",
+      "~500 AI-qualified conversations/mo",
+      "Priority support",
+    ],
     highlighted: false,
   },
 ];
@@ -440,7 +446,7 @@ export default function MarketingHomePage() {
           <div className="mx-auto mt-14 grid max-w-5xl gap-5 lg:grid-cols-[0.95fr_1.1fr_0.95fr]">
             {pricingTiers.map((tier) => {
               const isPro = tier.highlighted;
-              const isElite = tier.name === "Elite Agency";
+              const isBusiness = tier.name === "Business";
 
               return (
                 <div
@@ -504,13 +510,13 @@ export default function MarketingHomePage() {
                     </p>
 
                     <div className="mt-7">
-                      {isElite ? (
-                        <AuraButton href="/demo" variant="text">
-                          Talk to sales <ChevronRight className="size-4" />
-                        </AuraButton>
-                      ) : isPro ? (
+                      {isPro ? (
                         <AuraButton href="/register" variant="gold">
                           Upgrade to Pro
+                        </AuraButton>
+                      ) : isBusiness ? (
+                        <AuraButton href="/register" variant="secondary">
+                          Upgrade to Business
                         </AuraButton>
                       ) : (
                         <AuraButton href="/register" variant="secondary">

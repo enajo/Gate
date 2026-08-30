@@ -14,16 +14,15 @@ import {
 
 const plans = [
   {
-    name: "Starter",
-    price: "Free",
+    name: "Free",
+    price: "$0/mo",
     description:
       "For early experts setting up their first gated booking page.",
     features: [
-      "Public expert page",
-      "Service tiles",
-      "Gatekeeper questions",
-      "Basic qualification rules",
-      "Manual access code flow",
+      "1 active service",
+      "Unlimited bookings",
+      "~10 AI-qualified conversations/mo",
+      "Google Calendar sync",
     ],
     ctaLabel: "Get started",
     ctaHref: "/register",
@@ -31,20 +30,33 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "Coming soon",
+    price: "$29/mo",
     description:
-      "For professionals who want a full front-desk workflow with calendar control and advanced monetization.",
+      "For professionals running a real practice who need more services and more room to screen prospects.",
     features: [
-      "Everything in Starter",
-      "Calendar connections",
-      "Conflict checking",
-      "Default event calendar",
-      "Advanced routing and booking controls",
-      "Priority support",
+      "Unlimited services",
+      "Unlimited bookings",
+      "~100 AI-qualified conversations/mo",
+      "Pre-call briefings",
+      "AI pattern reports",
     ],
-    ctaLabel: "Join waitlist",
+    ctaLabel: "Upgrade to Pro",
     ctaHref: "/register",
     highlighted: true,
+  },
+  {
+    name: "Business",
+    price: "$79/mo",
+    description:
+      "For busy practices with steady inbound who don't want to think about limits.",
+    features: [
+      "Everything in Pro",
+      "~500 AI-qualified conversations/mo",
+      "Priority support",
+    ],
+    ctaLabel: "Upgrade to Business",
+    ctaHref: "/register",
+    highlighted: false,
   },
 ];
 
@@ -61,7 +73,7 @@ export default function PricingPage() {
             maxWidth="2xl"
           />
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          <div className="mt-12 grid gap-6 lg:grid-cols-3">
             {plans.map((plan) => (
               <Card
                 key={plan.name}
@@ -118,13 +130,15 @@ export default function PricingPage() {
 
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">
-                  Early access pricing note
+                  AI qualification, not just scheduling
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  The product roadmap originally envisioned a beta phase with early
-                  professional users testing the gated booking flow before full paid
-                  rollout. This page keeps that spirit: easy entry now, deeper paid
-                  workflow later.
+                  Every plan includes the AI gatekeeper that screens visitors
+                  before they ever see your calendar — the monthly conversation
+                  count above is how many of those screenings are AI-powered.
+                  Once that count runs out for the month, bookings keep
+                  working — the gate just stops actively screening until it
+                  resets.
                 </p>
               </div>
             </div>

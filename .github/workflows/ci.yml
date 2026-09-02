@@ -8,9 +8,32 @@ on:
 
 jobs:
   ci:
-    name: Typecheck · Lint · Audit · Test
+    name: Typecheck · Lint · Audit · Test · Build
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gatekeeper
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Dummy values — same minimum set tests/setup.ts uses to let server
+      # modules import cleanly. No real secret is ever needed for a build:
+      # `prisma generate` only reads the schema, and `next build`'s static
+      # generation just needs lib/env.ts's required fields to validate.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gatekeeper
+      AUTH_SECRET: ci-build-dummy-secret
 
     steps:
       - name: Checkout
@@ -34,7 +57,10 @@ jobs:
         run: npm ci
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        # npm run typecheck (not raw tsc) so CI runs `next typegen` first,
+        # same as local — otherwise CI can silently miss route-type errors
+        # a local typecheck would catch.
+        run: npm run typecheck
 
       - name: Lint
         run: npm run lint
@@ -55,3 +81,12 @@ jobs:
           name: coverage-report
           path: coverage/
           retention-days: 14
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Production build
+        # Compiling clean is not the same as building for production —
+        # this step exists because that gap repeatedly caught real bugs
+        # (see docs/decisions/) that typecheck/lint/test all missed.
+        run: npm run build

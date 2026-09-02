@@ -8,7 +8,7 @@ Professionals can create a branded public page, qualify leads before access, con
 
 ### Option A — GitHub Codespaces (one click, no local setup)
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/enajo/Gate)
 
 1. Click the badge above (or **Code → Codespaces → Create codespace**)
 2. Wait ~2 minutes while the container installs dependencies, migrates the DB, and seeds demo data
@@ -26,7 +26,7 @@ Professionals can create a branded public page, qualify leads before access, con
 
 ```bash
 # 1. Clone and enter the project
-git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME.git gate
+git clone https://github.com/enajo/Gate.git gate
 cd gate
 
 # 2. Install dependencies
@@ -60,6 +60,18 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run typecheck` | Full TypeScript type check |
 
 ---
+
+## Where project context lives
+
+This README covers setup. Everything else — architecture and conventions,
+current build status, and the reasoning behind non-obvious decisions — lives
+in the repo, not in any chat history:
+
+- [`CLAUDE.md`](./CLAUDE.md) — architecture, domain model, commands, testing philosophy, gotchas
+- [`docs/STATUS.md`](./docs/STATUS.md) — what's built, what's left, what's blocking it
+- [`docs/decisions/`](./docs/decisions/) — short write-ups of the non-obvious calls (why AI qualification fails open, the plan-tier billing model, the embed widget's CSP scoping, why background jobs aren't on real cron yet)
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — the layering convention (route → service → repository → Prisma) and how to add a feature consistently
+- [`SECURITY.md`](./SECURITY.md) — security posture and reporting
 
 ## Core idea
 

@@ -4,6 +4,7 @@ const mockProfileRepository = vi.hoisted(() => ({
   findById: vi.fn(),
   findByUserId: vi.fn(),
   findByIdWithUser: vi.fn(),
+  deductTokenBalance: vi.fn(),
 }));
 
 const mockServiceRepository = vi.hoisted(() => ({
@@ -33,6 +34,8 @@ const mockBookingRepository = vi.hoisted(() => ({
   findBookingHoldById: vi.fn(),
   findActiveHoldsWithRelationsByProfessionalId: vi.fn(),
   findHoldWithRelationsById: vi.fn(),
+  findLeadWithServiceByIdForProfessional: vi.fn(),
+  updateLeadById: vi.fn(),
 }));
 
 const mockAvailabilityService = vi.hoisted(() => ({
@@ -59,6 +62,10 @@ const mockGoogleRepository = vi.hoisted(() => ({
 const mockCalendarProviderService = vi.hoisted(() => ({
   createEvent: vi.fn(),
   getMergedBusyRanges: vi.fn(),
+}));
+
+const mockPreCallBriefingService = vi.hoisted(() => ({
+  generate: vi.fn(),
 }));
 
 vi.mock("@/server/repositories/profile.repository", () => ({
@@ -91,6 +98,10 @@ vi.mock("@/server/services/email.service", () => ({
 
 vi.mock("@/server/services/calendar-provider.service", () => ({
   calendarProviderService: mockCalendarProviderService,
+}));
+
+vi.mock("@/server/services/pre-call-briefing.service", () => ({
+  preCallBriefingService: mockPreCallBriefingService,
 }));
 
 import { bookingService } from "@/server/services/booking.service";
@@ -461,6 +472,103 @@ describe("bookingService", () => {
       await expect(
         bookingService.markEventFailed("nonexistent"),
       ).rejects.toThrow("Booking not found.");
+    });
+  });
+
+  // ── getPreCallBriefing ─────────────────────────────────────────────────────
+
+  describe("getPreCallBriefing", () => {
+    const USER_ID = "user_1";
+    const LEAD_WITH_SERVICE = {
+      id: LEAD_ID,
+      professionalId: PROFESSIONAL_ID,
+      name: "Jordan Rivera",
+      answersJson: { conversationHistory: [{ role: "user", content: "I need help." }] },
+      service: { id: SERVICE_ID, title: "Strategy Session" },
+      briefingSummary: null,
+      briefingGeneratedAt: null,
+    };
+
+    beforeEach(() => {
+      mockProfileRepository.findByUserId.mockResolvedValue({ id: PROFESSIONAL_ID });
+    });
+
+    it("returns the cached briefing without calling the AI service", async () => {
+      const generatedAt = new Date("2026-01-01T00:00:00.000Z");
+      mockBookingRepository.findLeadWithServiceByIdForProfessional.mockResolvedValue({
+        ...LEAD_WITH_SERVICE,
+        briefingSummary: { summary: "Cached", keyPoints: [], suggestedOpening: "" },
+        briefingGeneratedAt: generatedAt,
+      });
+
+      const result = await bookingService.getPreCallBriefing(USER_ID, LEAD_ID);
+
+      expect(mockPreCallBriefingService.generate).not.toHaveBeenCalled();
+      expect(result.summary).toBe("Cached");
+      expect(result.generatedAt).toBe(generatedAt);
+    });
+
+    it("generates, persists, and deducts tokens on first call", async () => {
+      mockBookingRepository.findLeadWithServiceByIdForProfessional.mockResolvedValue(
+        LEAD_WITH_SERVICE,
+      );
+      mockPreCallBriefingService.generate.mockResolvedValue({
+        summary: "Fresh summary",
+        keyPoints: ["Point one"],
+        suggestedOpening: "Hi Jordan",
+        tokensUsed: 250,
+      });
+      mockBookingRepository.updateLeadById.mockResolvedValue({});
+
+      const result = await bookingService.getPreCallBriefing(USER_ID, LEAD_ID);
+
+      expect(mockPreCallBriefingService.generate).toHaveBeenCalledWith({
+        clientName: "Jordan Rivera",
+        serviceName: "Strategy Session",
+        conversationHistory: LEAD_WITH_SERVICE.answersJson.conversationHistory,
+      });
+      expect(mockProfileRepository.deductTokenBalance).toHaveBeenCalledWith(
+        PROFESSIONAL_ID,
+        250,
+      );
+      expect(mockBookingRepository.updateLeadById).toHaveBeenCalledWith(
+        LEAD_ID,
+        expect.objectContaining({
+          briefingSummary: {
+            summary: "Fresh summary",
+            keyPoints: ["Point one"],
+            suggestedOpening: "Hi Jordan",
+          },
+        }),
+      );
+      expect(result.summary).toBe("Fresh summary");
+    });
+
+    it("does not deduct tokens when the AI call used zero tokens (fail-open)", async () => {
+      mockBookingRepository.findLeadWithServiceByIdForProfessional.mockResolvedValue({
+        ...LEAD_WITH_SERVICE,
+        answersJson: { autoQualified: true, history: [] },
+      });
+      mockPreCallBriefingService.generate.mockResolvedValue({
+        summary: "",
+        keyPoints: [],
+        suggestedOpening: "",
+        tokensUsed: 0,
+      });
+      mockBookingRepository.updateLeadById.mockResolvedValue({});
+
+      const result = await bookingService.getPreCallBriefing(USER_ID, LEAD_ID);
+
+      expect(mockProfileRepository.deductTokenBalance).not.toHaveBeenCalled();
+      expect(result.summary).toBe("");
+    });
+
+    it("throws when the lead does not exist for this professional", async () => {
+      mockBookingRepository.findLeadWithServiceByIdForProfessional.mockResolvedValue(null);
+
+      await expect(
+        bookingService.getPreCallBriefing(USER_ID, "nonexistent"),
+      ).rejects.toThrow("Lead not found.");
     });
   });
 });

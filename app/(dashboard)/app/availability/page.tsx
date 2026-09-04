@@ -10,6 +10,7 @@ import {
   WeeklyScheduleForm,
   type WeeklyScheduleRule,
 } from "@/components/availability/weekly-schedule-form";
+import { WeeklyAvailabilityPreview } from "@/components/availability/weekly-schedule-preview";
 import { PageShell } from "@/components/layout/page-shell";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
@@ -378,6 +379,7 @@ export default function AvailabilityPage() {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              <WeeklyAvailabilityPreview rules={rules} />
               <WeeklyScheduleForm value={rules} onChange={setRules} />
               <div className="flex justify-end">
                 <Button

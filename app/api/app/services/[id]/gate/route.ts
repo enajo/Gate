@@ -37,8 +37,10 @@ function buildCompilerPrompt(
   input: z.infer<typeof compileRequestSchema>,
   serviceTitle: string,
   professionalName: string,
+  professionalRole: string | null,
   industry: string | null,
 ): string {
+  const roleLine = professionalRole ? `Role: ${professionalRole}` : "";
   const industryLine = industry ? `Industry context: ${industry}` : "";
   const extraLine = input.extra ? `\nAdditional context from expert:\n${input.extra}` : "";
 
@@ -50,6 +52,7 @@ function buildCompilerPrompt(
 
 EXPERT DETAILS:
 Name: ${professionalName}
+${roleLine}
 Service: ${serviceTitle}
 ${industryLine}
 
@@ -127,8 +130,15 @@ export async function POST(request: Request, context: RouteContext) {
 
     const resolvedTitle = service?.title ?? input.serviceTitle ?? "this service";
     const industry = professional?.industry ?? null;
+    const professionalRole = professional?.title ?? null;
 
-    const systemPrompt = buildCompilerPrompt(input, resolvedTitle, professional?.fullName ?? "the expert", industry);
+    const systemPrompt = buildCompilerPrompt(
+      input,
+      resolvedTitle,
+      professional?.fullName ?? "the expert",
+      professionalRole,
+      industry,
+    );
 
     const completion = await openai.chat.completions.create(
       {

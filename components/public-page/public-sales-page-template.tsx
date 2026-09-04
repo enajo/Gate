@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { formatInTimeZone } from "date-fns-tz";
 import {
   ArrowLeft,
   ArrowRight,
@@ -152,6 +153,57 @@ function getExposureLimit(exposure: AvailabilityExposure) {
   return limits[exposure];
 }
 
+/**
+ * Re-groups already-generated slots into the visitor's own timezone for
+ * display, purely client-side. Each AvailabilityTime.id already encodes the
+ * slot's real UTC start/end ("{startISO}__{endISO}") regardless of which
+ * timezone bucketed it — booking submission reads that id directly, so
+ * rebucketing here only changes what's shown, never what gets booked.
+ * Mirrors the server's own transformSlots() (public-sales-page.service.ts),
+ * just keyed to a different timezone and rebuilt from the ids we already have
+ * instead of a fresh server round-trip.
+ */
+function rebucketSlotsForTimezone(
+  slotsPerDate: Record<string, AvailabilityTime[]>,
+  targetTimezone: string,
+): { availableDates: AvailabilityDate[]; slotsPerDate: Record<string, AvailabilityTime[]> } {
+  const buckets = new Map<string, { date: AvailabilityDate; times: AvailabilityTime[] }>();
+
+  for (const times of Object.values(slotsPerDate)) {
+    for (const time of times) {
+      const [startIso] = time.id.split("__");
+      const start = new Date(startIso);
+      if (Number.isNaN(start.getTime())) continue;
+
+      const dateKey = formatInTimeZone(start, targetTimezone, "yyyy-MM-dd");
+      if (!buckets.has(dateKey)) {
+        buckets.set(dateKey, {
+          date: {
+            id: dateKey,
+            label: formatInTimeZone(start, targetTimezone, "EEE"),
+            day: formatInTimeZone(start, targetTimezone, "d"),
+            monthLabel: formatInTimeZone(start, targetTimezone, "MMM"),
+            available: true,
+          },
+          times: [],
+        });
+      }
+
+      buckets.get(dateKey)!.times.push({
+        id: time.id,
+        label: formatInTimeZone(start, targetTimezone, "h:mm a"),
+      });
+    }
+  }
+
+  const sorted = [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b));
+
+  return {
+    availableDates: sorted.map(([, entry]) => entry.date),
+    slotsPerDate: Object.fromEntries(sorted.map(([key, entry]) => [key, entry.times])),
+  };
+}
+
 function ProgressBars({
   step,
   accentColor,
@@ -272,14 +324,60 @@ export function PublicSalesPageTemplate({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preview, data.professionalId]);
 
+  // Visitor's own timezone, detected client-side only (SSR always renders in
+  // the professional's timezone — comparing here, not at render time, avoids
+  // a hydration mismatch). null until detected or if it matches the
+  // professional's zone, in which case there's nothing to rebucket.
+  const [visitorTimezone, setVisitorTimezone] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (detected && detected !== data.timezone) {
+        setVisitorTimezone(detected);
+      }
+    } catch {
+      // Intl unsupported in this environment — show the professional's
+      // timezone, same as before this existed.
+    }
+  }, [data.timezone]);
+
+  // Re-groups the already-fetched slots into the visitor's timezone for
+  // display. The underlying slot ids (real UTC instants) never change, so
+  // this only affects what's shown, never what gets booked.
+  const { availableDates: displayAvailableDates, slotsPerDate: displaySlotsPerDate } =
+    useMemo(() => {
+      if (!visitorTimezone || !data.slotsPerDate) {
+        return { availableDates: data.availableDates, slotsPerDate: data.slotsPerDate ?? {} };
+      }
+      return rebucketSlotsForTimezone(data.slotsPerDate, visitorTimezone);
+    }, [data.availableDates, data.slotsPerDate, visitorTimezone]);
+
+  // If rebucketing moved the already-selected time into a different day
+  // bucket (e.g. a professional's 11pm slot is the visitor's next morning),
+  // keep the date selection pointed at whichever bucket now holds it.
+  useEffect(() => {
+    if (!selectedTimeId) return;
+    const stillInSelectedDate = displaySlotsPerDate[selectedDateId]?.some(
+      (t) => t.id === selectedTimeId,
+    );
+    if (stillInSelectedDate) return;
+
+    const newDateId = Object.entries(displaySlotsPerDate).find(([, times]) =>
+      times.some((t) => t.id === selectedTimeId),
+    )?.[0];
+    if (newDateId) setSelectedDateId(newDateId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displaySlotsPerDate]);
+
   // Times for the currently selected date — use per-date map when real slots
   // are present, otherwise fall back to the flat list (preview / mock mode).
   const timesForSelectedDate = useMemo<AvailabilityTime[]>(() => {
-    if (data.slotsPerDate && selectedDateId) {
-      return data.slotsPerDate[selectedDateId] ?? [];
+    if (displaySlotsPerDate && selectedDateId) {
+      return displaySlotsPerDate[selectedDateId] ?? [];
     }
     return data.availableTimes;
-  }, [data.slotsPerDate, data.availableTimes, selectedDateId]);
+  }, [displaySlotsPerDate, data.availableTimes, selectedDateId]);
 
   const accentColor = data.theme.accentColor;
   const accentTextColor = getReadableTextColor(accentColor);
@@ -293,7 +391,7 @@ export function PublicSalesPageTemplate({
   const isDark = getYiq(backgroundColor) < 135;
 
   const exposureLimit = getExposureLimit(activeService.availabilityExposure);
-  const exposedDates = data.availableDates.slice(0, exposureLimit);
+  const exposedDates = displayAvailableDates.slice(0, exposureLimit);
 
   const selectedDate = exposedDates.find((date) => date.id === selectedDateId);
 
@@ -328,7 +426,7 @@ export function PublicSalesPageTemplate({
     setSelectedDateId(dateId);
     setShowAllSlots(false); // collapse back to the capped view
     // Reset time selection — times differ per date when real slots are used.
-    const newTimes = data.slotsPerDate?.[dateId] ?? data.availableTimes;
+    const newTimes = displaySlotsPerDate[dateId] ?? data.availableTimes;
     setSelectedTimeId(newTimes[0]?.id ?? "");
   }
 
@@ -1002,7 +1100,11 @@ export function PublicSalesPageTemplate({
 
                   <p className="mt-4 flex shrink-0 items-center gap-2 text-[12px] text-[var(--text-secondary)]">
                     <MapPin className="size-3.5" />
-                    {data.timezone}
+                    {visitorTimezone ? (
+                      <>Times shown in your local time ({visitorTimezone})</>
+                    ) : (
+                      data.timezone
+                    )}
                   </p>
                 </div>
               ) : null}

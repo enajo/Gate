@@ -16,11 +16,13 @@ import type { ServiceFormValues } from "@/components/services/service-form";
 type ServicesPageResponse = {
   services?: ServiceCardValue[];
   service?: ServiceCardValue;
+  professionalSlug?: string | null;
   error?: string;
 };
 
 export default function ServicesPage() {
   const [services, setServices] = React.useState<ServiceCardValue[]>([]);
+  const [publicBasePath, setPublicBasePath] = React.useState("/");
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -49,6 +51,9 @@ export default function ServicesPage() {
       }
 
       setServices(data.services ?? []);
+      if (data.professionalSlug) {
+        setPublicBasePath(`${window.location.origin}/${data.professionalSlug}`);
+      }
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -232,6 +237,7 @@ export default function ServicesPage() {
 
           <ServiceList
             services={services}
+            publicBasePath={publicBasePath}
             onCreate={openCreateDialog}
             onEdit={openEditDialog}
             onDelete={handleDelete}

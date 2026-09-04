@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 import { auth } from "@/lib/auth";
+import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceCatalogService } from "@/server/services/service-catalog.service";
 import { createServiceSchema } from "@/server/validators/service.validator";
 
@@ -59,11 +60,15 @@ export async function GET() {
       return unauthorizedResponse();
     }
 
-    const services = await serviceCatalogService.listServicesWithMeta(userId);
+    const [services, professional] = await Promise.all([
+      serviceCatalogService.listServicesWithMeta(userId),
+      profileRepository.findByUserId(userId),
+    ]);
 
     return NextResponse.json(
       {
         services,
+        professionalSlug: professional?.slug ?? null,
       },
       { status: 200 },
     );

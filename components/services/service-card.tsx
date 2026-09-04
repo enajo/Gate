@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import {
+  Check,
   Clock3,
+  Copy,
   Eye,
   MoreHorizontal,
   Pencil,
@@ -69,9 +71,34 @@ export function ServiceCard({
   ...props
 }: ServiceCardProps) {
   const isActive = service.active ?? true;
-  const publicUrl = service.slug
-    ? `${publicBasePath.replace(/\/$/, "")}/${service.slug}`
-    : null;
+  const publicUrl =
+    publicBasePath && publicBasePath !== "/"
+      ? `${publicBasePath.replace(/\/$/, "")}?service=${encodeURIComponent(service.id)}`
+      : null;
+  const [copied, setCopied] = React.useState(false);
+
+  async function handleCopyLink() {
+    if (!publicUrl) return;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(publicUrl);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = publicUrl;
+        el.style.cssText = "position:fixed;top:0;left:0;opacity:0;";
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore — clipboard access denied or unavailable
+    }
+  }
 
   return (
     <Card
@@ -146,9 +173,23 @@ export function ServiceCard({
         </div>
 
         {publicUrl ? (
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            Public URL:{" "}
-            <span className="font-medium text-slate-900">{publicUrl}</span>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <span className="min-w-0 truncate">
+              Public URL:{" "}
+              <span className="font-medium text-slate-900">{publicUrl}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => void handleCopyLink()}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
+            >
+              {copied ? (
+                <Check className="size-3.5 text-emerald-600" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </button>
           </div>
         ) : null}
       </CardContent>

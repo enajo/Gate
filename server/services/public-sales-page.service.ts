@@ -87,6 +87,8 @@ export type VisitorSourceInput = {
 export async function getPublicSalesPageData(
   slug: string,
   visitorSource: VisitorSourceInput,
+  /** From `?service=` — a service id, for a service-specific link. Falls back to the first service if it doesn't match. */
+  requestedService?: string | null,
 ): Promise<PublicSalesPageTemplateData | null> {
   const data = await profileService.getPublicPageData(slug);
   if (!data) return null;
@@ -95,9 +97,12 @@ export async function getPublicSalesPageData(
   if (!professional) return null;
 
   const timezone = professional.timezone || "UTC";
+  const requestedMatch = requestedService
+    ? data.services.find((s) => s.id === requestedService)
+    : undefined;
+  const activeServiceId = requestedMatch?.id ?? data.activeServiceId;
   const activeService =
-    data.services.find((s) => s.id === data.activeServiceId) ??
-    data.services[0];
+    data.services.find((s) => s.id === activeServiceId) ?? data.services[0];
 
   let availableDates: AvailabilityDate[] = [];
   let slotsPerDate: Record<string, AvailabilityTime[]> = {};
@@ -126,6 +131,7 @@ export async function getPublicSalesPageData(
 
   return {
     ...data,
+    activeServiceId,
     professionalId: professional.id,
     availableDates,
     availableTimes: [], // unused — template reads from slotsPerDate

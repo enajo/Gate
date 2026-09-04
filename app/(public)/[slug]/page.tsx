@@ -14,6 +14,7 @@ type PageProps = {
     utm_source?: string;
     utm_medium?: string;
     utm_campaign?: string;
+    service?: string;
   }>;
 };
 
@@ -43,15 +44,19 @@ export default async function PublicProfessionalPage({
   searchParams,
 }: PageProps) {
   const { slug } = await params;
-  const { utm_source, utm_medium, utm_campaign } = await searchParams;
+  const { utm_source, utm_medium, utm_campaign, service } = await searchParams;
   const referrer = (await headers()).get("referer");
 
-  const pageData = await getPublicSalesPageData(slug, {
-    referrer,
-    utmSource: utm_source,
-    utmMedium: utm_medium,
-    utmCampaign: utm_campaign,
-  });
+  const pageData = await getPublicSalesPageData(
+    slug,
+    {
+      referrer,
+      utmSource: utm_source,
+      utmMedium: utm_medium,
+      utmCampaign: utm_campaign,
+    },
+    service,
+  );
   if (!pageData) notFound();
 
   return <PublicSalesPageTemplate data={pageData} />;

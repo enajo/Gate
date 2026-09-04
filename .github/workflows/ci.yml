@@ -66,10 +66,22 @@ jobs:
         run: npm run lint
 
       - name: Audit dependencies
-        # Blocks on critical CVEs. As of the last dependency sweep the tree
-        # audits clean (0 vulnerabilities) via patched next-auth/resend plus
-        # postcss/sharp/esbuild pins in package.json#overrides.
-        run: npm audit --audit-level=critical
+        # Blocks on critical CVEs. `npm audit` calls out to npm's live
+        # advisory API — a transient timeout/error there fails this step
+        # with no real vulnerability behind it (reproduced locally: two
+        # real CI failures on this exact step, a from-scratch `npm ci` +
+        # audit reproduced neither). Retry a few times before treating a
+        # failure as real.
+        run: |
+          for attempt in 1 2 3; do
+            if npm audit --audit-level=critical; then
+              exit 0
+            fi
+            echo "npm audit attempt $attempt failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "npm audit failed after 3 attempts."
+          exit 1
 
       - name: Test with coverage
         run: npm run test:coverage

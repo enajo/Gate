@@ -43,7 +43,7 @@ function CalendarList({
         <CalendarDays className="mb-3 size-8 text-warm-border-soft" />
         <p className="text-[14px] font-medium text-ink">No calendars connected</p>
         <p className="mt-1 max-w-xs text-[13px] text-gray-500">
-          Connect your Google Calendar to sync availability and create booking events automatically.
+          Connect one above to get started.
         </p>
       </div>
     );
@@ -178,6 +178,12 @@ function CalendarModalContent() {
           />
         </div>
       </div>
+
+      <p className="-mt-2 text-[12px] leading-5 text-gray-400">
+        Lets Gate check this calendar for conflicts and create events when a
+        booking is confirmed — nothing on it changes unless someone actually
+        books through your gate.
+      </p>
 
       {/* Error */}
       {error && (

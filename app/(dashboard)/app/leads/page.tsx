@@ -48,26 +48,54 @@ export default async function LeadsPage({
       ? allLeads
       : allLeads.filter((l) => l.qualificationResult === activeFilter);
 
-  const tableLeads: LeadRow[] = filtered.map((l) => ({
-    id: l.id,
-    name: l.name,
-    email: l.email,
-    qualificationResult: l.qualificationResult as LeadRow["qualificationResult"],
-    service: { title: l.service.title },
-    answersJson: l.answersJson,
-    referrer: l.referrer,
-    utmSource: l.utmSource,
-    correctedResult: l.correctedResult as LeadRow["correctedResult"],
-    correctionNote: l.correctionNote,
-    createdAt: l.createdAt,
-    visits: l.visits.map((v) => ({
-      id: v.id,
-      referrer: v.referrer,
-      utmSource: v.utmSource,
-      landingPath: v.landingPath,
-      createdAt: v.createdAt,
-    })),
-  }));
+  // Group the full (unfiltered) list by email so repeat contacts show their
+  // whole history even when the current filter tab would otherwise hide it.
+  const leadsByEmail = new Map<string, typeof allLeads>();
+  for (const lead of allLeads) {
+    const key = lead.email.trim().toLowerCase();
+    const existing = leadsByEmail.get(key);
+    if (existing) {
+      existing.push(lead);
+    } else {
+      leadsByEmail.set(key, [lead]);
+    }
+  }
+
+  const tableLeads: LeadRow[] = filtered.map((l) => {
+    const sameEmail = leadsByEmail.get(l.email.trim().toLowerCase()) ?? [];
+    const priorVisits = sameEmail
+      .filter((other) => other.id !== l.id)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map((other) => ({
+        id: other.id,
+        createdAt: other.createdAt,
+        serviceTitle: other.service.title,
+        qualificationResult: other.qualificationResult as LeadRow["qualificationResult"],
+        outcome: other.outcome,
+      }));
+
+    return {
+      id: l.id,
+      name: l.name,
+      email: l.email,
+      qualificationResult: l.qualificationResult as LeadRow["qualificationResult"],
+      service: { title: l.service.title },
+      answersJson: l.answersJson,
+      referrer: l.referrer,
+      utmSource: l.utmSource,
+      correctedResult: l.correctedResult as LeadRow["correctedResult"],
+      correctionNote: l.correctionNote,
+      createdAt: l.createdAt,
+      visits: l.visits.map((v) => ({
+        id: v.id,
+        referrer: v.referrer,
+        utmSource: v.utmSource,
+        landingPath: v.landingPath,
+        createdAt: v.createdAt,
+      })),
+      priorVisits,
+    };
+  });
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-ink">

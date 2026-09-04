@@ -26,6 +26,14 @@ export type VisitRow = {
   createdAt: Date | string;
 };
 
+export type PriorVisitSummary = {
+  id: string;
+  createdAt: Date | string;
+  serviceTitle: string;
+  qualificationResult: "QUALIFIED" | "REDIRECTED" | "REJECTED" | "PENDING_REVIEW";
+  outcome?: "WON" | "LOST" | "NO_RESPONSE" | null;
+};
+
 export type LeadRow = {
   id: string;
   name: string;
@@ -39,9 +47,16 @@ export type LeadRow = {
   correctionNote?: string | null;
   createdAt: Date | string;
   visits?: VisitRow[];
+  priorVisits?: PriorVisitSummary[];
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+const OUTCOME_STYLES: Record<string, { label: string; className: string }> = {
+  WON: { label: "Won", className: "bg-green-50 text-green-700 border-green-200" },
+  LOST: { label: "Lost", className: "bg-gray-100 text-gray-500 border-gray-200" },
+  NO_RESPONSE: { label: "No response", className: "bg-gray-50 text-gray-400 border-gray-200" },
+};
 
 const RESULT_STYLES: Record<string, { label: string; className: string }> = {
   QUALIFIED: {
@@ -251,6 +266,46 @@ function VisitPath({ visits }: { visits: VisitRow[] }) {
   );
 }
 
+/** Every prior time this same email qualified with this professional — the thing missing without it, no memory of a repeat visitor. */
+function PreviousContact({ priorVisits }: { priorVisits: PriorVisitSummary[] }) {
+  if (priorVisits.length === 0) return null;
+
+  return (
+    <div className="mb-5 rounded-[0.85rem] border border-brand-amber/40 bg-brand-amber-faint px-4 py-3.5">
+      <p className="text-[12px] font-medium text-ink">
+        Reached out {priorVisits.length} time{priorVisits.length === 1 ? "" : "s"} before
+      </p>
+      <div className="mt-2.5 space-y-1.5">
+        {priorVisits.map((visit) => {
+          const style = RESULT_STYLES[visit.qualificationResult] ?? RESULT_STYLES.PENDING_REVIEW;
+          const outcomeStyle = visit.outcome ? OUTCOME_STYLES[visit.outcome] : null;
+
+          return (
+            <div
+              key={visit.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-full border border-warm-border-soft bg-white/70 px-3.5 py-1.5 text-[12px]"
+            >
+              <span className="text-gray-500">
+                {formatDate(visit.createdAt)} · {visit.serviceTitle}
+              </span>
+              <span className="flex gap-1.5">
+                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${style.className}`}>
+                  {style.label}
+                </span>
+                {outcomeStyle && (
+                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${outcomeStyle.className}`}>
+                    {outcomeStyle.label}
+                  </span>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function LeadRowItem({ lead }: { lead: LeadRow }) {
   const [open, setOpen] = React.useState(false);
   const style = RESULT_STYLES[lead.qualificationResult] ?? RESULT_STYLES.PENDING_REVIEW;
@@ -281,6 +336,11 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
                 Reviewed
               </span>
             )}
+            {lead.priorVisits && lead.priorVisits.length > 0 && (
+              <span className="inline-flex items-center rounded-full border border-brand-amber/40 bg-brand-amber-faint px-2.5 py-0.5 text-[11px] font-medium text-ink">
+                Repeat contact
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-[12px] text-gray-500">{lead.email}</p>
         </div>
@@ -295,6 +355,9 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
 
       {open && (
         <div className="border-t border-warm-border-soft/60 bg-warm-cream/40 px-5 py-5">
+          {lead.priorVisits && lead.priorVisits.length > 0 && (
+            <PreviousContact priorVisits={lead.priorVisits} />
+          )}
           {lead.visits && lead.visits.length > 0 && <VisitPath visits={lead.visits} />}
           <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-gray-400">
             Conversation

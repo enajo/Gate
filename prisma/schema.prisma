@@ -216,6 +216,8 @@ model Professional {
   bufferAfterMinutes         Int       @default(0) @map("buffer_after_minutes")
   minimumNoticeMinutes       Int       @default(0) @map("minimum_notice_minutes")
   maxBookingsPerDay          Int?      @map("max_bookings_per_day")
+  /** Calendly-style "how will you use this / what do you need" onboarding answers — { usageMode, goals }. Signal, not config. */
+  onboardingSurvey            Json?     @map("onboarding_survey")
   planTier                   PlanTier  @default(FREE) @map("plan_tier")
   tokenBalance               Int       @default(15000) @map("token_balance")
   tokenBalanceResetAt        DateTime? @map("token_balance_reset_at")

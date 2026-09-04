@@ -98,6 +98,13 @@ export const upsertProfessionalProfileSchema = z
     ),
     onboardingCompleted: z.boolean().optional(),
     industry: optionalNullableTrimmedString(100),
+    onboardingSurvey: z
+      .object({
+        usageMode: z.enum(["SOLO", "TEAM"]),
+        goals: z.array(z.string().trim().min(1).max(60)).max(10),
+      })
+      .nullable()
+      .optional(),
   })
   .strict();
 

@@ -192,6 +192,8 @@ export const profileService = {
       minimumNoticeMinutes: parsed.minimumNoticeMinutes ?? 0,
       maxBookingsPerDay: parsed.maxBookingsPerDay ?? null,
       industry: parsed.industry ?? null,
+      onboardingSurvey: (parsed.onboardingSurvey ??
+        Prisma.JsonNull) as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput,
     });
 
     return mapProfessional(profile)!;

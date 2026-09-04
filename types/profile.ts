@@ -127,6 +127,7 @@ export type UpsertProfessionalProfileInput = {
   maxBookingsPerDay?: number | null;
   onboardingCompleted?: boolean;
   industry?: string | null;
+  onboardingSurvey?: { usageMode: "SOLO" | "TEAM"; goals: string[] } | null;
 };
 
 export type UpdateBrandSettingsInput = BrandSettings;

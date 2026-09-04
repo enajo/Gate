@@ -143,6 +143,7 @@ export const profileRepository = {
       minimumNoticeMinutes,
       maxBookingsPerDay,
       industry,
+      onboardingSurvey,
     } = data;
 
     return db.professional.upsert({
@@ -165,6 +166,7 @@ export const profileRepository = {
         minimumNoticeMinutes,
         maxBookingsPerDay,
         industry,
+        onboardingSurvey,
       },
       create: {
         userId,
@@ -185,6 +187,7 @@ export const profileRepository = {
         minimumNoticeMinutes,
         maxBookingsPerDay,
         industry,
+        onboardingSurvey,
       },
     });
   },

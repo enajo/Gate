@@ -10,6 +10,12 @@ const onboardingInputSchema = z.object({
   title: z.string().trim().min(1, "Role is required.").max(100),
   headline: z.string().trim().max(120).optional(),
   industry: z.string().trim().max(100).optional(),
+  onboardingSurvey: z
+    .object({
+      usageMode: z.enum(["SOLO", "TEAM"]),
+      goals: z.array(z.string().trim().min(1).max(60)).max(10),
+    })
+    .optional(),
 });
 
 /**
@@ -69,6 +75,7 @@ export async function POST(request: Request) {
       timezone: "UTC",
       onboardingCompleted: false,
       industry: input.industry ?? null,
+      onboardingSurvey: input.onboardingSurvey ?? null,
     });
 
     return NextResponse.json({ ok: true, slug }, { status: 200 });

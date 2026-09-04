@@ -5,9 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  BadgeCheck,
-  BriefcaseBusiness,
-  LockKeyhole,
+  Check,
   Sparkles,
   UserRound,
 } from "lucide-react";
@@ -29,27 +27,18 @@ const industries = [
   "Education",
 ];
 
-const goals = [
-  {
-    title: "Paid Consultations",
-    description: "Secure upfront revenue for your advisory time.",
-    icon: BadgeCheck,
-  },
-  {
-    title: "Qualify Leads",
-    description: "Filter out low-intent inquiries automatically.",
-    icon: Sparkles,
-  },
-  {
-    title: "Applications Only",
-    description: "Review profiles manually before accepting slots.",
-    icon: BriefcaseBusiness,
-  },
-  {
-    title: "Private Access",
-    description: "Lock your booking page behind custom access codes.",
-    icon: LockKeyhole,
-  },
+const usageModes = [
+  { value: "SOLO" as const, label: "On my own" },
+  { value: "TEAM" as const, label: "With my team" },
+];
+
+const helpOptions = [
+  "Screen out bad-fit leads before they book",
+  "Protect my calendar from time-wasters",
+  "See where my best clients actually come from",
+  "Get briefed before every call",
+  "Collect payment for consultations",
+  "Manage calendars for multiple team members",
 ];
 
 export default function OnboardingPage() {
@@ -66,7 +55,16 @@ export default function OnboardingPage() {
   const [otherIndustry, setOtherIndustry] = useState("");
 
   // Step 2 fields
-  const [goal, setGoal] = useState("Qualify Leads");
+  const [usageMode, setUsageMode] = useState<"SOLO" | "TEAM">("SOLO");
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+
+  function toggleGoal(option: string) {
+    setSelectedGoals((prev) =>
+      prev.includes(option)
+        ? prev.filter((g) => g !== option)
+        : [...prev, option],
+    );
+  }
 
   // Submission state
   const [launching, setLaunching] = useState(false);
@@ -93,6 +91,7 @@ export default function OnboardingPage() {
           title: role === "Other" ? otherRole.trim() || "Professional" : role,
           headline: headline.trim() || undefined,
           industry: industry === "Other" ? otherIndustry.trim() || undefined : industry || undefined,
+          onboardingSurvey: { usageMode, goals: selectedGoals },
         }),
       });
 
@@ -320,49 +319,67 @@ export default function OnboardingPage() {
                 </p>
 
                 <h2 className="mt-4 text-[30px] font-medium leading-tight tracking-[-0.045em]">
-                  What&apos;s your booking goal?
+                  How do you plan on using Gate?
                 </h2>
 
                 <p className="mt-2 text-[13px] text-gray-500">
-                  Choose the style that fits your practice. You can change this
-                  at any time.
+                  Your answers help us tailor your setup. You can change any
+                  of this later.
                 </p>
 
-                <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                  {goals.map((item) => {
-                    const Icon = item.icon;
-                    const selected = goal === item.title;
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  {usageModes.map((mode) => (
+                    <button
+                      key={mode.value}
+                      type="button"
+                      onClick={() => setUsageMode(mode.value)}
+                      className={
+                        usageMode === mode.value
+                          ? "rounded-[1.25rem] border border-brand-amber bg-ink p-5 text-left text-warm-cream shadow-[0_18px_50px_rgba(43,43,43,0.16)]"
+                          : "rounded-[1.25rem] border border-warm-border-soft bg-white/50 p-5 text-left transition hover:border-ink-soft"
+                      }
+                    >
+                      <span className="text-[15px] font-semibold">
+                        {mode.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <h3 className="mt-7 text-[15px] font-semibold">
+                  How can Gate help you?
+                </h3>
+                <p className="mt-1 text-[12px] text-gray-500">
+                  Select all that apply.
+                </p>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {helpOptions.map((option) => {
+                    const selected = selectedGoals.includes(option);
 
                     return (
                       <button
-                        key={item.title}
+                        key={option}
                         type="button"
-                        onClick={() => setGoal(item.title)}
+                        onClick={() => toggleGoal(option)}
                         className={
                           selected
-                            ? "rounded-[1.5rem] border border-brand-amber bg-ink p-5 text-left text-warm-cream shadow-[0_18px_50px_rgba(43,43,43,0.16)]"
-                            : "rounded-[1.5rem] border border-warm-border-soft bg-white/50 p-5 text-left transition hover:border-ink-soft"
+                            ? "flex items-start gap-2.5 rounded-[1rem] border border-brand-amber bg-brand-amber-faint p-3.5 text-left"
+                            : "flex items-start gap-2.5 rounded-[1rem] border border-warm-border-soft bg-white/50 p-3.5 text-left transition hover:border-ink-soft"
                         }
                       >
-                        <Icon
+                        <span
                           className={
                             selected
-                              ? "size-5 text-brand-amber"
-                              : "size-5 text-ink-soft"
-                          }
-                        />
-                        <h3 className="mt-4 text-[16px] font-semibold">
-                          {item.title}
-                        </h3>
-                        <p
-                          className={
-                            selected
-                              ? "mt-2 text-[12px] leading-5 text-warm-border-soft"
-                              : "mt-2 text-[12px] leading-5 text-gray-500"
+                              ? "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-brand-amber text-ink"
+                              : "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-warm-border-soft"
                           }
                         >
-                          {item.description}
-                        </p>
+                          {selected && <Check className="size-3" strokeWidth={3} />}
+                        </span>
+                        <span className="text-[13px] leading-5 text-ink">
+                          {option}
+                        </span>
                       </button>
                     );
                   })}

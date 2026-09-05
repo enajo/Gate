@@ -49,6 +49,12 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 0.5rem);
 
+  /* Marketing-only display/body faces — set as CSS vars by
+     app/(marketing)/layout.tsx via next/font. Resolve to the system stack
+     anywhere outside that route group, where those vars are never defined. */
+  --font-display: var(--font-fraunces, ui-serif, Georgia, serif);
+  --font-body: var(--font-ibm-plex-sans, ui-sans-serif, system-ui, sans-serif);
+
   /* ─────────────────────────────────────────────────────────────────────────
      BRAND PALETTE
      How to use: replace [#HEX] arbitrary values with the named token below.
@@ -275,4 +281,22 @@ a {
 @keyframes typingBounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
   30%            { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Hero qualification teaser — per-message entrance. Disabled entirely under
+   reduced motion rather than just skipping the staged timing, so a message
+   that appears instantly on mount never animates either. */
+@keyframes teaser-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.teaser-message-in {
+  animation: teaser-in 0.35s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teaser-message-in {
+    animation: none;
+  }
 }

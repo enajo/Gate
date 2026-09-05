@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  CalendarCheck,
   Check,
   ChevronRight,
   CircleCheck,
@@ -10,22 +9,35 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const footerColumns = [
+import { HeroQualificationTeaser } from "@/components/marketing/hero-qualification-teaser";
+
+const footerColumns: Array<{
+  title: string;
+  links: Array<{ label: string; href: string }>;
+}> = [
   {
     title: "Product",
-    links: ["Gatekeeper", "Expert Pages", "Access Codes", "Bookings"],
-  },
-  {
-    title: "For Professionals",
-    links: ["Consultants", "Mentors", "Fractional CXOs", "Coaches"],
+    links: [
+      { label: "Gatekeeper", href: "/#gatekeeper" },
+      { label: "Features", href: "/#features" },
+      { label: "Pricing", href: "/#pricing" },
+    ],
   },
   {
     title: "Resources",
-    links: ["How it works", "Demo", "Pricing", "Support"],
+    links: [
+      { label: "How it works", href: "/how-it-works" },
+      { label: "Demo", href: "/demo" },
+      { label: "Support", href: "mailto:hello@expertgatekeeper.com" },
+    ],
   },
   {
     title: "Company",
-    links: ["About", "Contact", "Privacy", "Terms"],
+    links: [
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+      { label: "Contact", href: "mailto:hello@expertgatekeeper.com" },
+    ],
   },
 ];
 
@@ -155,18 +167,6 @@ function AuraButton({
   );
 }
 
-function HeroVisual() {
-  return (
-    <div className="relative mx-auto -mt-4 flex w-full max-w-7xl items-center justify-center overflow-visible">
-      <img
-        src="/hero-image.png"
-        alt="Expert Gatekeeper dashboard preview"
-        className="w-full max-w-[1150px] object-contain"
-      />
-    </div>
-  );
-}
-
 function GatekeeperVisual() {
   return (
     <div className="mx-auto mt-20 w-full max-w-5xl rounded-[2.25rem] border border-warm-border/80 bg-white/60 p-5 shadow-warm-lg backdrop-blur">
@@ -275,6 +275,59 @@ function GatekeeperVisual() {
 }
 
 function FeatureMockup({ type }: { type: string }) {
+  if (type === "qualification") {
+    return (
+      <div className="mx-auto mt-16 max-w-sm rounded-card bg-white/75 p-8 text-left text-ink shadow-warm-lg">
+        <p className="text-[13px] text-gray-500">Decision</p>
+
+        <div className="mt-4 space-y-2.5">
+          {[
+            { label: "Qualified", tone: "bg-success/10 text-success border-success/30" },
+            { label: "Redirected", tone: "bg-brand-amber/10 text-brand-amber border-brand-amber/30" },
+            { label: "Rejected", tone: "bg-gray-500/10 text-gray-500 border-gray-400/30" },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className={`inline-flex items-center rounded-full border px-4 py-1.5 text-[12px] font-medium ${item.tone}`}
+            >
+              {item.label}
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-7 text-[13px] leading-6 text-gray-500">
+          Every visitor gets one of three outcomes — automatically, before
+          your calendar is ever shown.
+        </p>
+      </div>
+    );
+  }
+
+  if (type === "trust") {
+    return (
+      <div className="mx-auto mt-16 max-w-sm rounded-card bg-white/75 p-8 text-left text-ink shadow-warm-lg">
+        <p className="text-[13px] text-gray-500">Client results</p>
+
+        <div className="mt-4 flex gap-1 text-brand-amber">
+          {Array.from({ length: 5 }, (_, i) => (
+            <span key={i}>★</span>
+          ))}
+        </div>
+
+        <div className="mt-4 space-y-2">
+          <div className="h-2.5 w-full rounded-full bg-warm-stone" />
+          <div className="h-2.5 w-5/6 rounded-full bg-warm-stone" />
+          <div className="h-2.5 w-2/3 rounded-full bg-warm-stone" />
+        </div>
+
+        <p className="mt-6 text-[13px] leading-6 text-gray-500">
+          Your testimonials and results, shown to visitors who've already
+          qualified.
+        </p>
+      </div>
+    );
+  }
+
   if (type === "qr") {
     return (
       <div className="mx-auto mt-16 flex h-56 max-w-sm items-center justify-center rounded-card bg-white/75 shadow-warm-lg">
@@ -340,25 +393,36 @@ export default function MarketingHomePage() {
       <section className="relative overflow-hidden text-center">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(223,167,103,0.18),transparent_34%),radial-gradient(circle_at_70%_35%,rgba(71,85,105,0.10),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.86)_0%,rgba(246,242,234,0.58)_58%,rgba(243,237,226,0.68)_100%)]" />
 
-        <div className="relative mx-auto min-h-[650px] max-w-7xl px-4 pt-12">
-          <h1 className="text-[42px] font-semibold leading-none tracking-[-0.045em] sm:text-[58px]">
-            Expert Gatekeeper
-          </h1>
-
-          <p className="mt-3 text-[20px] font-normal leading-tight tracking-[-0.03em]">
-            Your Time is a High-Value Asset. Treat it like one.
+        <div className="relative mx-auto max-w-4xl px-4 pb-20 pt-16">
+          <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-brand-amber">
+            A gate, not a calendar
           </p>
 
-          <div className="mt-6 flex justify-center gap-4">
+          <h1
+            style={{ fontFamily: "var(--font-display)" }}
+            className="mx-auto mt-5 max-w-3xl text-[44px] font-medium leading-[1.05] tracking-[-0.02em] sm:text-[64px]"
+          >
+            Your calendar isn&apos;t open to everyone.
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-xl text-[18px] leading-[1.6] text-gray-500">
+            Gate screens every visitor with a real conversation before they
+            ever see an open slot — so what reaches your calendar is already
+            worth your time.
+          </p>
+
+          <div className="mt-8 flex justify-center gap-4">
             <AuraButton href="/register" variant="primary">
-              Learn more
+              Start free
             </AuraButton>
             <AuraButton href="/demo" variant="secondary">
-              See demo
+              See how it works
             </AuraButton>
           </div>
 
-          <HeroVisual />
+          <div className="mt-16">
+            <HeroQualificationTeaser />
+          </div>
         </div>
       </section>
 
@@ -366,19 +430,23 @@ export default function MarketingHomePage() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(223,167,103,0.15),transparent_30%),radial-gradient(circle_at_80%_45%,rgba(71,85,105,0.09),transparent_30%),linear-gradient(180deg,rgba(243,237,226,0.76)_0%,rgba(249,250,251,0.52)_48%,rgba(243,237,226,0.72)_100%)]" />
 
         <div className="relative mx-auto min-h-[820px] max-w-7xl px-4 pt-24">
-          <h2 className="text-[54px] font-semibold leading-none tracking-[-0.045em] sm:text-[68px]">
+          <h2
+            style={{ fontFamily: "var(--font-display)" }}
+            className="text-[48px] font-medium leading-none tracking-[-0.02em] sm:text-[64px]"
+          >
             The Gatekeeper
           </h2>
 
-          <p className="mt-4 text-[27px] font-normal leading-tight tracking-[-0.03em]">
-            Qualification before calendar access.
+          <p className="mt-4 text-[22px] font-normal leading-tight tracking-[-0.02em] text-gray-500">
+            A real conversation stands between a stranger and your calendar —
+            not a form, not a filter, a decision.
           </p>
 
           <div className="mt-7 flex justify-center gap-4">
             <AuraButton href="/register" variant="primary">
               Learn more
             </AuraButton>
-            <AuraButton href="/john-carter" variant="secondary">
+            <AuraButton href="/demo" variant="secondary">
               See how it works
             </AuraButton>
           </div>
@@ -401,7 +469,10 @@ export default function MarketingHomePage() {
             >
               <Icon className="size-10 text-brand-amber" />
 
-              <h3 className="mt-7 max-w-md text-[34px] font-semibold leading-tight tracking-[-0.04em]">
+              <h3
+                style={{ fontFamily: "var(--font-display)" }}
+                className="mt-7 max-w-md text-[30px] font-medium leading-tight tracking-[-0.01em]"
+              >
                 {card.title}
               </h3>
 
@@ -433,7 +504,10 @@ export default function MarketingHomePage() {
               Pricing
             </p>
 
-            <h2 className="mt-4 text-[34px] font-semibold leading-tight tracking-[-0.045em] sm:text-[42px]">
+            <h2
+              style={{ fontFamily: "var(--font-display)" }}
+              className="mt-4 text-[32px] font-medium leading-tight tracking-[-0.01em] sm:text-[42px]"
+            >
               A private front desk for high-value professionals.
             </h2>
 
@@ -561,8 +635,8 @@ export default function MarketingHomePage() {
                 </p>
 
                 <h3 className="mt-4 max-w-xl text-[22px] font-semibold leading-tight tracking-[-0.04em]">
-                  If 8 of 10 discovery calls are unqualified, GATE protects 4
-                  hours every week.
+                  Example: 8 of 10 discovery calls turn out unqualified, GATE
+                  protects 4 hours every week.
                 </h3>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -658,12 +732,12 @@ export default function MarketingHomePage() {
                 </h4>
                 <ul className="mt-3 space-y-2">
                   {column.links.map((link) => (
-                    <li key={link}>
+                    <li key={link.label}>
                       <Link
-                        href="#"
+                        href={link.href}
                         className="hover:text-ink-soft hover:underline"
                       >
-                        {link}
+                        {link.label}
                       </Link>
                     </li>
                   ))}
@@ -679,10 +753,6 @@ export default function MarketingHomePage() {
               <Link href="/privacy">Privacy Policy</Link>
               <span>|</span>
               <Link href="/terms">Terms of Use</Link>
-              <span>|</span>
-              <Link href="#">Legal</Link>
-              <span>|</span>
-              <Link href="#">Site Map</Link>
             </div>
           </div>
         </div>

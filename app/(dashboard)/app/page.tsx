@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { auth } from "@/lib/auth";
+import { isAdmin } from "@/lib/permissions";
 import { LOW_TOKEN_BALANCE_THRESHOLD } from "@/lib/constants";
 import { bookingService } from "@/server/services/booking.service";
 import { onboardingService } from "@/server/services/onboarding.service";
@@ -76,6 +77,7 @@ function DashboardButton({
 export default async function DashboardPage() {
   const session = await auth();
   if (!session) redirect("/login");
+  const admin = isAdmin(session);
 
   // Fetch everything in parallel — degrade gracefully on errors
   const [onboardingResult, controlRoomResult, upcomingResult, holdsResult] =
@@ -216,6 +218,11 @@ export default async function DashboardPage() {
             <Link href="/app/control-room">Control Room</Link>
             <Link href="/app/leads">Leads</Link>
             <Link href="/app/embed">Embed</Link>
+            {admin && (
+              <Link href="/admin" className="text-brand-amber">
+                Admin
+              </Link>
+            )}
             {publicUrl && (
               <Link
                 href={publicUrl}

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { adminService } from "@/server/services/admin.service";
+import { UnpublishButton } from "@/components/admin/unpublish-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -60,7 +61,7 @@ export default async function AdminPage() {
           Platform overview
         </h1>
         <p className="mt-1 text-[13px] text-slate-500">
-          Read-only, across every professional on Gate — not one dashboard's view.
+          Across every professional on Gate — not one dashboard's view.
         </p>
 
         {/* Top-line stats */}
@@ -119,12 +120,13 @@ export default async function AdminPage() {
                   <TableHead>Leads</TableHead>
                   <TableHead>Token balance</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {professionals.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-slate-400">
+                    <TableCell colSpan={8} className="text-center text-slate-400">
                       No professionals yet.
                     </TableCell>
                   </TableRow>
@@ -153,6 +155,16 @@ export default async function AdminPage() {
                       </TableCell>
                       <TableCell className="text-slate-500">
                         {formatDate(p.createdAt)}
+                      </TableCell>
+                      <TableCell>
+                        {p.published ? (
+                          <UnpublishButton
+                            professionalId={p.id}
+                            fullName={p.fullName}
+                          />
+                        ) : (
+                          <span className="text-[12px] text-slate-400">—</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))

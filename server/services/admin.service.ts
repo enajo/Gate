@@ -1,6 +1,7 @@
 import "server-only";
 
 import { db } from "@/lib/db";
+import { profileRepository } from "@/server/repositories/profile.repository";
 
 export type PlatformStats = {
   professionals: {
@@ -44,7 +45,8 @@ const CONFIRMED_BOOKING_STATUSES = [
 
 /**
  * Founder-facing platform-wide view — not scoped to one professional.
- * Read-only aggregates, no writes, so there's little that can go wrong here.
+ * Mostly read-only aggregates; the one write (unpublishProfessional) is a
+ * moderation kill-switch, not a general-purpose edit surface.
  */
 export const adminService = {
   async getPlatformStats(): Promise<PlatformStats> {
@@ -134,5 +136,17 @@ export const adminService = {
       tokenBalance: p.tokenBalance,
       createdAt: p.createdAt,
     }));
+  },
+
+  /**
+   * Moderation kill-switch: takes a professional's public page down
+   * immediately (publishedAt -> null), independent of their own draft
+   * state. They can re-publish themselves from their own Control Room
+   * whenever they're ready — this only ever removes access, it never
+   * grants it, so there's no risk of admin accidentally publishing a
+   * draft the professional never approved.
+   */
+  async unpublishProfessional(professionalId: string): Promise<void> {
+    await profileRepository.setPublishedAt(professionalId, null);
   },
 };

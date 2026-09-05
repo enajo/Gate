@@ -36,7 +36,7 @@ export function ProfileSettings({ profile, setProfile }: ProfileSettingsProps) {
   }
 
   return (
-    <section className="card-section">
+    <section id="profile" className="card-section scroll-mt-20">
       <div className="flex items-center gap-3">
         <UserRound className="size-5 text-brand-amber" />
 

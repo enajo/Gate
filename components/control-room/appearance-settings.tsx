@@ -89,7 +89,7 @@ export function AppearanceSettings({
   }
 
   return (
-    <section className="card-section">
+    <section id="appearance" className="card-section scroll-mt-20">
       <div className="flex items-center gap-3">
         <Paintbrush className="size-5 text-brand-amber" />
 

@@ -243,7 +243,7 @@ export function AvailabilitySettings() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <section id="availability" className="space-y-6">
+    <section id="availability" className="scroll-mt-20 space-y-6">
       <div className="card-section">
         <div className="flex items-center gap-3">
           <Calendar className="size-5 text-brand-amber" />

@@ -95,7 +95,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <section id="gate" className="space-y-6">
+    <section id="gate" className="scroll-mt-20 space-y-6">
       {/* ── Gate Control ───────────────────────────────────────────────────── */}
       <div className="card-section">
         <div className="flex items-center justify-between gap-4">

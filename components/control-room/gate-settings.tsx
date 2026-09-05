@@ -284,8 +284,11 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
                 Gate Rules
               </p>
 
-              {/* 2 × 2 toggle grid */}
-              <div className="grid grid-cols-2 gap-2.5">
+              {/* 2 × 2 toggle grid — capped so each card sizes to its
+                  label/description instead of stretching to fill a wide
+                  column, which was leaving a large dead gap before the
+                  toggle switch on the right. */}
+              <div className="grid max-w-lg grid-cols-2 gap-2.5">
                 <Toggle
                   label="Qualification"
                   description="AI screens visitors"
@@ -412,7 +415,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
                 Availability Window
               </p>
 
-              <div className="flex items-center justify-between rounded-[0.875rem] border border-warm-border-soft bg-white/70 px-4 py-3">
+              <div className="flex max-w-xl items-center justify-between gap-4 rounded-[0.875rem] border border-warm-border-soft bg-white/70 px-4 py-3">
                 <div>
                   <p className="text-[13px] font-medium text-ink">
                     Calendar exposure

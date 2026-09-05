@@ -269,7 +269,7 @@ export function AvailabilitySettings() {
             <Loader2 className="size-5 animate-spin text-brand-amber" />
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="max-w-md space-y-2">
             {WEEKDAYS.map((weekday) => {
               const day = days[weekday.value];
               const isEnabled = day.enabled;

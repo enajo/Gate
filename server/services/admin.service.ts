@@ -37,6 +37,59 @@ export type ProfessionalSummary = {
   createdAt: Date;
 };
 
+export type ProfessionalDetail = {
+  id: string;
+  fullName: string;
+  slug: string;
+  email: string;
+  title: string | null;
+  industry: string | null;
+  timezone: string;
+  planTier: string;
+  published: boolean;
+  tokenBalance: number;
+  tokenBalanceResetAt: Date | null;
+  createdAt: Date;
+  services: Array<{
+    id: string;
+    title: string;
+    active: boolean;
+    durationMinutes: number;
+    displayPrice: string | null;
+    currency: string | null;
+    qualificationRequired: boolean;
+    accessCodeRequired: boolean;
+    paymentRequired: boolean;
+    manualApprovalRequired: boolean;
+  }>;
+  calendarAccounts: Array<{
+    id: string;
+    provider: string;
+    providerEmail: string | null;
+    syncStatus: string;
+    isActive: boolean;
+    lastSyncedAt: Date | null;
+  }>;
+  recentLeads: Array<{
+    id: string;
+    name: string;
+    email: string;
+    serviceTitle: string;
+    qualificationResult: string;
+    correctedResult: string | null;
+    outcome: string | null;
+    createdAt: Date;
+  }>;
+  recentBookings: Array<{
+    id: string;
+    leadName: string;
+    serviceTitle: string;
+    slotStart: Date;
+    status: string;
+    calendarStatus: string;
+  }>;
+};
+
 const CONFIRMED_BOOKING_STATUSES = [
   "CONFIRMED",
   "EVENT_CREATION_PENDING",
@@ -136,6 +189,92 @@ export const adminService = {
       tokenBalance: p.tokenBalance,
       createdAt: p.createdAt,
     }));
+  },
+
+  /**
+   * Read-only per-professional drill-down for support/debugging — never a
+   * real session as them, just their data. Deliberately excludes calendar
+   * OAuth tokens (accessTokenEncrypted/refreshTokenEncrypted) even though
+   * they live on the same row; there's no reason an admin view should ever
+   * render those, encrypted or not.
+   */
+  async getProfessionalDetail(professionalId: string): Promise<ProfessionalDetail | null> {
+    const professional = await db.professional.findUnique({
+      where: { id: professionalId },
+      include: {
+        user: { select: { email: true } },
+        services: { orderBy: { sortOrder: "asc" } },
+        calendarAccounts: { orderBy: { createdAt: "asc" } },
+        leads: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+          include: { service: { select: { title: true } } },
+        },
+        bookings: {
+          orderBy: { slotStart: "desc" },
+          take: 20,
+          include: {
+            lead: { select: { name: true } },
+            service: { select: { title: true } },
+          },
+        },
+      },
+    });
+
+    if (!professional) return null;
+
+    return {
+      id: professional.id,
+      fullName: professional.fullName,
+      slug: professional.slug,
+      email: professional.user.email ?? "",
+      title: professional.title,
+      industry: professional.industry,
+      timezone: professional.timezone,
+      planTier: professional.planTier,
+      published: Boolean(professional.publishedAt),
+      tokenBalance: professional.tokenBalance,
+      tokenBalanceResetAt: professional.tokenBalanceResetAt,
+      createdAt: professional.createdAt,
+      services: professional.services.map((s) => ({
+        id: s.id,
+        title: s.title,
+        active: s.active,
+        durationMinutes: s.durationMinutes,
+        displayPrice: s.displayPrice,
+        currency: s.currency,
+        qualificationRequired: s.qualificationRequired,
+        accessCodeRequired: s.accessCodeRequired,
+        paymentRequired: s.paymentRequired,
+        manualApprovalRequired: s.manualApprovalRequired,
+      })),
+      calendarAccounts: professional.calendarAccounts.map((c) => ({
+        id: c.id,
+        provider: c.provider,
+        providerEmail: c.providerEmail,
+        syncStatus: c.syncStatus,
+        isActive: c.isActive,
+        lastSyncedAt: c.lastSyncedAt,
+      })),
+      recentLeads: professional.leads.map((l) => ({
+        id: l.id,
+        name: l.name,
+        email: l.email,
+        serviceTitle: l.service.title,
+        qualificationResult: l.qualificationResult,
+        correctedResult: l.correctedResult,
+        outcome: l.outcome,
+        createdAt: l.createdAt,
+      })),
+      recentBookings: professional.bookings.map((b) => ({
+        id: b.id,
+        leadName: b.lead.name,
+        serviceTitle: b.service.title,
+        slotStart: b.slotStart,
+        status: b.status,
+        calendarStatus: b.calendarStatus,
+      })),
+    };
   },
 
   /**

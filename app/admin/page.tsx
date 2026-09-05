@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
@@ -134,7 +135,14 @@ export default async function AdminPage() {
                 ) : (
                   professionals.map((p) => (
                     <TableRow key={p.id}>
-                      <TableCell className="font-medium text-slate-900">{p.fullName}</TableCell>
+                      <TableCell className="font-medium text-slate-900">
+                        <Link
+                          href={`/admin/professionals/${p.id}`}
+                          className="hover:underline"
+                        >
+                          {p.fullName}
+                        </Link>
+                      </TableCell>
                       <TableCell className="text-slate-500">{p.email}</TableCell>
                       <TableCell className="text-slate-500">{p.slug}</TableCell>
                       <TableCell>

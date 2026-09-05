@@ -149,4 +149,23 @@ export const adminService = {
   async unpublishProfessional(professionalId: string): Promise<void> {
     await profileRepository.setPublishedAt(professionalId, null);
   },
+
+  /**
+   * Manual AI-qualification token top-up — a support bridge until real
+   * billing exists (docs/decisions/0002). Sets the balance to an absolute
+   * value rather than adding a delta: simpler mental model for an admin
+   * looking at "current balance: 12" and deciding what it should be.
+   * Doesn't touch tokenBalanceResetAt — this is a one-off adjustment, not
+   * a change to when/whether the monthly reset job runs for them.
+   */
+  async setTokenBalance(professionalId: string, tokenBalance: number): Promise<void> {
+    if (!Number.isInteger(tokenBalance) || tokenBalance < 0) {
+      throw new Error("Token balance must be a non-negative whole number.");
+    }
+
+    await db.professional.update({
+      where: { id: professionalId },
+      data: { tokenBalance },
+    });
+  },
 };

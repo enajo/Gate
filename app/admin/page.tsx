@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { adminService } from "@/server/services/admin.service";
 import { UnpublishButton } from "@/components/admin/unpublish-button";
+import { TokenBalanceButton } from "@/components/admin/token-balance-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -157,14 +158,19 @@ export default async function AdminPage() {
                         {formatDate(p.createdAt)}
                       </TableCell>
                       <TableCell>
-                        {p.published ? (
-                          <UnpublishButton
+                        <div className="flex items-center gap-2">
+                          {p.published && (
+                            <UnpublishButton
+                              professionalId={p.id}
+                              fullName={p.fullName}
+                            />
+                          )}
+                          <TokenBalanceButton
                             professionalId={p.id}
                             fullName={p.fullName}
+                            currentBalance={p.tokenBalance}
                           />
-                        ) : (
-                          <span className="text-[12px] text-slate-400">—</span>
-                        )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

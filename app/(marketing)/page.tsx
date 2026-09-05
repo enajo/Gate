@@ -18,9 +18,10 @@ const footerColumns: Array<{
   {
     title: "Product",
     links: [
-      { label: "Gatekeeper", href: "/#gatekeeper" },
+      { label: "Home", href: "/" },
       { label: "Features", href: "/#features" },
       { label: "Pricing", href: "/#pricing" },
+      { label: "FAQ", href: "/#faq" },
     ],
   },
   {
@@ -47,6 +48,7 @@ const cards = [
     body: "Ask the right questions up front and automatically qualify every visitor before they can book.",
     icon: ShieldCheck,
     mockup: "qualification",
+    tier: "primary" as const,
   },
   {
     title: "Trust Engine",
@@ -54,6 +56,7 @@ const cards = [
     body: "Share testimonials, client results, and authority signals that help serious buyers move faster.",
     icon: Sparkles,
     mockup: "trust",
+    tier: "primary" as const,
   },
   {
     title: "Access Codes",
@@ -61,6 +64,7 @@ const cards = [
     body: "Invite the right people with private access codes and manage entry with precision.",
     icon: LockKeyhole,
     mockup: "code",
+    tier: "secondary" as const,
   },
   {
     title: "Branded QR Links",
@@ -68,8 +72,12 @@ const cards = [
     body: "Share your branded QR link anywhere. Every scan goes through your Gatekeeper.",
     icon: QrCode,
     mockup: "qr",
+    tier: "secondary" as const,
   },
 ];
+
+const primaryCards = cards.filter((card) => card.tier === "primary");
+const secondaryCards = cards.filter((card) => card.tier === "secondary");
 
 const pricingTiers = [
   {
@@ -133,6 +141,26 @@ const faqs = [
     answer:
       "Yes. Start with questions and access codes, then add payments when your offer is ready.",
   },
+  {
+    question: "Do I need a credit card to try GATE?",
+    answer:
+      "No. The Free plan is $0/mo with no payment method required, capped at roughly 10 AI qualifications a month.",
+  },
+  {
+    question: "What happens if the AI can't reach a decision?",
+    answer:
+      "GATE fails open. If a qualification check ever errors out, a visitor is let through rather than blocked — you never lose a legitimate lead to a technical hiccup.",
+  },
+  {
+    question: "What happens if I go over my monthly AI limit?",
+    answer:
+      "GATE keeps failing open: visitors are auto-qualified instead of turned away, and your allowance resets automatically at the start of the next month.",
+  },
+  {
+    question: "Can I embed my gate on my own website?",
+    answer:
+      "Yes. A lightweight embeddable widget lets visitors qualify and book without ever leaving your site.",
+  },
 ];
 
 function AuraButton({
@@ -168,7 +196,7 @@ function AuraButton({
 
 function GatekeeperVisual() {
   return (
-    <div className="mx-auto mt-20 w-full max-w-5xl rounded-[2.25rem] border border-warm-border/80 bg-white/60 p-5 shadow-warm-lg backdrop-blur">
+    <div className="mx-auto w-full max-w-5xl rounded-[2.25rem] border border-warm-border/80 bg-white/60 p-5 shadow-warm-lg backdrop-blur">
       <div className="flex h-8 items-center gap-2 border-b border-warm-border px-2">
         <span className="size-3 rounded-full bg-brand-amber/50" />
         <span className="size-3 rounded-full bg-warm-gray/35" />
@@ -273,10 +301,21 @@ function GatekeeperVisual() {
   );
 }
 
-function FeatureMockup({ type }: { type: string }) {
+function FeatureMockup({
+  type,
+  compact = false,
+}: {
+  type: string;
+  compact?: boolean;
+}) {
+  const topMargin = compact ? "mt-8" : "mt-16";
+  const padding = compact ? "p-6" : "p-8";
+
   if (type === "qualification") {
     return (
-      <div className="mx-auto mt-16 max-w-sm rounded-card bg-white/75 p-8 text-left text-ink shadow-warm-lg">
+      <div
+        className={`mx-auto ${topMargin} max-w-sm rounded-card bg-white/75 ${padding} text-left text-ink shadow-warm-lg`}
+      >
         <p className="text-[13px] text-gray-500">Decision</p>
 
         <div className="mt-4 space-y-2.5">
@@ -304,7 +343,9 @@ function FeatureMockup({ type }: { type: string }) {
 
   if (type === "trust") {
     return (
-      <div className="mx-auto mt-16 max-w-sm rounded-card bg-white/75 p-8 text-left text-ink shadow-warm-lg">
+      <div
+        className={`mx-auto ${topMargin} max-w-sm rounded-card bg-white/75 ${padding} text-left text-ink shadow-warm-lg`}
+      >
         <p className="text-[13px] text-gray-500">Client results</p>
 
         <div className="mt-4 flex gap-1 text-brand-amber">
@@ -329,7 +370,9 @@ function FeatureMockup({ type }: { type: string }) {
 
   if (type === "qr") {
     return (
-      <div className="mx-auto mt-16 flex h-56 max-w-sm items-center justify-center rounded-card bg-white/75 shadow-warm-lg">
+      <div
+        className={`mx-auto ${topMargin} flex ${compact ? "h-40" : "h-56"} max-w-sm items-center justify-center rounded-card bg-white/75 shadow-warm-lg`}
+      >
         <div className="grid grid-cols-5 gap-2">
           {Array.from({ length: 25 }, (_, i) => (
             <span
@@ -346,7 +389,9 @@ function FeatureMockup({ type }: { type: string }) {
 
   if (type === "code") {
     return (
-      <div className="mx-auto mt-16 max-w-sm rounded-card bg-white/75 p-8 text-left text-ink shadow-warm-lg">
+      <div
+        className={`mx-auto ${topMargin} max-w-sm rounded-card bg-white/75 ${padding} text-left text-ink shadow-warm-lg`}
+      >
         <p className="text-[13px] text-gray-500">Access Code</p>
 
         <div className="mt-4 rounded-xl border border-warm-stone px-4 py-3 font-mono tracking-[0.35em]">
@@ -365,7 +410,9 @@ function FeatureMockup({ type }: { type: string }) {
   }
 
   return (
-    <div className="mx-auto mt-16 h-56 max-w-sm rounded-card bg-white/75 shadow-warm-lg" />
+    <div
+      className={`mx-auto ${topMargin} h-56 max-w-sm rounded-card bg-white/75 shadow-warm-lg`}
+    />
   );
 }
 
@@ -379,9 +426,9 @@ export default function MarketingHomePage() {
           </Link>
 
           <div className="hidden items-center gap-8 text-gray-500 md:flex">
-            <Link href="#gatekeeper">Gatekeeper</Link>
             <Link href="#features">Features</Link>
             <Link href="#pricing">Pricing</Link>
+            <Link href="#faq">FAQ</Link>
             <Link href="/how-it-works">How it works</Link>
             <Link href="/login">Login</Link>
             <Link href="/register">Register</Link>
@@ -389,10 +436,10 @@ export default function MarketingHomePage() {
         </nav>
       </header>
 
-      <section className="relative overflow-hidden text-center">
+      <section id="gatekeeper" className="relative overflow-hidden text-center">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(223,167,103,0.18),transparent_34%),radial-gradient(circle_at_70%_35%,rgba(71,85,105,0.10),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.86)_0%,rgba(246,242,234,0.58)_58%,rgba(243,237,226,0.68)_100%)]" />
 
-        <div className="relative mx-auto max-w-4xl px-4 pb-20 pt-16">
+        <div className="relative mx-auto max-w-4xl px-4 pb-24 pt-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-brand-amber">
             A gate, not a calendar
           </p>
@@ -422,78 +469,153 @@ export default function MarketingHomePage() {
           <div className="mt-16">
             <HeroQualificationTeaser />
           </div>
+
+          <div className="relative mx-auto mt-24 max-w-5xl">
+            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand-amber">
+              How it decides
+            </p>
+            <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-gray-500">
+              Every visitor moves through the same three steps before your
+              calendar is ever shown.
+            </p>
+
+            <div className="mt-10">
+              <GatekeeperVisual />
+            </div>
+          </div>
         </div>
       </section>
 
-      <section id="gatekeeper" className="relative overflow-hidden text-center">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(223,167,103,0.15),transparent_30%),radial-gradient(circle_at_80%_45%,rgba(71,85,105,0.09),transparent_30%),linear-gradient(180deg,rgba(243,237,226,0.76)_0%,rgba(249,250,251,0.52)_48%,rgba(243,237,226,0.72)_100%)]" />
+      <section className="relative overflow-hidden px-4 py-16 text-center">
+        <div className="mx-auto max-w-3xl">
+          <div className="relative overflow-hidden rounded-section bg-[radial-gradient(circle_at_bottom_right,rgba(223,167,103,0.16),transparent_32%),linear-gradient(145deg,#1B1B1B_0%,#252525_45%,#171717_100%)] px-8 py-10 text-warm-cream shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_42%)]" />
 
-        <div className="relative mx-auto min-h-[820px] max-w-7xl px-4 pt-24">
-          <h2
-            style={{ fontFamily: "var(--font-display)" }}
-            className="text-[48px] font-medium leading-none tracking-[-0.02em] sm:text-[64px]"
-          >
-            The Gatekeeper
-          </h2>
+            <div className="relative">
+              <p className="text-xs uppercase tracking-[0.22em] text-brand-amber">
+                The math
+              </p>
 
-          <p className="mt-4 text-[22px] font-normal leading-tight tracking-[-0.02em] text-gray-500">
-            A real conversation stands between a stranger and your calendar —
-            not a form, not a filter, a decision.
+              <h2
+                style={{ fontFamily: "var(--font-display)" }}
+                className="mx-auto mt-4 max-w-xl text-[26px] font-medium leading-tight tracking-[-0.02em] sm:text-[30px]"
+              >
+                Example: 8 of 10 discovery calls turn out unqualified, GATE
+                protects 4 hours every week.
+              </h2>
+
+              <div className="mx-auto mt-7 grid max-w-md gap-3 sm:grid-cols-3">
+                {[
+                  ["10", "free calls/week"],
+                  ["8", "unqualified"],
+                  ["4h", "weekly time saved"],
+                ].map(([value, label]) => (
+                  <div
+                    key={label}
+                    className="rounded-[1rem] bg-[linear-gradient(145deg,rgba(255,255,255,0.14),rgba(255,255,255,0.07))] px-4 py-3"
+                  >
+                    <p className="text-[24px] font-semibold tracking-[-0.05em]">
+                      {value}
+                    </p>
+                    <p className="mt-1 text-[11px] text-warm-border-soft">
+                      {label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-6 text-[13px] leading-6 text-warm-border-soft">
+                What is one protected hour of your attention worth?
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className="px-3 py-6">
+        <div className="grid gap-3 md:grid-cols-2">
+          {primaryCards.map((card) => {
+            const Icon = card.icon;
+
+            return (
+              <div
+                key={card.title}
+                className="min-h-[620px] overflow-hidden rounded-card bg-[linear-gradient(145deg,rgba(255,255,255,0.54),rgba(243,237,226,0.76))] p-12 text-ink shadow-warm-sm"
+              >
+                <Icon className="size-10 text-brand-amber" />
+
+                <h3
+                  style={{ fontFamily: "var(--font-display)" }}
+                  className="mt-7 max-w-md text-[30px] font-medium leading-tight tracking-[-0.01em]"
+                >
+                  {card.title}
+                </h3>
+
+                <p className="mt-4 max-w-md text-[21px] font-normal leading-7">
+                  {card.subtitle}
+                </p>
+
+                <p className="mt-5 max-w-sm text-[15px] leading-6 text-gray-500">
+                  {card.body}
+                </p>
+
+                <Link
+                  href="/register"
+                  className="mt-6 inline-flex items-center text-[15px] font-normal text-ink-soft hover:underline"
+                >
+                  Learn more <ChevronRight className="size-4" />
+                </Link>
+
+                <FeatureMockup type={card.mockup} />
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mx-auto mt-3 max-w-6xl">
+          <p className="px-1 font-mono text-[11px] uppercase tracking-[0.26em] text-brand-amber">
+            Also included
           </p>
 
-          <div className="mt-7 flex justify-center gap-4">
-            <AuraButton href="/register" variant="primary">
-              Learn more
-            </AuraButton>
-            <AuraButton href="/how-it-works" variant="secondary">
-              See how it works
-            </AuraButton>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {secondaryCards.map((card) => {
+              const Icon = card.icon;
+
+              return (
+                <div
+                  key={card.title}
+                  className="overflow-hidden rounded-card bg-[linear-gradient(145deg,rgba(255,255,255,0.44),rgba(243,237,226,0.62))] p-8 text-ink shadow-warm-sm"
+                >
+                  <Icon className="size-7 text-brand-amber" />
+
+                  <h3
+                    style={{ fontFamily: "var(--font-display)" }}
+                    className="mt-5 max-w-md text-[22px] font-medium leading-tight tracking-[-0.01em]"
+                  >
+                    {card.title}
+                  </h3>
+
+                  <p className="mt-2 max-w-md text-[15px] font-normal leading-6 text-gray-500">
+                    {card.subtitle}
+                  </p>
+
+                  <p className="mt-3 max-w-sm text-[13px] leading-5 text-gray-500">
+                    {card.body}
+                  </p>
+
+                  <Link
+                    href="/register"
+                    className="mt-4 inline-flex items-center text-[13px] font-normal text-ink-soft hover:underline"
+                  >
+                    Learn more <ChevronRight className="size-3.5" />
+                  </Link>
+
+                  <FeatureMockup type={card.mockup} compact />
+                </div>
+              );
+            })}
           </div>
-
-          <GatekeeperVisual />
         </div>
-      </section>
-
-      <section
-        id="features"
-        className="grid gap-3 bg-transparent p-3 md:grid-cols-2"
-      >
-        {cards.map((card) => {
-          const Icon = card.icon;
-
-          return (
-            <div
-              key={card.title}
-              className="min-h-[620px] overflow-hidden rounded-card bg-[linear-gradient(145deg,rgba(255,255,255,0.54),rgba(243,237,226,0.76))] p-12 text-ink shadow-warm-sm"
-            >
-              <Icon className="size-10 text-brand-amber" />
-
-              <h3
-                style={{ fontFamily: "var(--font-display)" }}
-                className="mt-7 max-w-md text-[30px] font-medium leading-tight tracking-[-0.01em]"
-              >
-                {card.title}
-              </h3>
-
-              <p className="mt-4 max-w-md text-[21px] font-normal leading-7">
-                {card.subtitle}
-              </p>
-
-              <p className="mt-5 max-w-sm text-[15px] leading-6 text-gray-500">
-                {card.body}
-              </p>
-
-              <Link
-                href="/register"
-                className="mt-6 inline-flex items-center text-[15px] font-normal text-ink-soft hover:underline"
-              >
-                Learn more <ChevronRight className="size-4" />
-              </Link>
-
-              <FeatureMockup type={card.mockup} />
-            </div>
-          );
-        })}
       </section>
 
       <section id="pricing" className="relative overflow-hidden bg-transparent px-4 py-20">
@@ -623,84 +745,71 @@ export default function MarketingHomePage() {
               It is about preserving focus for the right people.
             </p>
           </div>
+        </div>
+      </section>
 
-          <div className="mx-auto mt-14 grid max-w-5xl gap-6 lg:grid-cols-[1.35fr_0.9fr]">
-            <div className="relative overflow-hidden rounded-section bg-[radial-gradient(circle_at_bottom_right,rgba(223,167,103,0.16),transparent_32%),linear-gradient(145deg,#1B1B1B_0%,#252525_45%,#171717_100%)] px-8 py-8 text-warm-cream shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_42%)]" />
+      <section id="faq" className="relative overflow-hidden bg-transparent px-4 py-20">
+        <div className="mx-auto max-w-4xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
+              FAQ
+            </p>
 
-              <div className="relative">
-                <p className="text-xs uppercase tracking-[0.22em] text-brand-amber">
-                  Savings calculator
-                </p>
-
-                <h3 className="mt-4 max-w-xl text-[22px] font-semibold leading-tight tracking-[-0.04em]">
-                  Example: 8 of 10 discovery calls turn out unqualified, GATE
-                  protects 4 hours every week.
-                </h3>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  {[
-                    ["10", "free calls/week"],
-                    ["8", "unqualified"],
-                    ["4h", "weekly time saved"],
-                  ].map(([value, label]) => (
-                    <div
-                      key={label}
-                      className="rounded-[1rem] bg-[linear-gradient(145deg,rgba(255,255,255,0.14),rgba(255,255,255,0.07))] px-4 py-3"
-                    >
-                      <p className="text-[24px] font-semibold tracking-[-0.05em]">
-                        {value}
-                      </p>
-                      <p className="mt-1 text-[11px] text-warm-border-soft">
-                        {label}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <p className="mt-5 text-[13px] leading-6 text-warm-border-soft">
-                  What is one protected hour of your attention worth?
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              {faqs.map((faq) => (
-                <div
-                  key={faq.question}
-                  className="border-b border-warm-border-soft pb-5"
-                >
-                  <h4 className="text-[16px] font-semibold tracking-[-0.03em]">
-                    {faq.question}
-                  </h4>
-                  <p className="mt-2 text-[13px] leading-[1.65] text-gray-500">
-                    {faq.answer}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <h2
+              style={{ fontFamily: "var(--font-display)" }}
+              className="mt-4 text-[32px] font-medium leading-tight tracking-[-0.01em] sm:text-[42px]"
+            >
+              Frequently asked questions
+            </h2>
           </div>
 
-          <div className="mx-auto mt-14 flex max-w-5xl flex-col items-start justify-between gap-5 border-t border-warm-border-soft pt-8 md:flex-row md:items-center">
-            <div>
-              <h3 className="text-[24px] font-semibold tracking-[-0.04em]">
-                Want concierge setup?
-              </h3>
+          <div className="mx-auto mt-14 grid gap-x-10 gap-y-8 sm:grid-cols-2">
+            {faqs.map((faq) => (
+              <div
+                key={faq.question}
+                className="border-b border-warm-border-soft pb-6"
+              >
+                <h4 className="text-[16px] font-semibold tracking-[-0.03em]">
+                  {faq.question}
+                </h4>
+                <p className="mt-2 text-[13px] leading-[1.65] text-gray-500">
+                  {faq.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-              <p className="mt-2 max-w-xl text-[14px] leading-[1.7] text-gray-500">
-                For high-traffic experts and teams, request a short setup call
-                and we’ll map your Gatekeeper flow.
-              </p>
-            </div>
+      <section className="relative overflow-hidden px-4 pb-24">
+        <div className="mx-auto max-w-5xl rounded-section border border-warm-border/80 bg-[linear-gradient(145deg,#F6F0E6_0%,#F3EDE2_54%,#FBF9F4_100%)] px-8 py-12 text-center shadow-[0_12px_34px_rgba(120,100,80,0.07)]">
+          <h3
+            style={{ fontFamily: "var(--font-display)" }}
+            className="text-[28px] font-medium tracking-[-0.02em] sm:text-[36px]"
+          >
+            Ready to protect your calendar?
+          </h3>
 
-            <AuraButton href="mailto:hello@expertgatekeeper.com" variant="secondary">
+          <p className="mx-auto mt-3 max-w-md text-[15px] leading-[1.7] text-gray-500">
+            Start free in a few minutes, or request a short setup call and
+            we&apos;ll map your Gatekeeper flow with you.
+          </p>
+
+          <div className="mt-7 flex flex-wrap justify-center gap-4">
+            <AuraButton href="/register" variant="primary">
+              Start free
+            </AuraButton>
+            <AuraButton
+              href="mailto:hello@expertgatekeeper.com"
+              variant="secondary"
+            >
               Request setup call
             </AuraButton>
           </div>
         </div>
       </section>
 
-      <footer className="bg-transparent px-4 pb-8 pt-12 text-[12px] text-gray-500">
+      <footer className="bg-transparent px-4 pb-8 pt-4 text-[12px] text-gray-500">
         <div className="mx-auto max-w-6xl">
           <div className="space-y-3 border-b border-warm-border-soft pb-7 leading-5">
             <p>

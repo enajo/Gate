@@ -7,7 +7,7 @@ import Link from "next/link";
 // ── Scripted content ─────────────────────────────────────────────────────────
 // Deliberately not the real qualification API — this is a public, anonymous
 // marketing page, and a live AI call here would be a cost/abuse surface for
-// zero benefit. The real thing lives at /demo and inside every gate.
+// zero benefit. The real thing lives inside every gate.
 
 type ScriptMessage = {
   role: "gate" | "visitor";
@@ -15,7 +15,7 @@ type ScriptMessage = {
 };
 
 const SCRIPT: ScriptMessage[] = [
-  { role: "gate", content: "What are you hoping to get out of a session with Sarah?" },
+  { role: "gate", content: "What are you hoping to get out of a session with Josef?" },
   { role: "visitor", content: "I have a final-round PM interview in 9 days and keep failing the case study." },
   { role: "gate", content: "Got it. Have you had a real mock case study since your last rejection?" },
   { role: "visitor", content: "No — just been reading frameworks on my own." },
@@ -109,7 +109,7 @@ export function HeroQualificationTeaser() {
           <Sparkles className="size-3.5 text-brand-amber" />
         </span>
         <div>
-          <p className="text-[13px] font-medium text-ink">Sarah&apos;s Gate</p>
+          <p className="text-[13px] font-medium text-ink">Josef&apos;s Gate</p>
           <p className="text-[11px] text-gray-400">Screening before booking</p>
         </div>
       </div>
@@ -151,7 +151,7 @@ export function HeroQualificationTeaser() {
           <div className="flex justify-start">
             <div className="teaser-message-in max-w-[85%] rounded-[1.1rem] rounded-tl-sm border border-brand-amber/50 bg-brand-amber-faint px-4 py-3 text-[13px] leading-6 text-ink">
               <span className="font-medium">Qualified ✓</span> — this looks
-              like a strong fit. Here are Sarah&apos;s open times this week.
+              like a strong fit. Here are Josef&apos;s open times this week.
             </div>
           </div>
         )}
@@ -159,7 +159,7 @@ export function HeroQualificationTeaser() {
 
       <div className="border-t border-warm-border/70 px-5 py-4">
         <Link
-          href="/demo"
+          href="/how-it-works"
           className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-soft transition hover:text-ink"
         >
           See how this works

@@ -27,7 +27,6 @@ const footerColumns: Array<{
     title: "Resources",
     links: [
       { label: "How it works", href: "/how-it-works" },
-      { label: "Demo", href: "/demo" },
       { label: "Support", href: "mailto:hello@expertgatekeeper.com" },
     ],
   },
@@ -383,7 +382,7 @@ export default function MarketingHomePage() {
             <Link href="#gatekeeper">Gatekeeper</Link>
             <Link href="#features">Features</Link>
             <Link href="#pricing">Pricing</Link>
-            <Link href="/demo">Demo</Link>
+            <Link href="/how-it-works">How it works</Link>
             <Link href="/login">Login</Link>
             <Link href="/register">Register</Link>
           </div>
@@ -415,7 +414,7 @@ export default function MarketingHomePage() {
             <AuraButton href="/register" variant="primary">
               Start free
             </AuraButton>
-            <AuraButton href="/demo" variant="secondary">
+            <AuraButton href="/how-it-works" variant="secondary">
               See how it works
             </AuraButton>
           </div>
@@ -446,7 +445,7 @@ export default function MarketingHomePage() {
             <AuraButton href="/register" variant="primary">
               Learn more
             </AuraButton>
-            <AuraButton href="/demo" variant="secondary">
+            <AuraButton href="/how-it-works" variant="secondary">
               See how it works
             </AuraButton>
           </div>
@@ -694,8 +693,8 @@ export default function MarketingHomePage() {
               </p>
             </div>
 
-            <AuraButton href="/demo" variant="secondary">
-              Request demo
+            <AuraButton href="mailto:hello@expertgatekeeper.com" variant="secondary">
+              Request setup call
             </AuraButton>
           </div>
         </div>

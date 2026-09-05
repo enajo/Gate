@@ -7,7 +7,6 @@ const productLinks = [
   { href: "/", label: "Home" },
   { href: "/how-it-works", label: "How it works" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/demo", label: "Demo" },
 ];
 
 const accountLinks = [

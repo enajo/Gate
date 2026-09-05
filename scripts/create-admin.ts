@@ -2,6 +2,16 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+function slugify(value: string): string {
+  return (
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "admin"
+  );
+}
+
 async function main() {
   const email = process.env.ADMIN_EMAIL || "admin@example.com";
   const name = process.env.ADMIN_NAME || "Admin User";
@@ -23,19 +33,36 @@ async function main() {
     },
   });
 
+  // Derived from the email, not hardcoded to "admin" — a static slug
+  // collides the moment a second admin is provisioned, since slugs are
+  // unique across every professional on the platform, not just admins.
+  const slug = slugify(email.split("@")[0] ?? name);
+
+  const existingBySlug = await prisma.professional.findUnique({
+    where: { slug },
+    select: { userId: true },
+  });
+
+  if (existingBySlug && existingBySlug.userId !== user.id) {
+    throw new Error(
+      `Slug "${slug}" (derived from ${email}) is already in use by a different account. ` +
+        `Set ADMIN_EMAIL to something that produces a unique slug.`,
+    );
+  }
+
   await prisma.professional.upsert({
     where: {
       userId: user.id,
     },
     update: {
       fullName: name,
-      slug: "admin",
+      slug,
       onboardingCompleted: true,
     },
     create: {
       userId: user.id,
       fullName: name,
-      slug: "admin",
+      slug,
       title: "Platform Admin",
       headline: "Internal admin account",
       bio: "Administrative account for managing the platform.",

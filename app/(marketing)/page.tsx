@@ -1,15 +1,8 @@
 import Link from "next/link";
-import {
-  Check,
-  ChevronRight,
-  CircleCheck,
-  LockKeyhole,
-  QrCode,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { Check } from "lucide-react";
 
 import { HeroQualificationTeaser } from "@/components/marketing/hero-qualification-teaser";
+import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
 
 const footerColumns: Array<{
   title: string;
@@ -19,17 +12,14 @@ const footerColumns: Array<{
     title: "Product",
     links: [
       { label: "Home", href: "/" },
-      { label: "Features", href: "/#features" },
+      { label: "How it works", href: "/#how-it-works" },
       { label: "Pricing", href: "/#pricing" },
       { label: "FAQ", href: "/#faq" },
     ],
   },
   {
     title: "Resources",
-    links: [
-      { label: "How it works", href: "/how-it-works" },
-      { label: "Support", href: "mailto:hello@expertgatekeeper.com" },
-    ],
+    links: [{ label: "Support", href: "mailto:hello@expertgatekeeper.com" }],
   },
   {
     title: "Company",
@@ -40,44 +30,6 @@ const footerColumns: Array<{
     ],
   },
 ];
-
-const cards = [
-  {
-    title: "The Gatekeeper",
-    subtitle: "Only qualified leads unlock your calendar.",
-    body: "Ask the right questions up front and automatically qualify every visitor before they can book.",
-    icon: ShieldCheck,
-    mockup: "qualification",
-    tier: "primary" as const,
-  },
-  {
-    title: "Trust Engine",
-    subtitle: "Show proof before the client decides.",
-    body: "Share testimonials, client results, and authority signals that help serious buyers move faster.",
-    icon: Sparkles,
-    mockup: "trust",
-    tier: "primary" as const,
-  },
-  {
-    title: "Access Codes",
-    subtitle: "Control who gets through during beta.",
-    body: "Invite the right people with private access codes and manage entry with precision.",
-    icon: LockKeyhole,
-    mockup: "code",
-    tier: "secondary" as const,
-  },
-  {
-    title: "Branded QR Links",
-    subtitle: "Turn offline attention into qualified bookings.",
-    body: "Share your branded QR link anywhere. Every scan goes through your Gatekeeper.",
-    icon: QrCode,
-    mockup: "qr",
-    tier: "secondary" as const,
-  },
-];
-
-const primaryCards = cards.filter((card) => card.tier === "primary");
-const secondaryCards = cards.filter((card) => card.tier === "secondary");
 
 const pricingTiers = [
   {
@@ -194,228 +146,6 @@ function AuraButton({
   );
 }
 
-function GatekeeperVisual() {
-  return (
-    <div className="mx-auto w-full max-w-5xl rounded-[2.25rem] border border-warm-border/80 bg-white/60 p-5 shadow-warm-lg backdrop-blur">
-      <div className="flex h-8 items-center gap-2 border-b border-warm-border px-2">
-        <span className="size-3 rounded-full bg-brand-amber/50" />
-        <span className="size-3 rounded-full bg-warm-gray/35" />
-        <span className="size-3 rounded-full bg-slate-300" />
-      </div>
-
-      <div className="grid gap-5 p-6 md:grid-cols-3">
-        <div className="card-glass p-7 text-left">
-          <p className="text-sm font-medium text-ink">
-            Qualification Form
-          </p>
-
-          <p className="mt-5 text-[13px] leading-5 text-gray-500">
-            What is your primary goal for this engagement?
-          </p>
-
-          <div className="mt-5 space-y-3">
-            {[
-              "Strategy & advisory",
-              "Operational improvement",
-              "Fundraising",
-              "Other",
-            ].map((item) => (
-              <div
-                key={item}
-                className="flex items-center gap-3 rounded-xl border border-warm-stone px-4 py-3 text-[12px] text-gray-500"
-              >
-                <span className="size-3 rounded-full border border-warm-gray" />
-                {item}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 rounded-xl bg-ink-soft py-3 text-center text-[13px] text-white">
-            Submit
-          </div>
-        </div>
-
-        <div className="card-glass p-7 text-center">
-          <p className="text-sm font-medium text-ink">
-            Qualification Score
-          </p>
-
-          <p className="mt-8 text-[64px] font-normal leading-none text-success">
-            92
-          </p>
-
-          <p className="mt-2 text-[20px] text-success">Qualified</p>
-
-          <div className="mt-7 space-y-2 text-left text-[12px] text-gray-500">
-            {[
-              "Company size",
-              "Budget range",
-              "Project scope",
-              "Decision authority",
-            ].map((item) => (
-              <p key={item} className="flex items-center gap-2">
-                <CircleCheck className="size-3 text-success" />
-                {item}
-              </p>
-            ))}
-          </div>
-        </div>
-
-        <div className="card-glass p-7 text-left">
-          <p className="text-sm font-medium text-ink">Calendar Access</p>
-          <p className="mt-5 text-[13px] text-gray-500">Select a time</p>
-
-          <div className="mt-5 rounded-2xl border border-warm-stone p-4">
-            <div className="flex items-center justify-between text-[12px] text-ink">
-              <span>May 2026</span>
-              <span>›</span>
-            </div>
-
-            <div className="mt-4 grid grid-cols-7 gap-2 text-center text-[11px] text-gray-500">
-              {[
-                "S",
-                "M",
-                "T",
-                "W",
-                "T",
-                "F",
-                "S",
-                ...Array.from({ length: 31 }, (_, i) => String(i + 1)),
-              ].map((day, index) => (
-                <span
-                  key={`${day}-${index}`}
-                  className={
-                    day === "14"
-                      ? "rounded-lg bg-brand-amber py-1 text-ink"
-                      : "py-1"
-                  }
-                >
-                  {day}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FeatureMockup({
-  type,
-  compact = false,
-}: {
-  type: string;
-  compact?: boolean;
-}) {
-  const topMargin = compact ? "mt-8" : "mt-16";
-  const padding = compact ? "p-6" : "p-8";
-
-  if (type === "qualification") {
-    return (
-      <div
-        className={`mx-auto ${topMargin} max-w-sm rounded-card bg-white/75 ${padding} text-left text-ink shadow-warm-lg`}
-      >
-        <p className="text-[13px] text-gray-500">Decision</p>
-
-        <div className="mt-4 space-y-2.5">
-          {[
-            { label: "Qualified", tone: "bg-success/10 text-success border-success/30" },
-            { label: "Redirected", tone: "bg-brand-amber/10 text-brand-amber border-brand-amber/30" },
-            { label: "Rejected", tone: "bg-gray-500/10 text-gray-500 border-gray-400/30" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className={`inline-flex items-center rounded-full border px-4 py-1.5 text-[12px] font-medium ${item.tone}`}
-            >
-              {item.label}
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-7 text-[13px] leading-6 text-gray-500">
-          Every visitor gets one of three outcomes — automatically, before
-          your calendar is ever shown.
-        </p>
-      </div>
-    );
-  }
-
-  if (type === "trust") {
-    return (
-      <div
-        className={`mx-auto ${topMargin} max-w-sm rounded-card bg-white/75 ${padding} text-left text-ink shadow-warm-lg`}
-      >
-        <p className="text-[13px] text-gray-500">Client results</p>
-
-        <div className="mt-4 flex gap-1 text-brand-amber">
-          {Array.from({ length: 5 }, (_, i) => (
-            <span key={i}>★</span>
-          ))}
-        </div>
-
-        <div className="mt-4 space-y-2">
-          <div className="h-2.5 w-full rounded-full bg-warm-stone" />
-          <div className="h-2.5 w-5/6 rounded-full bg-warm-stone" />
-          <div className="h-2.5 w-2/3 rounded-full bg-warm-stone" />
-        </div>
-
-        <p className="mt-6 text-[13px] leading-6 text-gray-500">
-          Your testimonials and results, shown to visitors who've already
-          qualified.
-        </p>
-      </div>
-    );
-  }
-
-  if (type === "qr") {
-    return (
-      <div
-        className={`mx-auto ${topMargin} flex ${compact ? "h-40" : "h-56"} max-w-sm items-center justify-center rounded-card bg-white/75 shadow-warm-lg`}
-      >
-        <div className="grid grid-cols-5 gap-2">
-          {Array.from({ length: 25 }, (_, i) => (
-            <span
-              key={i}
-              className={`size-5 ${
-                i % 3 === 0 || i % 7 === 0 ? "bg-ink" : "bg-warm-stone"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (type === "code") {
-    return (
-      <div
-        className={`mx-auto ${topMargin} max-w-sm rounded-card bg-white/75 ${padding} text-left text-ink shadow-warm-lg`}
-      >
-        <p className="text-[13px] text-gray-500">Access Code</p>
-
-        <div className="mt-4 rounded-xl border border-warm-stone px-4 py-3 font-mono tracking-[0.35em]">
-          GATE2026
-        </div>
-
-        <p className="mt-7 text-[13px] text-gray-500">Usage</p>
-
-        <div className="mt-3 h-2 rounded-full bg-warm-stone">
-          <div className="h-2 w-1/2 rounded-full bg-brand-amber" />
-        </div>
-
-        <p className="mt-3 text-[13px] text-gray-500">48 / 100</p>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`mx-auto ${topMargin} h-56 max-w-sm rounded-card bg-white/75 shadow-warm-lg`}
-    />
-  );
-}
-
 export default function MarketingHomePage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_28%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_25%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_28%,#F3EDE2_58%,#F8F5EF_100%)] text-ink">
@@ -426,20 +156,19 @@ export default function MarketingHomePage() {
           </Link>
 
           <div className="hidden items-center gap-8 text-gray-500 md:flex">
-            <Link href="#features">Features</Link>
+            <Link href="#how-it-works">How it works</Link>
             <Link href="#pricing">Pricing</Link>
             <Link href="#faq">FAQ</Link>
-            <Link href="/how-it-works">How it works</Link>
             <Link href="/login">Login</Link>
             <Link href="/register">Register</Link>
           </div>
         </nav>
       </header>
 
-      <section id="gatekeeper" className="relative overflow-hidden text-center">
+      <section className="relative overflow-hidden text-center">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(223,167,103,0.18),transparent_34%),radial-gradient(circle_at_70%_35%,rgba(71,85,105,0.10),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.86)_0%,rgba(246,242,234,0.58)_58%,rgba(243,237,226,0.68)_100%)]" />
 
-        <div className="relative mx-auto max-w-4xl px-4 pb-24 pt-16">
+        <div className="relative mx-auto max-w-4xl px-4 pb-20 pt-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-brand-amber">
             A gate, not a calendar
           </p>
@@ -461,27 +190,13 @@ export default function MarketingHomePage() {
             <AuraButton href="/register" variant="primary">
               Start free
             </AuraButton>
-            <AuraButton href="/how-it-works" variant="secondary">
+            <AuraButton href="#how-it-works" variant="secondary">
               See how it works
             </AuraButton>
           </div>
 
           <div className="mt-16">
             <HeroQualificationTeaser />
-          </div>
-
-          <div className="relative mx-auto mt-24 max-w-5xl">
-            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-brand-amber">
-              How it decides
-            </p>
-            <p className="mx-auto mt-3 max-w-md text-[15px] leading-6 text-gray-500">
-              Every visitor moves through the same three steps before your
-              calendar is ever shown.
-            </p>
-
-            <div className="mt-10">
-              <GatekeeperVisual />
-            </div>
           </div>
         </div>
       </section>
@@ -532,91 +247,7 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      <section id="features" className="px-3 py-6">
-        <div className="grid gap-3 md:grid-cols-2">
-          {primaryCards.map((card) => {
-            const Icon = card.icon;
-
-            return (
-              <div
-                key={card.title}
-                className="min-h-[620px] overflow-hidden rounded-card bg-[linear-gradient(145deg,rgba(255,255,255,0.54),rgba(243,237,226,0.76))] p-12 text-ink shadow-warm-sm"
-              >
-                <Icon className="size-10 text-brand-amber" />
-
-                <h3
-                  style={{ fontFamily: "var(--font-display)" }}
-                  className="mt-7 max-w-md text-[30px] font-medium leading-tight tracking-[-0.01em]"
-                >
-                  {card.title}
-                </h3>
-
-                <p className="mt-4 max-w-md text-[21px] font-normal leading-7">
-                  {card.subtitle}
-                </p>
-
-                <p className="mt-5 max-w-sm text-[15px] leading-6 text-gray-500">
-                  {card.body}
-                </p>
-
-                <Link
-                  href="/register"
-                  className="mt-6 inline-flex items-center text-[15px] font-normal text-ink-soft hover:underline"
-                >
-                  Learn more <ChevronRight className="size-4" />
-                </Link>
-
-                <FeatureMockup type={card.mockup} />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mx-auto mt-3 max-w-6xl">
-          <p className="px-1 font-mono text-[11px] uppercase tracking-[0.26em] text-brand-amber">
-            Also included
-          </p>
-
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {secondaryCards.map((card) => {
-              const Icon = card.icon;
-
-              return (
-                <div
-                  key={card.title}
-                  className="overflow-hidden rounded-card bg-[linear-gradient(145deg,rgba(255,255,255,0.44),rgba(243,237,226,0.62))] p-8 text-ink shadow-warm-sm"
-                >
-                  <Icon className="size-7 text-brand-amber" />
-
-                  <h3
-                    style={{ fontFamily: "var(--font-display)" }}
-                    className="mt-5 max-w-md text-[22px] font-medium leading-tight tracking-[-0.01em]"
-                  >
-                    {card.title}
-                  </h3>
-
-                  <p className="mt-2 max-w-md text-[15px] font-normal leading-6 text-gray-500">
-                    {card.subtitle}
-                  </p>
-
-                  <p className="mt-3 max-w-sm text-[13px] leading-5 text-gray-500">
-                    {card.body}
-                  </p>
-
-                  <Link
-                    href="/register"
-                    className="mt-4 inline-flex items-center text-[13px] font-normal text-ink-soft hover:underline"
-                  >
-                    Learn more <ChevronRight className="size-3.5" />
-                  </Link>
-
-                  <FeatureMockup type={card.mockup} compact />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <HowItWorksSection />
 
       <section id="pricing" className="relative overflow-hidden bg-transparent px-4 py-20">
         <div className="mx-auto max-w-6xl">

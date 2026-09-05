@@ -159,7 +159,7 @@ export function HeroQualificationTeaser() {
 
       <div className="border-t border-warm-border/70 px-5 py-4">
         <Link
-          href="/how-it-works"
+          href="#how-it-works"
           className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-soft transition hover:text-ink"
         >
           See how this works

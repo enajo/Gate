@@ -269,7 +269,7 @@ export function AvailabilitySettings() {
             <Loader2 className="size-5 animate-spin text-brand-amber" />
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {WEEKDAYS.map((weekday) => {
               const day = days[weekday.value];
               const isEnabled = day.enabled;
@@ -279,8 +279,8 @@ export function AvailabilitySettings() {
                   key={weekday.value}
                   className={
                     isEnabled
-                      ? "flex flex-wrap items-center gap-3 rounded-inner border border-brand-amber bg-brand-amber-faint px-4 py-3"
-                      : "flex flex-wrap items-center gap-3 card-inner px-4 py-3"
+                      ? "flex flex-wrap items-center gap-3 rounded-lg border border-brand-amber bg-brand-amber-faint px-4 py-2.5"
+                      : "flex flex-wrap items-center gap-3 rounded-lg border border-warm-border-mid bg-white/70 px-4 py-2.5"
                   }
                 >
                   {/* Day toggle */}

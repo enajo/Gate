@@ -430,7 +430,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
                       e.target.value,
                     )
                   }
-                  className="rounded-full border border-warm-border-soft bg-white px-3 py-1.5 text-[13px] text-ink outline-none transition focus:border-ink"
+                  className="rounded-lg border border-warm-border-soft bg-white px-3 py-1.5 text-[13px] text-ink outline-none transition focus:border-ink"
                 >
                   {availabilityExposureOptions.map((o) => (
                     <option key={o.value} value={o.value}>

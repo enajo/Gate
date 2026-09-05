@@ -173,8 +173,8 @@ export function AppearanceSettings({
         </Field>
       </div>
 
-      <div className="mt-5 card-inner px-4 py-3">
-        <p className="text-[12px] leading-6 text-gray-500">
+      <div className="mt-5 flex gap-3 rounded-lg border-l-2 border-brand-amber bg-brand-amber-faint px-4 py-3">
+        <p className="text-[12px] leading-6 text-ink-soft">
           Contrast mode:{" "}
           <span className="font-medium text-ink">
             {isDark ? "Dark background detected" : "Light background detected"}
@@ -195,12 +195,12 @@ function ColorInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex h-11 items-center gap-3 rounded-full border border-warm-border-soft bg-white/80 px-3">
+    <div className="flex h-11 items-center gap-3 rounded-lg border border-warm-border-soft bg-white/80 px-3">
       <input
         type="color"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="size-7 cursor-pointer rounded-full border-0 bg-transparent p-0"
+        className="size-7 cursor-pointer rounded-md border-0 bg-transparent p-0"
       />
 
       <input

@@ -96,28 +96,18 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
 
   return (
     <section id="gate" className="space-y-6">
-      {/* Section header */}
-      <div className="card-section">
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="size-5 text-brand-amber" />
-          <div>
-            <p className="text-[15px] font-medium text-ink">Gate Control</p>
-            <p className="mt-1 text-[12px] text-gray-500">
-              Configure each service and set up the AI qualifier.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Services ────────────────────────────────────────────────────────── */}
+      {/* ── Gate Control ───────────────────────────────────────────────────── */}
       <div className="card-section">
         <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[15px] font-medium text-ink">Services</p>
-            <p className="mt-1 text-[12px] text-gray-500">
-              Each offer can have its own price, access rules, and availability
-              exposure.
-            </p>
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="size-5 text-brand-amber" />
+            <div>
+              <p className="text-[15px] font-medium text-ink">Gate Control</p>
+              <p className="mt-1 text-[12px] text-gray-500">
+                Configure each service&apos;s price, access rules, and AI
+                qualifier.
+              </p>
+            </div>
           </div>
 
           <button

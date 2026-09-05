@@ -257,9 +257,8 @@ export function AvailabilitySettings() {
             </p>
           </div>
         </div>
-      </div>
 
-      <div className="card-section">
+        <div className="mt-5">
         {error ? (
           <p className="mb-4 text-[13px] text-red-500">{error}</p>
         ) : null}
@@ -363,6 +362,7 @@ export function AvailabilitySettings() {
           Times are in the timezone set in your profile. Visitors see slots
           converted to their local time.
         </p>
+        </div>
       </div>
     </section>
   );

@@ -271,83 +271,77 @@ export default function ControlRoomPage() {
       </header>
 
       <section className="mx-auto max-w-5xl px-4 py-10">
-        {/* Hero card */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.68),rgba(243,237,226,0.86))] p-8 shadow-warm-2xl">
-          <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
-            <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
+        {/* Page header — a settings screen opened many times a day doesn't
+            need marketing-hero energy; a calm, functional header with the
+            actions people actually reach for every visit. */}
+        <div className="flex flex-col justify-between gap-6 border-b border-warm-border-soft pb-6 lg:flex-row lg:items-center">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-[26px] font-semibold tracking-[-0.02em] text-ink">
                 Control Room
-              </p>
-
-              <h1 className="mt-5 text-[44px] font-semibold leading-none tracking-[-0.055em] sm:text-[64px]">
-                Design access to your time.
               </h1>
 
-              <p className="mt-5 max-w-2xl text-[17px] leading-[1.8] text-gray-500">
-                Configure your expert profile, services, qualification gates,
-                pricing, access codes, availability exposure, and publish state.
-              </p>
+              {publishedAt ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+                  <CheckCircle2 className="size-3" />
+                  Published
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-amber-faint px-2.5 py-1 text-[11px] font-medium text-brand-amber">
+                  Draft only — not visible publicly
+                </span>
+              )}
 
-              <div className="mt-5 flex flex-wrap gap-3 text-[12px] text-gray-500">
-                {savedAt ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1">
-                    <CheckCircle2 className="size-3 text-emerald-600" />
-                    Draft saved
-                  </span>
-                ) : null}
-
-                {publishedAt ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1">
-                    <CheckCircle2 className="size-3 text-emerald-600" />
-                    Published
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-3 py-1 text-brand-amber">
-                    Draft only — not visible publicly
-                  </span>
-                )}
-              </div>
-
-              {error ? (
-                <p className="mt-3 text-[13px] text-red-500">{error}</p>
+              {savedAt ? (
+                <span className="text-[11px] text-gray-400">Draft saved</span>
               ) : null}
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <ControlRoomPreview profile={draftProfile} />
+            <p className="mt-2 max-w-2xl text-[14px] leading-6 text-gray-500">
+              Configure your expert profile, services, qualification gates,
+              pricing, access codes, availability exposure, and publish
+              state.
+            </p>
 
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                disabled={isSaving}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-warm-border-soft bg-white/70 px-5 text-[14px] text-ink transition hover:border-ink disabled:opacity-60"
-              >
-                {isSaving ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 size-4" />
-                )}
-                {isSaving ? "Saving…" : "Save Draft"}
-              </button>
+            {error ? (
+              <p className="mt-2 text-[13px] text-red-500">{error}</p>
+            ) : null}
+          </div>
 
-              <button
-                type="button"
-                onClick={handlePublish}
-                disabled={isPublishing || isSaving}
-                className="inline-flex h-10 items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
-              >
-                {isPublishing ? (
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                ) : (
-                  <UploadCloud className="mr-2 size-4" />
-                )}
-                {isPublishing
-                  ? "Publishing…"
-                  : publishedAt
-                    ? "Publish Update"
-                    : "Publish"}
-              </button>
-            </div>
+          <div className="flex flex-wrap gap-2.5">
+            <ControlRoomPreview profile={draftProfile} />
+
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={isSaving}
+              className="inline-flex h-10 items-center justify-center rounded-full border border-warm-border-soft bg-white px-5 text-[14px] text-ink transition hover:border-ink disabled:opacity-60"
+            >
+              {isSaving ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 size-4" />
+              )}
+              {isSaving ? "Saving…" : "Save Draft"}
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={isPublishing || isSaving}
+              className="inline-flex h-10 items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
+            >
+              {isPublishing ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <UploadCloud className="mr-2 size-4" />
+              )}
+              {isPublishing
+                ? "Publishing…"
+                : publishedAt
+                  ? "Publish Update"
+                  : "Publish"}
+            </button>
           </div>
         </div>
 

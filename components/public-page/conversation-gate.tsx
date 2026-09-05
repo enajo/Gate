@@ -1,11 +1,49 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, CheckCircle2, Send } from "lucide-react";
+import { ArrowRight, CheckCircle2, Mic, Send } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ChatMessage = { role: "assistant" | "user"; content: string };
+
+// ── Voice input (browser-native, no server cost) ─────────────────────────────
+// Uses the Web Speech API's SpeechRecognition when the browser exposes it —
+// transcription happens in the browser/OS, not through our OpenAI usage, so
+// this adds zero token cost and no new server-side surface. Unsupported
+// browsers (Firefox) simply never see the mic button; typing still works.
+
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  [index: number]: { transcript: string };
+}
+
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+interface MinimalSpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: { error?: string }) => void) | null;
+  onend: (() => void) | null;
+}
+
+type SpeechRecognitionConstructor = new () => MinimalSpeechRecognition;
+
+function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+}
 
 type ChatApiResponse = {
   type: "question" | "final";
@@ -71,6 +109,13 @@ export function ConversationGate({
     message: string;
   } | null>(null);
 
+  // Voice input
+  const [isListening, setIsListening] = React.useState(false);
+  const [speechSupported, setSpeechSupported] = React.useState(false);
+  const [micError, setMicError] = React.useState<string | null>(null);
+  const recognitionRef = React.useRef<MinimalSpeechRecognition | null>(null);
+  const baseTranscriptRef = React.useRef("");
+
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -78,6 +123,33 @@ export function ConversationGate({
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history, isLoading]);
+
+  // Detect Web Speech API support once, client-side only (avoids SSR mismatch)
+  React.useEffect(() => {
+    setSpeechSupported(getSpeechRecognitionConstructor() !== null);
+  }, []);
+
+  // Auto-grow the textarea for both typed and voice-transcribed text
+  React.useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+      inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+    }
+  }, [inputValue]);
+
+  // Stop any in-progress recognition if the conversation moves past chatting
+  // (qualified/rejected/redirect) or the component unmounts.
+  React.useEffect(() => {
+    if (phase !== "chatting") {
+      recognitionRef.current?.stop();
+    }
+  }, [phase]);
+
+  React.useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+    };
+  }, []);
 
   // Focus the input when chatting starts
   React.useEffect(() => {
@@ -216,6 +288,58 @@ export function ConversationGate({
     }
   }
 
+  // ── Voice input ───────────────────────────────────────────────────────────
+
+  function handleMicClick() {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const SpeechRecognitionCtor = getSpeechRecognitionConstructor();
+    if (!SpeechRecognitionCtor) return;
+
+    setMicError(null);
+    const recognition = new SpeechRecognitionCtor();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    baseTranscriptRef.current = inputValue ? `${inputValue} ` : "";
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      let final = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const transcript = result[0].transcript;
+        if (result.isFinal) {
+          final += transcript;
+        } else {
+          interim += transcript;
+        }
+      }
+      if (final) baseTranscriptRef.current += final;
+      setInputValue(baseTranscriptRef.current + interim);
+    };
+
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      setMicError(
+        event.error === "not-allowed"
+          ? "Microphone access was denied — you can still type your reply."
+          : "Voice input stopped working — you can still type your reply.",
+      );
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   // ── Identity phase ────────────────────────────────────────────────────────
@@ -302,6 +426,9 @@ export function ConversationGate({
 
       {/* Message list */}
       <div
+        role="log"
+        aria-live="polite"
+        aria-label="Qualification conversation"
         className="flex-1 space-y-4 overflow-y-auto pr-1"
         style={{ maxHeight: "340px", minHeight: "200px" }}
       >
@@ -414,38 +541,73 @@ export function ConversationGate({
 
       {/* Input — only shown while chatting */}
       {phase === "chatting" && (
-        <div
-          className="mt-4 flex items-end gap-2 rounded-[1.1rem] border bg-white/80 px-3 py-2"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <textarea
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => {
-              setInputValue(e.target.value);
-              e.target.style.height = "auto";
-              e.target.style.height = `${e.target.scrollHeight}px`;
-            }}
-            onKeyDown={handleInputKeyDown}
-            rows={1}
-            placeholder="Type your reply…"
-            className="flex-1 resize-none overflow-y-auto bg-transparent text-[14px] leading-6 text-ink-deep outline-none"
-            style={{ maxHeight: "120px" }}
-            disabled={isLoading}
-          />
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!inputValue.trim() || isLoading}
-            className="flex size-8 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40"
-            style={{
-              backgroundColor: accentColor,
-              color: accentTextColor,
-            }}
+        <>
+          <div
+            className="mt-4 flex items-end gap-2 rounded-[1.1rem] border bg-white/80 px-3 py-2"
+            style={{ borderColor: "var(--border)" }}
           >
-            <Send className="size-3.5" />
-          </button>
-        </div>
+            <textarea
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleInputKeyDown}
+              rows={1}
+              placeholder="Type your reply…"
+              aria-label="Your reply"
+              className="flex-1 resize-none overflow-y-auto bg-transparent text-[14px] leading-6 text-ink-deep outline-none"
+              style={{ maxHeight: "120px" }}
+              disabled={isLoading}
+            />
+
+            {speechSupported && (
+              <button
+                type="button"
+                onClick={handleMicClick}
+                disabled={isLoading}
+                aria-pressed={isListening}
+                aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                className="flex size-8 shrink-0 items-center justify-center rounded-full border transition disabled:opacity-40"
+                style={
+                  isListening
+                    ? {
+                        backgroundColor: accentColor,
+                        borderColor: accentColor,
+                        color: accentTextColor,
+                      }
+                    : {
+                        backgroundColor: "transparent",
+                        borderColor: "var(--border)",
+                        color: "var(--text-secondary)",
+                      }
+                }
+              >
+                <Mic className="size-3.5" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!inputValue.trim() || isLoading}
+              aria-label="Send message"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40"
+              style={{
+                backgroundColor: accentColor,
+                color: accentTextColor,
+              }}
+            >
+              <Send className="size-3.5" />
+            </button>
+          </div>
+
+          <span className="sr-only" aria-live="polite">
+            {isListening ? "Listening…" : ""}
+          </span>
+
+          {micError && (
+            <p className="mt-2 text-[12px] text-red-500">{micError}</p>
+          )}
+        </>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import type { CalendarAccount as PrismaCalendarAccount } from "@prisma/client";
 import type {
   CalendarAccount,
   CalendarConflictSource,
+  CalendarProviderAdapter,
   CreatedCalendarEvent,
   CreateCalendarEventInput,
   GoogleCalendarListItem,
@@ -338,7 +339,13 @@ async function performGoogleRequest<T>(params: {
   return parseGoogleJsonResponse<T>(response);
 }
 
-export const googleCalendarService = {
+export const googleCalendarService: CalendarProviderAdapter & {
+  listConnectedCalendarAccounts(userId: string): Promise<CalendarAccount[]>;
+  getDefaultEventCalendarForProfessional(
+    professionalId: string,
+  ): Promise<CalendarAccount | null>;
+  getMergedBusyRanges(input: SyncCalendarBusyTimesInput): Promise<MergedBusyRange[]>;
+} = {
   async listConnectedCalendarAccounts(userId: string): Promise<CalendarAccount[]> {
     const professional = await requireProfessionalByUserId(userId);
     const accounts =

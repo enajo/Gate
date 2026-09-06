@@ -4,8 +4,10 @@ import type { CalendarAccount } from "@prisma/client";
 import type {
   CreateCalendarEventInput,
   CreatedCalendarEvent,
+  GoogleCalendarListItem,
   MergedBusyRange,
   SyncCalendarBusyTimesInput,
+  UpdateCalendarEventInput,
 } from "@/types/google";
 import { logger } from "@/lib/logger";
 import { googleRepository } from "@/server/repositories/google.repository";
@@ -15,12 +17,19 @@ import {
 } from "@/server/services/google-calendar.service";
 import { GOOGLE_PROVIDER } from "@/server/services/google-auth.service";
 
+function unsupportedProviderError(account: CalendarAccount): Error {
+  return new Error(
+    `No calendar event integration for provider: ${account.provider}`,
+  );
+}
+
 /**
  * The one place that knows how to route a CalendarAccount to its actual
  * provider implementation. Availability checking and booking confirmation
  * call through here instead of a specific provider's service directly —
  * adding Outlook or CalDAV later means adding one branch here, not
- * touching every call site that needs busy times or creates events.
+ * touching every call site that needs busy times or creates/updates/
+ * cancels an event or lists a professional's remote calendars.
  *
  * The repository queries this relies on (findConflictCheckCalendarsByProfessionalId,
  * findDefaultEventCalendarByProfessionalId) are already provider-agnostic —
@@ -68,7 +77,49 @@ export const calendarProviderService = {
       return googleCalendarService.createCalendarEvent(input);
     }
 
-    throw new Error(`No calendar event integration for provider: ${account.provider}`);
+    throw unsupportedProviderError(account);
+  },
+
+  /**
+   * Updates an existing event on the given account.
+   */
+  async updateEvent(
+    account: CalendarAccount,
+    input: UpdateCalendarEventInput,
+  ): Promise<CreatedCalendarEvent> {
+    if (account.provider === GOOGLE_PROVIDER) {
+      return googleCalendarService.updateCalendarEvent(input);
+    }
+
+    throw unsupportedProviderError(account);
+  },
+
+  /**
+   * Cancels (deletes) an existing event on the given account.
+   */
+  async cancelEvent(
+    account: CalendarAccount,
+    params: { calendarAccountId: string; externalEventId: string },
+  ): Promise<void> {
+    if (account.provider === GOOGLE_PROVIDER) {
+      return googleCalendarService.cancelCalendarEvent(params);
+    }
+
+    throw unsupportedProviderError(account);
+  },
+
+  /**
+   * Lists the raw remote calendars available on the given account (e.g. so
+   * a professional can pick which of their Google calendars to sync).
+   */
+  async listRemoteCalendars(
+    account: CalendarAccount,
+  ): Promise<GoogleCalendarListItem[]> {
+    if (account.provider === GOOGLE_PROVIDER) {
+      return googleCalendarService.listRemoteCalendars(account.id);
+    }
+
+    throw unsupportedProviderError(account);
   },
 };
 

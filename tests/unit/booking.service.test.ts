@@ -57,11 +57,15 @@ const mockGoogleRepository = vi.hoisted(() => ({
   findDefaultEventCalendarByProfessionalId: vi.fn(),
   createCalendarEventForBooking: vi.fn(),
   touchLastSyncedAt: vi.fn(),
+  findCalendarEventsByBookingId: vi.fn(),
+  findCalendarAccountById: vi.fn(),
+  updateCalendarEventById: vi.fn(),
 }));
 
 const mockCalendarProviderService = vi.hoisted(() => ({
   createEvent: vi.fn(),
   getMergedBusyRanges: vi.fn(),
+  cancelEvent: vi.fn(),
 }));
 
 const mockPreCallBriefingService = vi.hoisted(() => ({
@@ -176,6 +180,10 @@ describe("bookingService", () => {
       slots: [{ start: SLOT_START, end: SLOT_END }],
       blockedRanges: [],
     });
+
+    // Default: no calendar events attached, so cancelBooking tests that
+    // don't care about calendar sync don't need to set this up themselves.
+    mockGoogleRepository.findCalendarEventsByBookingId.mockResolvedValue([]);
   });
 
   // ── createHold ─────────────────────────────────────────────────────────────
@@ -471,6 +479,96 @@ describe("bookingService", () => {
 
       await expect(
         bookingService.markEventFailed("nonexistent"),
+      ).rejects.toThrow("Booking not found.");
+    });
+  });
+
+  // ── cancelBooking ──────────────────────────────────────────────────────────
+
+  describe("cancelBooking", () => {
+    const USER_ID = "user_1";
+    const CALENDAR_EVENT = {
+      id: "calendar_event_1",
+      bookingId: "booking_1",
+      calendarAccountId: "calendar_account_1",
+      externalEventId: "external_event_1",
+      syncStatus: "CREATED",
+    };
+    const CALENDAR_ACCOUNT = {
+      id: "calendar_account_1",
+      provider: "GOOGLE",
+    };
+
+    beforeEach(() => {
+      mockProfileRepository.findByUserId.mockResolvedValue({
+        id: PROFESSIONAL_ID,
+      });
+      mockBookingRepository.findBookingByIdForProfessional.mockResolvedValue(
+        BASE_BOOKING,
+      );
+      mockBookingRepository.cancelBooking.mockResolvedValue({
+        ...BASE_BOOKING,
+        status: "CANCELLED",
+      });
+    });
+
+    it("cancels the calendar event when one is attached to the booking", async () => {
+      mockGoogleRepository.findCalendarEventsByBookingId.mockResolvedValue([
+        CALENDAR_EVENT,
+      ]);
+      mockGoogleRepository.findCalendarAccountById.mockResolvedValue(
+        CALENDAR_ACCOUNT,
+      );
+
+      await bookingService.cancelBooking(USER_ID, "booking_1");
+
+      expect(mockCalendarProviderService.cancelEvent).toHaveBeenCalledWith(
+        CALENDAR_ACCOUNT,
+        {
+          calendarAccountId: CALENDAR_EVENT.calendarAccountId,
+          externalEventId: CALENDAR_EVENT.externalEventId,
+        },
+      );
+      expect(mockGoogleRepository.updateCalendarEventById).toHaveBeenCalledWith(
+        CALENDAR_EVENT.id,
+        { syncStatus: "CANCELLED" },
+      );
+    });
+
+    it("still cancels the booking even if the calendar provider throws", async () => {
+      mockGoogleRepository.findCalendarEventsByBookingId.mockResolvedValue([
+        CALENDAR_EVENT,
+      ]);
+      mockGoogleRepository.findCalendarAccountById.mockResolvedValue(
+        CALENDAR_ACCOUNT,
+      );
+      mockCalendarProviderService.cancelEvent.mockRejectedValue(
+        new Error("Google API is down"),
+      );
+
+      const result = await bookingService.cancelBooking(USER_ID, "booking_1");
+
+      expect(result.status).toBe("CANCELLED");
+      expect(mockGoogleRepository.updateCalendarEventById).not.toHaveBeenCalled();
+    });
+
+    it("skips calendar events that are already cancelled", async () => {
+      mockGoogleRepository.findCalendarEventsByBookingId.mockResolvedValue([
+        { ...CALENDAR_EVENT, syncStatus: "CANCELLED" },
+      ]);
+
+      await bookingService.cancelBooking(USER_ID, "booking_1");
+
+      expect(mockCalendarProviderService.cancelEvent).not.toHaveBeenCalled();
+    });
+
+    it("throws when the booking does not exist", async () => {
+      mockBookingRepository.findBookingByIdForProfessional.mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        bookingService.cancelBooking(USER_ID, "nonexistent"),
       ).rejects.toThrow("Booking not found.");
     });
   });

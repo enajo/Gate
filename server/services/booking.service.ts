@@ -659,6 +659,43 @@ export const bookingService = {
     }
 
     const updated = await bookingRepository.cancelBooking(existing.id);
+
+    // Best-effort: the booking's own cancelled status is the source of
+    // truth and must succeed regardless of what happens here. A calendar
+    // provider outage shouldn't block a professional from cancelling.
+    const calendarEvents = await googleRepository.findCalendarEventsByBookingId(
+      existing.id,
+    );
+
+    for (const calendarEvent of calendarEvents) {
+      if (calendarEvent.syncStatus === "CANCELLED") continue;
+
+      try {
+        const account = await googleRepository.findCalendarAccountById(
+          calendarEvent.calendarAccountId,
+        );
+        if (!account) continue;
+
+        await calendarProviderService.cancelEvent(account, {
+          calendarAccountId: calendarEvent.calendarAccountId,
+          externalEventId: calendarEvent.externalEventId,
+        });
+
+        await googleRepository.updateCalendarEventById(calendarEvent.id, {
+          syncStatus: "CANCELLED",
+        });
+      } catch (error) {
+        logger.error(
+          "bookingService.cancelBooking: failed to cancel calendar event",
+          {
+            bookingId: existing.id,
+            calendarEventId: calendarEvent.id,
+            error,
+          },
+        );
+      }
+    }
+
     return mapBooking(updated)!;
   },
 

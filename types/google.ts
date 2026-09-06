@@ -188,3 +188,30 @@ export type GoogleConnectedCalendarSummary = {
   email?: string | null;
   calendars: GoogleCalendarListItem[];
 };
+
+/**
+ * The contract every calendar provider's service object must implement.
+ * calendarProviderService is the only thing that should call these directly —
+ * everywhere else routes through it so adding a second provider (Outlook,
+ * CalDAV) means adding one branch there, not touching every call site that
+ * needs busy times or creates/updates/cancels an event.
+ */
+export interface CalendarProviderAdapter {
+  getBusyRangesForCalendarAccount(params: {
+    calendarAccountId: string;
+    start: Date | string;
+    end: Date | string;
+    timezone: string;
+  }): Promise<MergedBusyRange[]>;
+
+  createCalendarEvent(input: CreateCalendarEventInput): Promise<CreatedCalendarEvent>;
+
+  updateCalendarEvent(input: UpdateCalendarEventInput): Promise<CreatedCalendarEvent>;
+
+  cancelCalendarEvent(params: {
+    calendarAccountId: string;
+    externalEventId: string;
+  }): Promise<void>;
+
+  listRemoteCalendars(calendarAccountId: string): Promise<GoogleCalendarListItem[]>;
+}

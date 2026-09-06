@@ -1,57 +1,87 @@
-import * as React from "react";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
-export interface DashboardHeaderProps
-  extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  description?: string;
-  eyebrow?: string;
-  actions?: React.ReactNode;
+const NAV_ITEMS: Array<{ href: string; label: string; exact?: boolean }> = [
+  { href: "/app", label: "Dashboard", exact: true },
+  { href: "/app/control-room", label: "Control Room" },
+  { href: "/app/leads", label: "Leads" },
+  { href: "/app/bookings", label: "Bookings" },
+  { href: "/app/embed", label: "Embed" },
+  { href: "/app/settings", label: "Settings" },
+];
+
+function isActivePath(pathname: string, href: string, exact?: boolean) {
+  if (exact) return pathname === href;
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+export interface DashboardHeaderProps {
+  initials: string;
+  publicUrl?: string | null;
+  isAdmin?: boolean;
+}
+
+// Rendered once, in the dashboard layout, so every /app/* page gets the same
+// nav and — the actual point of this component existing — sign-out from
+// anywhere, instead of only from the two pages that happened to hand-roll
+// their own header.
 export function DashboardHeader({
-  className,
-  title,
-  description,
-  eyebrow,
-  actions,
-  children,
-  ...props
+  initials,
+  publicUrl,
+  isAdmin = false,
 }: DashboardHeaderProps) {
+  const pathname = usePathname();
+
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-4 border-b border-slate-200 bg-white px-4 py-5 sm:px-6 lg:px-8",
-        className,
-      )}
-      {...props}
-    >
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0 space-y-1">
-          {eyebrow ? (
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
-              {eyebrow}
-            </p>
+    <header className="sticky top-0 z-50 bg-gray-50/75 backdrop-blur-xl">
+      <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 text-[13px]">
+        <Link href="/app" className="font-medium tracking-wide">
+          GATE
+        </Link>
+
+        <div className="hidden items-center gap-7 text-gray-500 md:flex">
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(isActivePath(pathname, item.href, item.exact) && "text-ink")}
+            >
+              {item.label}
+            </Link>
+          ))}
+
+          {isAdmin ? (
+            <Link href="/admin" className="text-brand-amber">
+              Admin
+            </Link>
           ) : null}
 
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            {title}
-          </h1>
-
-          {description ? (
-            <p className="max-w-2xl text-sm text-slate-500">{description}</p>
+          {publicUrl ? (
+            <Link
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1"
+            >
+              Public Page
+              <ExternalLink className="size-3" />
+            </Link>
           ) : null}
         </div>
 
-        {actions ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {actions}
+        <div className="flex items-center gap-3">
+          <SignOutButton />
+          <div className="flex size-8 items-center justify-center rounded-full bg-ink text-[12px] text-white">
+            {initials}
           </div>
-        ) : null}
-      </div>
-
-      {children ? <div>{children}</div> : null}
-    </div>
+        </div>
+      </nav>
+    </header>
   );
 }

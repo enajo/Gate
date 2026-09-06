@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 
 import { auth } from "@/lib/auth";
 import { bookingRepository } from "@/server/repositories/booking.repository";
@@ -100,15 +99,6 @@ export default async function LeadsPage({
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-ink">
       <div className="mx-auto max-w-4xl px-4 py-10">
-
-        {/* Back */}
-        <Link
-          href="/app"
-          className="mb-8 inline-flex items-center gap-2 text-[13px] text-gray-500 transition hover:text-ink"
-        >
-          <ArrowLeft className="size-3.5" />
-          Dashboard
-        </Link>
 
         {/* Header */}
         <div className="flex items-end justify-between gap-4">

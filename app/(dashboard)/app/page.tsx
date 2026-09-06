@@ -14,28 +14,14 @@ import {
 } from "lucide-react";
 
 import { auth } from "@/lib/auth";
-import { isAdmin } from "@/lib/permissions";
 import { LOW_TOKEN_BALANCE_THRESHOLD } from "@/lib/constants";
 import { bookingService } from "@/server/services/booking.service";
 import { onboardingService } from "@/server/services/onboarding.service";
 import { profileService } from "@/server/services/profile.service";
 import { CalendarModalCard } from "@/components/dashboard/calendar-modal-card";
 import { CopyLinkButton } from "@/components/dashboard/copy-link-button";
-import { SignOutButton } from "@/components/auth/sign-out-button";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function getInitials(name: string) {
-  return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "G"
-  );
-}
 
 function getGreeting() {
   const hour = new Date().getUTCHours();
@@ -77,7 +63,6 @@ function DashboardButton({
 export default async function DashboardPage() {
   const session = await auth();
   if (!session) redirect("/login");
-  const admin = isAdmin(session);
 
   // Fetch everything in parallel — degrade gracefully on errors
   const [onboardingResult, controlRoomResult, upcomingResult, holdsResult] =
@@ -118,7 +103,6 @@ export default async function DashboardPage() {
   const displayName =
     profile?.name ?? session.user.name ?? session.user.email ?? "there";
   const firstName = displayName.split(" ")[0];
-  const initials = getInitials(displayName);
   const greeting = getGreeting();
 
   const hasActivity = upcomingBookings.length > 0 || activeHolds.length > 0;
@@ -204,47 +188,6 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),radial-gradient(circle_at_85%_18%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-ink">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-gray-50/70 backdrop-blur-xl">
-        <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 text-[13px]">
-          <Link href="/app" className="font-medium tracking-wide">
-            GATE
-          </Link>
-
-          <div className="hidden items-center gap-7 text-gray-500 md:flex">
-            <Link href="/app" className="text-ink">
-              Dashboard
-            </Link>
-            <Link href="/app/control-room">Control Room</Link>
-            <Link href="/app/leads">Leads</Link>
-            <Link href="/app/embed">Embed</Link>
-            {admin && (
-              <Link href="/admin" className="text-brand-amber">
-                Admin
-              </Link>
-            )}
-            {publicUrl && (
-              <Link
-                href={publicUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1"
-              >
-                Public Page
-                <ExternalLink className="size-3" />
-              </Link>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <SignOutButton />
-            <div className="flex size-8 items-center justify-center rounded-full bg-ink text-[12px] text-white">
-              {initials}
-            </div>
-          </div>
-        </nav>
-      </header>
-
       <section className="mx-auto max-w-6xl px-4 py-10">
         {/* ── Hero card ───────────────────────────────────────────────────── */}
         <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.62),rgba(243,237,226,0.84))] p-8 shadow-warm-2xl">

@@ -54,7 +54,7 @@
       ".gate-embed-overlay.gate-embed-open{opacity:1;}" +
       ".gate-embed-panel{position:relative;width:100%;max-width:480px;height:min(760px,90vh);" +
       "background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);" +
-      "transform:translateY(12px) scale(.98);transition:transform .18s ease;}" +
+      "transform:translateY(12px) scale(.98);transition:transform .18s ease,height .2s ease;}" +
       ".gate-embed-overlay.gate-embed-open .gate-embed-panel{transform:translateY(0) scale(1);}" +
       ".gate-embed-panel iframe{width:100%;height:100%;border:0;display:block;}" +
       ".gate-embed-close{position:absolute;top:12px;right:12px;z-index:1;width:32px;height:32px;" +
@@ -88,6 +88,28 @@
 
   function onKeydown(e) {
     if (e.key === "Escape") closeOverlay();
+  }
+
+  var MIN_PANEL_HEIGHT_PX = 320;
+
+  // The iframe's own page (EmbedHeightReporter) posts its real content
+  // height so the panel can size to the actual conversation/booking flow
+  // instead of guessing a fixed height — still capped to fit the viewport
+  // since this renders as an overlay, never taller than 90vh.
+  function onMessage(e) {
+    if (e.origin !== origin) return;
+    var data = e.data;
+    if (!data || data.source !== "gate-embed" || data.type !== "gate:height") return;
+    if (typeof data.height !== "number" || !isFinite(data.height)) return;
+
+    var overlay = document.getElementById(OVERLAY_ID);
+    if (!overlay) return;
+    var panel = overlay.querySelector(".gate-embed-panel");
+    if (!panel) return;
+
+    var maxHeight = window.innerHeight * 0.9;
+    var height = Math.min(Math.max(data.height, MIN_PANEL_HEIGHT_PX), maxHeight);
+    panel.style.height = height + "px";
   }
 
   function openOverlay(targetSlug) {
@@ -161,6 +183,7 @@
   function init() {
     wireManualTriggers();
     if (mode !== "manual") injectFloatingButton();
+    window.addEventListener("message", onMessage);
   }
 
   // Global API — lets a professional open the widget from their own JS too.

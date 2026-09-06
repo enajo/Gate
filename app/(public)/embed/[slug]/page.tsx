@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
+import { EmbedHeightReporter } from "@/components/embed/embed-height-reporter";
 import { PublicSalesPageTemplate } from "@/components/public-page/public-sales-page-template";
 import { getPublicSalesPageData } from "@/server/services/public-sales-page.service";
 
@@ -52,5 +53,10 @@ export default async function EmbedProfessionalPage({
   );
   if (!pageData) notFound();
 
-  return <PublicSalesPageTemplate data={pageData} />;
+  return (
+    <>
+      <EmbedHeightReporter />
+      <PublicSalesPageTemplate data={pageData} />
+    </>
+  );
 }

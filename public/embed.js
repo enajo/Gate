@@ -60,7 +60,14 @@
       ".gate-embed-close{position:absolute;top:12px;right:12px;z-index:1;width:32px;height:32px;" +
       "border-radius:9999px;border:none;background:rgba(0,0,0,.06);cursor:pointer;" +
       "font-size:16px;line-height:1;color:#1a1a1a;}" +
-      ".gate-embed-close:hover{background:rgba(0,0,0,.12);}";
+      ".gate-embed-close:hover{background:rgba(0,0,0,.12);}" +
+      ".gate-embed-spinner{position:absolute;inset:0;display:flex;align-items:center;" +
+      "justify-content:center;background:#fff;transition:opacity .2s ease;}" +
+      ".gate-embed-spinner.gate-embed-spinner-hide{opacity:0;pointer-events:none;}" +
+      ".gate-embed-spinner-circle{width:28px;height:28px;border-radius:50%;" +
+      "border:3px solid rgba(0,0,0,.1);border-top-color:currentColor;" +
+      "animation:gate-embed-spin .7s linear infinite;}" +
+      "@keyframes gate-embed-spin{to{transform:rotate(360deg);}}";
     document.head.appendChild(style);
   }
 
@@ -75,6 +82,9 @@
     return origin + "/embed/" + encodeURIComponent(targetSlug) + (query ? "?" + query : "");
   }
 
+  var READY_TIMEOUT_MS = 4000;
+  var readyTimeoutId = null;
+
   function closeOverlay() {
     var overlay = document.getElementById(OVERLAY_ID);
     if (!overlay) return;
@@ -84,6 +94,26 @@
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
     }, 180);
     document.removeEventListener("keydown", onKeydown);
+    if (readyTimeoutId) {
+      window.clearTimeout(readyTimeoutId);
+      readyTimeoutId = null;
+    }
+  }
+
+  // Hides the loading spinner and reveals the iframe. Called either when
+  // the embedded page announces it's hydrated and interactive
+  // (gate:ready), or after READY_TIMEOUT_MS regardless — a slug that 404s
+  // never mounts EmbedHeightReporter and so never sends gate:ready, and a
+  // stuck spinner would be worse than showing whatever did load.
+  function revealPanel() {
+    if (readyTimeoutId) {
+      window.clearTimeout(readyTimeoutId);
+      readyTimeoutId = null;
+    }
+    var overlay = document.getElementById(OVERLAY_ID);
+    if (!overlay) return;
+    var spinner = overlay.querySelector(".gate-embed-spinner");
+    if (spinner) spinner.classList.add("gate-embed-spinner-hide");
   }
 
   function onKeydown(e) {
@@ -99,7 +129,14 @@
   function onMessage(e) {
     if (e.origin !== origin) return;
     var data = e.data;
-    if (!data || data.source !== "gate-embed" || data.type !== "gate:height") return;
+    if (!data || data.source !== "gate-embed") return;
+
+    if (data.type === "gate:ready") {
+      revealPanel();
+      return;
+    }
+
+    if (data.type !== "gate:height") return;
     if (typeof data.height !== "number" || !isFinite(data.height)) return;
 
     var overlay = document.getElementById(OVERLAY_ID);
@@ -136,8 +173,16 @@
     iframe.src = buildIframeSrc(targetSlug);
     iframe.title = "Book a time";
 
+    var spinner = document.createElement("div");
+    spinner.className = "gate-embed-spinner";
+    var spinnerCircle = document.createElement("div");
+    spinnerCircle.className = "gate-embed-spinner-circle";
+    spinnerCircle.style.color = accentColor;
+    spinner.appendChild(spinnerCircle);
+
     panel.appendChild(close);
     panel.appendChild(iframe);
+    panel.appendChild(spinner);
     overlay.appendChild(panel);
 
     overlay.addEventListener("click", function (e) {
@@ -147,6 +192,7 @@
     document.body.appendChild(overlay);
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKeydown);
+    readyTimeoutId = window.setTimeout(revealPanel, READY_TIMEOUT_MS);
 
     // Next frame, so the opacity/transform transition actually plays.
     window.requestAnimationFrame(function () {

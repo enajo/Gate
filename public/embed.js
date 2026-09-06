@@ -8,10 +8,18 @@
  *   <script async src="https://<your-gate-domain>/embed.js" data-gate-slug="sarah-malik" data-gate-mode="manual"></script>
  *   <button data-gate-open="sarah-malik">Book time with me</button>
  *
+ * Usage — inline (embedded directly in the page, no popup):
+ *   <script async src="https://<your-gate-domain>/embed.js" data-gate-slug="sarah-malik" data-gate-mode="inline"></script>
+ *   <div data-gate-inline></div>
+ *
+ *   Give a div its own data-gate-inline="other-slug" to embed a different
+ *   professional than the script tag's default — useful for embedding more
+ *   than one gate on the same page.
+ *
  * Optional attributes on the <script> tag:
- *   data-gate-text     Button label (default "Book a call")
+ *   data-gate-text     Button label (default "Book a call") — popup modes only
  *   data-gate-color    Accent hex color (default brand amber)
- *   data-gate-position "bottom-right" (default) or "bottom-left"
+ *   data-gate-position "bottom-right" (default) or "bottom-left" — popup modes only
  */
 (function () {
   "use strict";
@@ -33,6 +41,10 @@
 
   var STYLE_ID = "gate-embed-style";
   var OVERLAY_ID = "gate-embed-overlay";
+  var INLINE_ATTR = "data-gate-inline";
+  var READY_TIMEOUT_MS = 4000;
+  var MIN_FRAME_HEIGHT_PX = 320;
+  var DEFAULT_INLINE_HEIGHT_PX = 640;
 
   function injectStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -67,7 +79,9 @@
       ".gate-embed-spinner-circle{width:28px;height:28px;border-radius:50%;" +
       "border:3px solid rgba(0,0,0,.1);border-top-color:currentColor;" +
       "animation:gate-embed-spin .7s linear infinite;}" +
-      "@keyframes gate-embed-spin{to{transform:rotate(360deg);}}";
+      "@keyframes gate-embed-spin{to{transform:rotate(360deg);}}" +
+      ".gate-embed-inline{position:relative;width:100%;border-radius:24px;overflow:hidden;}" +
+      ".gate-embed-inline iframe{width:100%;border:0;display:block;transition:height .2s ease;}";
     document.head.appendChild(style);
   }
 
@@ -82,8 +96,88 @@
     return origin + "/embed/" + encodeURIComponent(targetSlug) + (query ? "?" + query : "");
   }
 
-  var READY_TIMEOUT_MS = 4000;
-  var readyTimeoutId = null;
+  // ── Shared frame lifecycle (used by both the popup panel and inline embeds) ──
+
+  // Builds the loading spinner + iframe pair and appends them to `container`
+  // (a .gate-embed-panel for popup mode, or a [data-gate-inline] div for
+  // inline mode). `initialHeightPx`, when given, sets the iframe's own
+  // starting height directly — inline embeds have no ambient container
+  // height to fall back on the way the popup panel's CSS does.
+  function attachLoadingFrame(container, targetSlug, initialHeightPx) {
+    var iframe = document.createElement("iframe");
+    iframe.src = buildIframeSrc(targetSlug);
+    iframe.title = "Book a time";
+    if (initialHeightPx) iframe.style.height = initialHeightPx + "px";
+
+    var spinner = document.createElement("div");
+    spinner.className = "gate-embed-spinner";
+    var spinnerCircle = document.createElement("div");
+    spinnerCircle.className = "gate-embed-spinner-circle";
+    spinnerCircle.style.color = accentColor;
+    spinner.appendChild(spinnerCircle);
+
+    container.appendChild(iframe);
+    container.appendChild(spinner);
+
+    iframe._gateSpinner = spinner;
+    iframe._gateReadyTimeoutId = window.setTimeout(function () {
+      revealFrame(iframe);
+    }, READY_TIMEOUT_MS);
+
+    return iframe;
+  }
+
+  // Hides a frame's loading spinner. Called either when its page announces
+  // it's hydrated and interactive (gate:ready), or after READY_TIMEOUT_MS
+  // regardless — a slug that 404s never sends gate:ready, and a stuck
+  // spinner would be a worse failure mode than showing whatever did load.
+  function revealFrame(iframe) {
+    if (iframe._gateReadyTimeoutId) {
+      window.clearTimeout(iframe._gateReadyTimeoutId);
+      iframe._gateReadyTimeoutId = null;
+    }
+    if (iframe._gateSpinner) iframe._gateSpinner.classList.add("gate-embed-spinner-hide");
+  }
+
+  function findIframeBySource(sourceWindow) {
+    var frames = document.querySelectorAll(".gate-embed-panel iframe, .gate-embed-inline iframe");
+    for (var i = 0; i < frames.length; i++) {
+      if (frames[i].contentWindow === sourceWindow) return frames[i];
+    }
+    return null;
+  }
+
+  // Routes a message to whichever iframe actually sent it (there can be
+  // several at once across inline embeds, though only one popup panel).
+  // The popup panel is capped to the viewport since it renders as an
+  // overlay; an inline embed just grows/shrinks in the page's own flow.
+  function onMessage(e) {
+    if (e.origin !== origin) return;
+    var data = e.data;
+    if (!data || data.source !== "gate-embed") return;
+
+    var iframe = findIframeBySource(e.source);
+    if (!iframe) return;
+
+    if (data.type === "gate:ready") {
+      revealFrame(iframe);
+      return;
+    }
+
+    if (data.type !== "gate:height") return;
+    if (typeof data.height !== "number" || !isFinite(data.height)) return;
+
+    var panel = iframe.closest(".gate-embed-panel");
+    if (panel) {
+      var maxHeight = window.innerHeight * 0.9;
+      var height = Math.min(Math.max(data.height, MIN_FRAME_HEIGHT_PX), maxHeight);
+      panel.style.height = height + "px";
+    } else {
+      iframe.style.height = Math.max(data.height, MIN_FRAME_HEIGHT_PX) + "px";
+    }
+  }
+
+  // ── Popup (button / manual) mode ──────────────────────────────────────────
 
   function closeOverlay() {
     var overlay = document.getElementById(OVERLAY_ID);
@@ -94,59 +188,12 @@
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
     }, 180);
     document.removeEventListener("keydown", onKeydown);
-    if (readyTimeoutId) {
-      window.clearTimeout(readyTimeoutId);
-      readyTimeoutId = null;
-    }
-  }
-
-  // Hides the loading spinner and reveals the iframe. Called either when
-  // the embedded page announces it's hydrated and interactive
-  // (gate:ready), or after READY_TIMEOUT_MS regardless — a slug that 404s
-  // never mounts EmbedHeightReporter and so never sends gate:ready, and a
-  // stuck spinner would be worse than showing whatever did load.
-  function revealPanel() {
-    if (readyTimeoutId) {
-      window.clearTimeout(readyTimeoutId);
-      readyTimeoutId = null;
-    }
-    var overlay = document.getElementById(OVERLAY_ID);
-    if (!overlay) return;
-    var spinner = overlay.querySelector(".gate-embed-spinner");
-    if (spinner) spinner.classList.add("gate-embed-spinner-hide");
+    var iframe = overlay.querySelector("iframe");
+    if (iframe) revealFrame(iframe); // clears any pending ready-timeout
   }
 
   function onKeydown(e) {
     if (e.key === "Escape") closeOverlay();
-  }
-
-  var MIN_PANEL_HEIGHT_PX = 320;
-
-  // The iframe's own page (EmbedHeightReporter) posts its real content
-  // height so the panel can size to the actual conversation/booking flow
-  // instead of guessing a fixed height — still capped to fit the viewport
-  // since this renders as an overlay, never taller than 90vh.
-  function onMessage(e) {
-    if (e.origin !== origin) return;
-    var data = e.data;
-    if (!data || data.source !== "gate-embed") return;
-
-    if (data.type === "gate:ready") {
-      revealPanel();
-      return;
-    }
-
-    if (data.type !== "gate:height") return;
-    if (typeof data.height !== "number" || !isFinite(data.height)) return;
-
-    var overlay = document.getElementById(OVERLAY_ID);
-    if (!overlay) return;
-    var panel = overlay.querySelector(".gate-embed-panel");
-    if (!panel) return;
-
-    var maxHeight = window.innerHeight * 0.9;
-    var height = Math.min(Math.max(data.height, MIN_PANEL_HEIGHT_PX), maxHeight);
-    panel.style.height = height + "px";
   }
 
   function openOverlay(targetSlug) {
@@ -168,21 +215,10 @@
     close.setAttribute("aria-label", "Close booking widget");
     close.textContent = "×";
     close.addEventListener("click", closeOverlay);
-
-    var iframe = document.createElement("iframe");
-    iframe.src = buildIframeSrc(targetSlug);
-    iframe.title = "Book a time";
-
-    var spinner = document.createElement("div");
-    spinner.className = "gate-embed-spinner";
-    var spinnerCircle = document.createElement("div");
-    spinnerCircle.className = "gate-embed-spinner-circle";
-    spinnerCircle.style.color = accentColor;
-    spinner.appendChild(spinnerCircle);
-
     panel.appendChild(close);
-    panel.appendChild(iframe);
-    panel.appendChild(spinner);
+
+    attachLoadingFrame(panel, targetSlug);
+
     overlay.appendChild(panel);
 
     overlay.addEventListener("click", function (e) {
@@ -192,7 +228,6 @@
     document.body.appendChild(overlay);
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKeydown);
-    readyTimeoutId = window.setTimeout(revealPanel, READY_TIMEOUT_MS);
 
     // Next frame, so the opacity/transform transition actually plays.
     window.requestAnimationFrame(function () {
@@ -226,9 +261,33 @@
     document.body.appendChild(btn);
   }
 
+  // ── Inline mode ───────────────────────────────────────────────────────────
+
+  // Fills every not-yet-initialized [data-gate-inline] container on the
+  // page with an embedded gate. Exposed as window.Gate.renderInline so a
+  // professional whose site adds containers dynamically (a SPA route
+  // change, a CMS block loaded after page load) can call it again.
+  function renderInlineEmbeds() {
+    injectStyles();
+    var containers = document.querySelectorAll("[" + INLINE_ATTR + "]");
+    for (var i = 0; i < containers.length; i++) {
+      var container = containers[i];
+      if (container.hasAttribute("data-gate-inline-ready")) continue;
+      container.setAttribute("data-gate-inline-ready", "true");
+      container.classList.add("gate-embed-inline");
+
+      var targetSlug = container.getAttribute(INLINE_ATTR) || slug;
+      attachLoadingFrame(container, targetSlug, DEFAULT_INLINE_HEIGHT_PX);
+    }
+  }
+
   function init() {
-    wireManualTriggers();
-    if (mode !== "manual") injectFloatingButton();
+    if (mode === "inline") {
+      renderInlineEmbeds();
+    } else {
+      wireManualTriggers();
+      if (mode !== "manual") injectFloatingButton();
+    }
     window.addEventListener("message", onMessage);
   }
 
@@ -236,6 +295,7 @@
   window.Gate = window.Gate || {};
   window.Gate.open = openOverlay;
   window.Gate.close = closeOverlay;
+  window.Gate.renderInline = renderInlineEmbeds;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);

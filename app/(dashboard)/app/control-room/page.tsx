@@ -313,7 +313,7 @@ function getEmptyProfile(): ProfileState {
         format: "Video call",
         price: "",
         currency: "$",
-        qualificationRequired: false,
+        qualificationMode: "OPEN",
         paymentRequired: false,
         accessCodeRequired: false,
         manualApprovalRequired: false,

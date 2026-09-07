@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { QualificationMode } from "@prisma/client";
 import { db } from "@/lib/db";
 import { profileRepository } from "@/server/repositories/profile.repository";
 
@@ -57,7 +58,7 @@ export type ProfessionalDetail = {
     durationMinutes: number;
     displayPrice: string | null;
     currency: string | null;
-    qualificationRequired: boolean;
+    qualificationMode: QualificationMode;
     accessCodeRequired: boolean;
     paymentRequired: boolean;
     manualApprovalRequired: boolean;
@@ -243,7 +244,7 @@ export const adminService = {
         durationMinutes: s.durationMinutes,
         displayPrice: s.displayPrice,
         currency: s.currency,
-        qualificationRequired: s.qualificationRequired,
+        qualificationMode: s.qualificationMode,
         accessCodeRequired: s.accessCodeRequired,
         paymentRequired: s.paymentRequired,
         manualApprovalRequired: s.manualApprovalRequired,

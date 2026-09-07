@@ -75,6 +75,14 @@ export interface ConversationGateProps {
     utmMedium?: string | null;
     utmCampaign?: string | null;
   };
+  /**
+   * GATEKEEPER: a REJECTED/REDIRECT verdict ends the conversation and the
+   * visitor never sees slots for this service. TRIAGE: every verdict is a
+   * silent pass-through — the AI's opinion still reaches the professional
+   * as the Lead's real qualificationResult, but the visitor always ends up
+   * looking at slots, same as a QUALIFIED outcome.
+   */
+  qualificationMode: "TRIAGE" | "GATEKEEPER";
   onQualified: (params: { leadId: string; name: string; email: string }) => void;
 }
 
@@ -87,6 +95,7 @@ export function ConversationGate({
   accentColor,
   accentTextColor,
   visitorSource,
+  qualificationMode,
   onQualified,
 }: ConversationGateProps) {
   // Identity form
@@ -212,7 +221,14 @@ export function ConversationGate({
       if (data.type === "final") {
         const leadId = data.leadId ?? null;
 
-        if (data.decision === "QUALIFIED") {
+        // Triage never turns a visitor away — the AI's verdict still
+        // becomes the Lead's real qualificationResult (for the
+        // professional), but every outcome here leads to the same
+        // "opening up the calendar" transition a QUALIFIED visitor gets.
+        if (qualificationMode === "TRIAGE") {
+          setRejectedLeadId(leadId);
+          setPhase("qualified");
+        } else if (data.decision === "QUALIFIED") {
           setRejectedLeadId(leadId); // reuse field for leadId storage
           setPhase("qualified");
         } else if (data.decision === "REDIRECT" && data.redirectService) {

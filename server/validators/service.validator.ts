@@ -50,7 +50,7 @@ export const createServiceSchema = z
     idealPersonaDescription: optionalNullableTrimmedString(8000),
     gateSetupAnswers: z.record(z.string(), z.string()).nullable().optional(),
     paymentRequired: z.boolean().optional(),
-    qualificationRequired: z.boolean().optional(),
+    qualificationMode: z.enum(["OPEN", "TRIAGE", "GATEKEEPER"]).optional(),
     accessCodeRequired: z.boolean().optional(),
     manualApprovalRequired: z.boolean().optional(),
     availabilityExposure: availabilityExposureSchema.optional(),

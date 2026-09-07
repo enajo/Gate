@@ -1,3 +1,6 @@
+// QualificationMode mirrors the Prisma schema enum.
+export type QualificationMode = "OPEN" | "TRIAGE" | "GATEKEEPER";
+
 // AvailabilityExposure mirrors the Prisma schema enum.
 export type AvailabilityExposure =
   | "THREE_DAYS"
@@ -23,7 +26,7 @@ export type Service = {
   idealPersonaDescription?: string | null;
   gateSetupAnswers?: Record<string, string> | null;
   paymentRequired: boolean;
-  qualificationRequired: boolean;
+  qualificationMode: QualificationMode;
   accessCodeRequired: boolean;
   manualApprovalRequired: boolean;
   availabilityExposure: AvailabilityExposure;
@@ -47,7 +50,7 @@ export type PublicService = Pick<
   | "durationMinutes"
   | "preparationInstructions"
   | "paymentRequired"
-  | "qualificationRequired"
+  | "qualificationMode"
   | "accessCodeRequired"
   | "manualApprovalRequired"
   | "availabilityExposure"
@@ -65,7 +68,7 @@ export type CreateServiceInput = {
   durationMinutes: number;
   preparationInstructions?: string | null;
   paymentRequired?: boolean;
-  qualificationRequired?: boolean;
+  qualificationMode?: QualificationMode;
   accessCodeRequired?: boolean;
   manualApprovalRequired?: boolean;
   availabilityExposure?: AvailabilityExposure;
@@ -90,7 +93,7 @@ export type ServiceSummary = Pick<
   | "durationMinutes"
   | "meetingFormat"
   | "paymentRequired"
-  | "qualificationRequired"
+  | "qualificationMode"
   | "accessCodeRequired"
   | "manualApprovalRequired"
   | "availabilityExposure"

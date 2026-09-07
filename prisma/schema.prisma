@@ -25,6 +25,12 @@ enum LeadOutcome {
   NO_RESPONSE
 }
 
+enum QualificationMode {
+  OPEN
+  TRIAGE
+  GATEKEEPER
+}
+
 enum PlanTier {
   FREE
   PRO
@@ -256,7 +262,7 @@ model Service {
   idealPersonaDescription String?   @db.Text @map("ideal_persona_description")
   gateSetupAnswers        Json?     @map("gate_setup_answers")
   paymentRequired         Boolean   @default(false) @map("payment_required")
-  qualificationRequired   Boolean   @default(false) @map("qualification_required")
+  qualificationMode       QualificationMode @default(OPEN) @map("qualification_mode")
   accessCodeRequired      Boolean   @default(false) @map("access_code_required")
   manualApprovalRequired  Boolean   @default(false) @map("manual_approval_required")
   availabilityExposure    AvailabilityExposure @default(TWO_WEEKS) @map("availability_exposure")

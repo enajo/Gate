@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import type {
   Booking as PrismaBooking,
   BookingHold as PrismaBookingHold,
+  QualificationMode,
 } from "@prisma/client";
 import type {
   Booking,
@@ -214,6 +215,7 @@ async function requireLead(params: {
   leadId: string;
   professionalId: string;
   serviceId: string;
+  qualificationMode: QualificationMode;
 }) {
   const lead = await bookingRepository.findLeadByIdForProfessional(
     params.leadId,
@@ -224,7 +226,14 @@ async function requireLead(params: {
     throw new Error("Lead not found.");
   }
 
-  if (lead.qualificationResult !== "QUALIFIED") {
+  // Only Gatekeeper actually blocks on the AI's verdict. Triage and Open
+  // both still require a Lead to exist, but never refuse a booking based
+  // on qualificationResult — that's the entire distinction between the
+  // three modes from the server's point of view.
+  if (
+    params.qualificationMode === "GATEKEEPER" &&
+    lead.qualificationResult !== "QUALIFIED"
+  ) {
     throw new Error("Lead is not qualified for booking.");
   }
 
@@ -376,7 +385,7 @@ export const bookingService = {
     });
 
     await requireProfessionalById(params.professionalId);
-    await requireService({
+    const service = await requireService({
       professionalId: params.professionalId,
       serviceId: parsed.serviceId,
     });
@@ -384,6 +393,7 @@ export const bookingService = {
       professionalId: params.professionalId,
       serviceId: parsed.serviceId,
       leadId: params.leadId,
+      qualificationMode: service.qualificationMode,
     });
 
     const slotStart = assertValidDate(parsed.slotStart);
@@ -481,7 +491,7 @@ export const bookingService = {
     const parsed = confirmBookingSchema.parse(input);
 
     await requireProfessionalById(parsed.professionalId);
-    await requireService({
+    const service = await requireService({
       professionalId: parsed.professionalId,
       serviceId: parsed.serviceId,
     });
@@ -489,6 +499,7 @@ export const bookingService = {
       professionalId: parsed.professionalId,
       serviceId: parsed.serviceId,
       leadId: parsed.leadId,
+      qualificationMode: service.qualificationMode,
     });
 
     const hold = await requireValidActiveHold({

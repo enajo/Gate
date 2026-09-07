@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
-import type { Service } from "@prisma/client";
+import type { QualificationMode, Service } from "@prisma/client";
 import { db } from "@/lib/db";
 
 const serviceWithMetaInclude = Prisma.validator<Prisma.ServiceInclude>()({
@@ -177,7 +177,7 @@ export const serviceRepository = {
       currency?: string | null;
       durationMinutes: number;
       paymentRequired: boolean;
-      qualificationRequired: boolean;
+      qualificationMode: QualificationMode;
       accessCodeRequired: boolean;
       manualApprovalRequired: boolean;
       availabilityExposure: string;
@@ -217,7 +217,7 @@ export const serviceRepository = {
           currency: svc.currency ?? "$",
           durationMinutes: svc.durationMinutes,
           paymentRequired: svc.paymentRequired,
-          qualificationRequired: svc.qualificationRequired,
+          qualificationMode: svc.qualificationMode,
           accessCodeRequired: svc.accessCodeRequired,
           manualApprovalRequired: svc.manualApprovalRequired,
           // Cast: the value is validated against the enum before reaching here.

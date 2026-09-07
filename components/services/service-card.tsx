@@ -33,7 +33,7 @@ export type ServiceCardValue = {
   preparationInstructions?: string | null;
   idealPersonaDescription?: string | null;
   gateSetupAnswers?: Record<string, string> | null;
-  qualificationRequired?: boolean;
+  qualificationMode?: "OPEN" | "TRIAGE" | "GATEKEEPER";
   active?: boolean;
 };
 

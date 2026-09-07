@@ -47,7 +47,7 @@ function service(overrides: Partial<{ id: string; active: boolean }> = {}) {
     idealPersonaDescription: null,
     gateSetupAnswers: null,
     paymentRequired: false,
-    qualificationRequired: false,
+    qualificationMode: "OPEN",
     accessCodeRequired: false,
     manualApprovalRequired: false,
     availabilityExposure: "TWO_WEEKS",

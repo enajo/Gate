@@ -257,7 +257,7 @@ export default function ServicesPage() {
           description: selectedService.description ?? undefined,
           displayPrice: selectedService.displayPrice ?? undefined,
           preparationInstructions: selectedService.preparationInstructions ?? undefined,
-          qualificationRequired: selectedService.qualificationRequired ?? false,
+          qualificationMode: selectedService.qualificationMode ?? "OPEN",
           idealPersonaDescription: selectedService.idealPersonaDescription,
           gateSetupAnswers: selectedService.gateSetupAnswers,
         } : undefined}

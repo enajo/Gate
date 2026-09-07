@@ -64,7 +64,7 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
           format: "Video call",
           price: "",
           currency: "$",
-          qualificationRequired: false,
+          qualificationMode: "OPEN",
           paymentRequired: false,
           accessCodeRequired: false,
           manualApprovalRequired: false,
@@ -274,19 +274,20 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
                 Gate Rules
               </p>
 
-              {/* 2 × 2 toggle grid — capped so each card sizes to its
+              <div className="max-w-lg">
+                <QualificationModeControl
+                  value={activeService.qualificationMode}
+                  onChange={(v) =>
+                    updateService(activeService.id, "qualificationMode", v)
+                  }
+                />
+              </div>
+
+              {/* Remaining Gate Rules — capped so each card sizes to its
                   label/description instead of stretching to fill a wide
                   column, which was leaving a large dead gap before the
                   toggle switch on the right. */}
-              <div className="grid max-w-lg grid-cols-2 gap-2.5">
-                <Toggle
-                  label="Qualification"
-                  description="AI screens visitors"
-                  checked={activeService.qualificationRequired}
-                  onChange={(v) =>
-                    updateService(activeService.id, "qualificationRequired", v)
-                  }
-                />
+              <div className="mt-2.5 grid max-w-lg grid-cols-1 gap-2.5 sm:grid-cols-3">
                 <Toggle
                   label="Payment"
                   description="Require payment upfront"
@@ -313,8 +314,8 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
                 />
               </div>
 
-              {/* AI Qualifier — expands below the grid when Qualification is ON */}
-              {activeService.qualificationRequired ? (
+              {/* AI Qualifier — expands below when Triage or Gatekeeper is selected */}
+              {activeService.qualificationMode !== "OPEN" ? (
                 <div className="mt-3 rounded-[1.25rem] border border-warm-border-mid bg-warm-cream-light p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-2.5">
@@ -487,6 +488,49 @@ function Toggle({
         />
       </span>
     </button>
+  );
+}
+
+type QualificationMode = "OPEN" | "TRIAGE" | "GATEKEEPER";
+
+const QUALIFICATION_MODES: Array<{
+  value: QualificationMode;
+  label: string;
+  description: string;
+}> = [
+  { value: "OPEN", label: "Open", description: "No screening — instant booking" },
+  { value: "TRIAGE", label: "Triage", description: "AI screens, never blocks booking" },
+  { value: "GATEKEEPER", label: "Gatekeeper", description: "AI can block a poor fit" },
+];
+
+function QualificationModeControl({
+  value,
+  onChange,
+}: {
+  value: QualificationMode;
+  onChange: (value: QualificationMode) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+      {QUALIFICATION_MODES.map((mode) => {
+        const selected = value === mode.value;
+        return (
+          <button
+            key={mode.value}
+            type="button"
+            onClick={() => onChange(mode.value)}
+            className={
+              selected
+                ? "rounded-[0.875rem] border border-brand-amber bg-brand-amber-faint px-4 py-3 text-left"
+                : "rounded-[0.875rem] border border-warm-border-soft bg-white/60 px-4 py-3 text-left transition hover:border-warm-border-mid"
+            }
+          >
+            <p className="text-[13px] font-medium text-ink">{mode.label}</p>
+            <p className="mt-0.5 text-[11px] text-gray-400">{mode.description}</p>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

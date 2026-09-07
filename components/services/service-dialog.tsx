@@ -59,7 +59,7 @@ export function ServiceDialog({
       body: JSON.stringify({
         idealPersonaDescription: compiledPrompt,
         gateSetupAnswers: answers,
-        qualificationRequired: true,
+        qualificationMode: "GATEKEEPER",
       }),
     });
 

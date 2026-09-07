@@ -159,7 +159,8 @@ export default async function AdminProfessionalDetailPage({
                       </TableCell>
                       <TableCell className="text-[12px] text-slate-500">
                         {[
-                          s.qualificationRequired && "Qualification",
+                          s.qualificationMode === "GATEKEEPER" && "Gatekeeper",
+                          s.qualificationMode === "TRIAGE" && "Triage",
                           s.accessCodeRequired && "Access code",
                           s.paymentRequired && "Payment",
                           s.manualApprovalRequired && "Manual approval",

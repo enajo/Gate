@@ -164,6 +164,7 @@ describe("bookingService", () => {
       title: "Strategy Session",
       durationMinutes: 45,
       active: true,
+      qualificationMode: "GATEKEEPER",
     });
 
     mockBookingRepository.findLeadByIdForProfessional.mockResolvedValue({
@@ -305,6 +306,66 @@ describe("bookingService", () => {
           timezone: TIMEZONE,
         }),
       ).rejects.toThrow("Lead is not qualified for booking.");
+    });
+
+    it("allows booking a Triage service regardless of qualification result", async () => {
+      mockServiceRepository.findByIdForProfessional.mockResolvedValue({
+        id: SERVICE_ID,
+        professionalId: PROFESSIONAL_ID,
+        title: "Strategy Session",
+        durationMinutes: 45,
+        active: true,
+        qualificationMode: "TRIAGE",
+      });
+      mockBookingRepository.findLeadByIdForProfessional.mockResolvedValue({
+        id: LEAD_ID,
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        qualificationResult: "REJECTED",
+      });
+      mockBookingRepository.findActiveBookingHold.mockResolvedValue(null);
+      mockBookingRepository.createBookingHoldForProfessional.mockResolvedValue(BASE_HOLD);
+
+      const result = await bookingService.createHold({
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        slotStart: SLOT_START.toISOString(),
+        slotEnd: SLOT_END.toISOString(),
+        timezone: TIMEZONE,
+      });
+
+      expect(result.id).toBe(HOLD_ID);
+    });
+
+    it("allows booking an Open service regardless of qualification result", async () => {
+      mockServiceRepository.findByIdForProfessional.mockResolvedValue({
+        id: SERVICE_ID,
+        professionalId: PROFESSIONAL_ID,
+        title: "Strategy Session",
+        durationMinutes: 45,
+        active: true,
+        qualificationMode: "OPEN",
+      });
+      mockBookingRepository.findLeadByIdForProfessional.mockResolvedValue({
+        id: LEAD_ID,
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        qualificationResult: "REJECTED",
+      });
+      mockBookingRepository.findActiveBookingHold.mockResolvedValue(null);
+      mockBookingRepository.createBookingHoldForProfessional.mockResolvedValue(BASE_HOLD);
+
+      const result = await bookingService.createHold({
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        slotStart: SLOT_START.toISOString(),
+        slotEnd: SLOT_END.toISOString(),
+        timezone: TIMEZONE,
+      });
+
+      expect(result.id).toBe(HOLD_ID);
     });
   });
 

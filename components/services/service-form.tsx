@@ -26,7 +26,7 @@ export type ServiceFormValues = {
   displayPrice: string;
   durationMinutes: number;
   preparationInstructions: string;
-  qualificationRequired: boolean;
+  qualificationMode: "OPEN" | "TRIAGE" | "GATEKEEPER";
   active: boolean;
 };
 
@@ -48,7 +48,7 @@ const defaultValues: ServiceFormValues = {
   displayPrice: "",
   durationMinutes: 30,
   preparationInstructions: "",
-  qualificationRequired: false,
+  qualificationMode: "OPEN",
   active: true,
 };
 
@@ -338,39 +338,38 @@ export function ServiceForm({
 
                 <FormField
                   control={control}
-                  name="qualificationRequired"
+                  name="qualificationMode"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Qualification gate</FormLabel>
                       <FormControl>
-                        <div className="flex gap-3">
-                          <button
-                            type="button"
-                            className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
-                              field.value
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                            }`}
-                            onClick={() => field.onChange(true)}
-                          >
-                            Required
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
-                              !field.value
-                                ? "border-slate-900 bg-slate-900 text-white"
-                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-                            }`}
-                            onClick={() => field.onChange(false)}
-                          >
-                            Off
-                          </button>
+                        <div className="flex flex-wrap gap-3">
+                          {(
+                            [
+                              { value: "OPEN", label: "Open" },
+                              { value: "TRIAGE", label: "Triage" },
+                              { value: "GATEKEEPER", label: "Gatekeeper" },
+                            ] as const
+                          ).map((mode) => (
+                            <button
+                              key={mode.value}
+                              type="button"
+                              className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
+                                field.value === mode.value
+                                  ? "border-slate-900 bg-slate-900 text-white"
+                                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                              }`}
+                              onClick={() => field.onChange(mode.value)}
+                            >
+                              {mode.label}
+                            </button>
+                          ))}
                         </div>
                       </FormControl>
                       <FormDescription>
-                        When on, visitors answer AI screening questions before they can book.
+                        Open: no screening. Triage: AI screens visitors and
+                        reports fit, but never blocks booking. Gatekeeper: a
+                        poor-fit visitor is blocked from booking.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

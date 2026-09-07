@@ -157,7 +157,7 @@ async function main() {
         "A focused strategy call for founders who need clarity on product architecture, roadmap bottlenecks, or technical hiring.",
       displayPrice: "€250",
       durationMinutes: 45,
-      qualificationRequired: true,
+      qualificationMode: "GATEKEEPER",
       idealPersonaDescription: "Early-stage SaaS founders with at least €5k MRR who have a specific technical blocker slowing their roadmap.",
       preparationInstructions:
         "Bring your current product stage, main bottleneck, and one technical decision you need clarity on.",
@@ -189,7 +189,7 @@ async function main() {
         "Mock interview and positioning feedback for product candidates preparing for upcoming interviews.",
       displayPrice: "€120",
       durationMinutes: 60,
-      qualificationRequired: true,
+      qualificationMode: "GATEKEEPER",
       idealPersonaDescription: "Product candidates actively interviewing or expecting interviews within the next 4 weeks.",
       preparationInstructions:
         "Bring the job description and your current CV or LinkedIn profile.",

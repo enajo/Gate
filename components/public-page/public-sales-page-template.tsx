@@ -72,7 +72,7 @@ export type PublicService = {
   price?: string;
   currency?: string;
 
-  qualificationRequired: boolean;
+  qualificationMode: "OPEN" | "TRIAGE" | "GATEKEEPER";
   paymentRequired: boolean;
   accessCodeRequired: boolean;
   manualApprovalRequired: boolean;
@@ -137,7 +137,7 @@ function getReadableTextColor(backgroundColor: string) {
 
 function getInitialStep(service: PublicService): GateStep {
   if (service.accessCodeRequired) return "access";
-  if (service.qualificationRequired) return "gate";
+  if (service.qualificationMode !== "OPEN") return "gate";
   return "time";
 }
 
@@ -477,7 +477,7 @@ export function PublicSalesPageTemplate({
       }
 
       // Code is valid (or preview mode — no professionalId)
-      setStep(activeService.qualificationRequired ? "gate" : "time");
+      setStep(activeService.qualificationMode !== "OPEN" ? "gate" : "time");
     } catch {
       setAccessCodeError("Could not verify the code. Please try again.");
     } finally {
@@ -520,8 +520,8 @@ export function PublicSalesPageTemplate({
     setIsSubmitting(true);
 
     try {
-      // 1. If not yet qualified (no leadId), create a basic lead first via
-      //    the qualification endpoint with empty answers.
+      // 1. If not yet qualified (no leadId), create a basic lead first —
+      //    reached only for Open services, which never ran the gate chat.
       let currentLeadId = leadId;
       if (!currentLeadId) {
         const qualRes = await fetch("/api/public/qualification/submit", {
@@ -532,7 +532,10 @@ export function PublicSalesPageTemplate({
             serviceId: activeService.id,
             name,
             email,
-            answers: {},
+            referrer: data.visitorSource?.referrer,
+            utmSource: data.visitorSource?.utmSource,
+            utmMedium: data.visitorSource?.utmMedium,
+            utmCampaign: data.visitorSource?.utmCampaign,
           }),
         });
         if (!qualRes.ok) {
@@ -689,10 +692,15 @@ export function PublicSalesPageTemplate({
                     {activeService.format}
                   </p>
 
-                  {activeService.qualificationRequired ? (
+                  {activeService.qualificationMode === "GATEKEEPER" ? (
                     <p className="flex items-center gap-2">
                       <LockKeyhole className="size-4" />
                       Qualification required
+                    </p>
+                  ) : activeService.qualificationMode === "TRIAGE" ? (
+                    <p className="flex items-center gap-2">
+                      <Sparkles className="size-4" />
+                      Quick chat first
                     </p>
                   ) : null}
                 </div>
@@ -834,6 +842,11 @@ export function PublicSalesPageTemplate({
                       accentColor={accentColor}
                       accentTextColor={accentTextColor}
                       visitorSource={data.visitorSource}
+                      qualificationMode={
+                        activeService.qualificationMode === "TRIAGE"
+                          ? "TRIAGE"
+                          : "GATEKEEPER"
+                      }
                       onQualified={({ leadId, name, email }) => {
                         setLeadId(leadId);
                         setGuestName(name);
@@ -885,13 +898,13 @@ export function PublicSalesPageTemplate({
 
               {step === "time" ? (
                 <div className="flex h-full flex-col">
-                  {(activeService.qualificationRequired ||
+                  {(activeService.qualificationMode !== "OPEN" ||
                     activeService.accessCodeRequired) ? (
                     <button
                       type="button"
                       onClick={() =>
                         setStep(
-                          activeService.qualificationRequired
+                          activeService.qualificationMode !== "OPEN"
                             ? "gate"
                             : "access",
                         )

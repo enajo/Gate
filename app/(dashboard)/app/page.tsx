@@ -187,10 +187,10 @@ export default async function DashboardPage() {
     });
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(61,90,66,0.16),transparent_30%),radial-gradient(circle_at_85%_18%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(14,110,82,0.16),transparent_30%),radial-gradient(circle_at_85%_18%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)] text-ink">
       <section className="mx-auto max-w-6xl px-4 py-10">
         {/* ── Hero card ───────────────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(61,90,66,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.62),rgba(243,237,226,0.84))] p-8 shadow-warm-2xl">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(14,110,82,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.62),rgba(243,237,226,0.84))] p-8 shadow-warm-2xl">
           <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-brand-amber/20 blur-3xl" />
 
           <div className="relative flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
@@ -420,7 +420,7 @@ export default async function DashboardPage() {
             )}
           </>
         ) : (
-          <div className="relative mt-8 overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(61,90,66,0.14),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.56),rgba(243,237,226,0.84))] p-10 text-center shadow-warm-xl">
+          <div className="relative mt-8 overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(14,110,82,0.14),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.56),rgba(243,237,226,0.84))] p-10 text-center shadow-warm-xl">
             <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-ink text-white">
               <Sparkles className="size-6" />
             </div>

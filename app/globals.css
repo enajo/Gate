@@ -72,8 +72,8 @@
      usage site — only the values changed. Two-tier: deep for primary
      buttons/real emphasis (the green revealed at an angle), light for
      hovers/soft accents (the sheen where light catches it directly). */
-  --color-brand-amber:       #3d5a42;
-  --color-brand-amber-light: #779370;
+  --color-brand-amber:       #0e6e52;
+  --color-brand-amber-light: #2f9e73;
   --color-brand-amber-faint: #eef1ee;
 
   /* ── Ink ── dark text, filled backgrounds
@@ -116,7 +116,7 @@
   /* ── Status colours ── feedback, validation
      Success now rhymes with the brand accent instead of being an unrelated
      green; error deepened/muted instead of a bright stock red. */
-  --color-success:        #3d5a42;
+  --color-success:        #0e6e52;
   --color-error:          #9a3b35;
   --color-error-bg:       #f6ecea;
   --color-error-bg-light: #faf3f2;

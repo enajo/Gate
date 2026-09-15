@@ -66,7 +66,7 @@ export function ControlRoomPreview({ profile }: ControlRoomPreviewProps) {
     role: profile.role || "",
     timezone: profile.timezone || "UTC",
     theme: {
-      accentColor: profile.theme?.accentColor ?? "#3d5a42",
+      accentColor: profile.theme?.accentColor ?? "#0e6e52",
       backgroundColor: profile.theme?.backgroundColor ?? "#fafafa",
     },
     activeServiceId:

@@ -114,7 +114,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(61,90,66,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_45%,#f0f0ef_100%)] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(14,110,82,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_45%,#f0f0ef_100%)] text-ink">
       <header className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 text-[13px]">
         <Link href="/" className="font-medium tracking-wide">
           GATE
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
 
       <section className="mx-auto grid min-h-[calc(100vh-56px)] max-w-6xl items-center gap-12 px-4 py-12 lg:grid-cols-[1fr_0.9fr]">
         {/* ── Left: live preview ────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(61,90,66,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.58),rgba(243,237,226,0.82))] p-10 shadow-warm-2xl">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(14,110,82,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.58),rgba(243,237,226,0.82))] p-10 shadow-warm-2xl">
           <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-brand-amber/20 blur-3xl" />
 
           <div className="relative">
@@ -404,7 +404,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={handleLaunch}
                     disabled={launching}
-                    className="inline-flex h-11 flex-[1.4] items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#3d5a42,#779370)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
+                    className="inline-flex h-11 flex-[1.4] items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#0e6e52,#2f9e73)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
                   >
                     Launch My Gate
                     <ArrowRight className="ml-2 size-4" />

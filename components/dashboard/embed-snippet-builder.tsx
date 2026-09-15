@@ -39,7 +39,7 @@ export function EmbedSnippetBuilder({
     "button",
   );
   const [buttonText, setButtonText] = React.useState("Book a call");
-  const [accentColor, setAccentColor] = React.useState("#dfa767");
+  const [accentColor, setAccentColor] = React.useState("#2f6b4f");
   const [position, setPosition] = React.useState<(typeof POSITIONS)[number]["value"]>(
     "bottom-right",
   );

@@ -404,7 +404,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={handleLaunch}
                     disabled={launching}
-                    className="inline-flex h-11 flex-[1.4] items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
+                    className="inline-flex h-11 flex-[1.4] items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#2f6b4f,#4a8a6a)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
                   >
                     Launch My Gate
                     <ArrowRight className="ml-2 size-4" />

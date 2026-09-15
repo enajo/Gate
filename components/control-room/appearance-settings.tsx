@@ -19,7 +19,7 @@ const presets: ThemePreset[] = [
   {
     id: "aura-light",
     name: "Aura Light",
-    accentColor: "#DFA767",
+    accentColor: "#2f6b4f",
     backgroundColor: "#F6F2EA",
   },
   {
@@ -70,7 +70,7 @@ export function AppearanceSettings({
 }: AppearanceSettingsProps) {
   const accentColor = isValidHex(profile.theme.accentColor)
     ? profile.theme.accentColor
-    : "#DFA767";
+    : "#2f6b4f";
 
   const backgroundColor = isValidHex(profile.theme.backgroundColor)
     ? profile.theme.backgroundColor

@@ -132,7 +132,7 @@ function AuraButton({
     secondary:
       "border-warm-border-soft bg-transparent text-ink hover:border-ink-soft hover:bg-ink-soft hover:text-white",
     gold:
-      "border-brand-amber bg-[linear-gradient(135deg,#DFA767,#E8BC82)] text-ink hover:brightness-[1.04]",
+      "border-brand-amber bg-[linear-gradient(135deg,#2f6b4f,#4a8a6a)] text-ink hover:brightness-[1.04]",
     text: "border-transparent bg-transparent px-0 text-ink-soft hover:text-ink",
   };
 

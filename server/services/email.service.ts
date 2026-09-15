@@ -29,7 +29,7 @@ function htmlWrapper(title: string, body: string): string {
           <!-- Logo row -->
           <tr>
             <td style="padding-bottom:28px;">
-              <span style="font-size:13px;font-weight:700;letter-spacing:0.18em;color:#2B2B2B;">GATE</span>
+              <span style="font-size:13px;font-weight:700;letter-spacing:0.18em;color:#1E2422;">GATE</span>
             </td>
           </tr>
           <!-- Card -->
@@ -53,11 +53,11 @@ function htmlWrapper(title: string, body: string): string {
 }
 
 function accentDot(): string {
-  return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#DFA767;margin-right:8px;vertical-align:middle;"></span>`;
+  return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2F6B4F;margin-right:8px;vertical-align:middle;"></span>`;
 }
 
 function slotBox(slotText: string): string {
-  return `<div style="margin:20px 0;padding:14px 18px;background:#FFF9F2;border:1px solid #DFA767;border-radius:12px;font-size:14px;color:#2B2B2B;">
+  return `<div style="margin:20px 0;padding:14px 18px;background:#EEF5F1;border:1px solid #2F6B4F;border-radius:12px;font-size:14px;color:#1E2422;">
     ${accentDot()}<strong>${slotText}</strong>
   </div>`;
 }
@@ -123,8 +123,8 @@ export const emailService = {
     const body = params.requiresApproval
       ? `<p style="margin:0 0 8px;font-size:14px;color:#6B7280;">Hi ${params.visitorName},</p>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
-           <strong style="color:#2B2B2B;">${params.professionalName}</strong> will review your booking request for
-           <strong style="color:#2B2B2B;">${params.serviceTitle}</strong> and get back to you within 24 hours.
+           <strong style="color:#1E2422;">${params.professionalName}</strong> will review your booking request for
+           <strong style="color:#1E2422;">${params.serviceTitle}</strong> and get back to you within 24 hours.
          </p>
          ${slotBox(slot)}
          <p style="margin:0 0 24px;font-size:13px;color:#9CA3AF;">
@@ -132,8 +132,8 @@ export const emailService = {
          </p>`
       : `<p style="margin:0 0 8px;font-size:14px;color:#6B7280;">Hi ${params.visitorName},</p>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
-           Your booking with <strong style="color:#2B2B2B;">${params.professionalName}</strong> for
-           <strong style="color:#2B2B2B;">${params.serviceTitle}</strong> is confirmed.
+           Your booking with <strong style="color:#1E2422;">${params.professionalName}</strong> for
+           <strong style="color:#1E2422;">${params.serviceTitle}</strong> is confirmed.
            A calendar invite will arrive shortly.
          </p>
          ${slotBox(slot)}`;
@@ -147,9 +147,9 @@ export const emailService = {
       subject,
       html: htmlWrapper(
         subject,
-        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;line-height:1.2;">${headline}</h1>
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;line-height:1.2;">${headline}</h1>
          ${body}
-         <a href="${statusUrl}" style="display:inline-block;padding:12px 24px;background:#2B2B2B;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+         <a href="${statusUrl}" style="display:inline-block;padding:12px 24px;background:#1E2422;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
            View Booking Status
          </a>`,
       ),
@@ -181,17 +181,17 @@ export const emailService = {
       subject,
       html: htmlWrapper(
         subject,
-        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;">New booking request</h1>
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">New booking request</h1>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
-           <strong style="color:#2B2B2B;">${params.visitorName}</strong>
-           (<a href="mailto:${params.visitorEmail}" style="color:#DFA767;">${params.visitorEmail}</a>)
-           has requested a <strong style="color:#2B2B2B;">${params.serviceTitle}</strong> session.
+           <strong style="color:#1E2422;">${params.visitorName}</strong>
+           (<a href="mailto:${params.visitorEmail}" style="color:#2F6B4F;">${params.visitorEmail}</a>)
+           has requested a <strong style="color:#1E2422;">${params.serviceTitle}</strong> session.
          </p>
          ${slotBox(slot)}
          <p style="margin:0 0 24px;font-size:13px;color:#9CA3AF;">
            This slot is temporarily held while you review the request. Approve or decline from your dashboard.
          </p>
-         <a href="${approveUrl}" style="display:inline-block;padding:12px 24px;background:#DFA767;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+         <a href="${approveUrl}" style="display:inline-block;padding:12px 24px;background:#2F6B4F;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
            Review Request
          </a>`,
       ),
@@ -218,7 +218,7 @@ export const emailService = {
 
     const meetingSection = params.meetingUrl
       ? `<p style="margin:16px 0 0;font-size:14px;color:#6B7280;">
-           <a href="${params.meetingUrl}" style="color:#DFA767;font-weight:600;">Join meeting link →</a>
+           <a href="${params.meetingUrl}" style="color:#2F6B4F;font-weight:600;">Join meeting link →</a>
          </p>`
       : "";
 
@@ -228,18 +228,18 @@ export const emailService = {
       subject,
       html: htmlWrapper(
         subject,
-        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;">Your booking is confirmed! ✓</h1>
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">Your booking is confirmed! ✓</h1>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
            Hi ${params.visitorName}, your session with
-           <strong style="color:#2B2B2B;">${params.professionalName}</strong>
-           for <strong style="color:#2B2B2B;">${params.serviceTitle}</strong> has been confirmed.
+           <strong style="color:#1E2422;">${params.professionalName}</strong>
+           for <strong style="color:#1E2422;">${params.serviceTitle}</strong> has been confirmed.
          </p>
          ${slotBox(slot)}
          ${meetingSection}
          <p style="margin:20px 0 24px;font-size:13px;color:#9CA3AF;">
            A calendar invite has been sent. You can view your booking details below.
          </p>
-         <a href="${statusUrl}" style="display:inline-block;padding:12px 24px;background:#2B2B2B;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+         <a href="${statusUrl}" style="display:inline-block;padding:12px 24px;background:#1E2422;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
            View Booking Details
          </a>`,
       ),
@@ -269,15 +269,15 @@ export const emailService = {
       subject,
       html: htmlWrapper(
         subject,
-        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;">Booking confirmed ✓</h1>
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">Booking confirmed ✓</h1>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
-           <strong style="color:#2B2B2B;">${params.visitorName}</strong>
-           (<a href="mailto:${params.visitorEmail}" style="color:#DFA767;">${params.visitorEmail}</a>)
-           is confirmed for <strong style="color:#2B2B2B;">${params.serviceTitle}</strong>.
+           <strong style="color:#1E2422;">${params.visitorName}</strong>
+           (<a href="mailto:${params.visitorEmail}" style="color:#2F6B4F;">${params.visitorEmail}</a>)
+           is confirmed for <strong style="color:#1E2422;">${params.serviceTitle}</strong>.
            A calendar event has been added to your calendar.
          </p>
          ${slotBox(slot)}
-         <a href="${dashboardUrl}" style="display:inline-block;margin-top:8px;padding:12px 24px;background:#2B2B2B;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+         <a href="${dashboardUrl}" style="display:inline-block;margin-top:8px;padding:12px 24px;background:#1E2422;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
            View in Dashboard
          </a>`,
       ),
@@ -304,20 +304,20 @@ export const emailService = {
       subject,
       html: htmlWrapper(
         subject,
-        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;">Someone reached out directly</h1>
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">Someone reached out directly</h1>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
-           <strong style="color:#2B2B2B;">${params.visitorName}</strong>
-           (<a href="mailto:${params.visitorEmail}" style="color:#DFA767;">${params.visitorEmail}</a>)
-           was not a fit for <strong style="color:#2B2B2B;">${params.serviceTitle}</strong> but
+           <strong style="color:#1E2422;">${params.visitorName}</strong>
+           (<a href="mailto:${params.visitorEmail}" style="color:#2F6B4F;">${params.visitorEmail}</a>)
+           was not a fit for <strong style="color:#1E2422;">${params.serviceTitle}</strong> but
            left you a message:
          </p>
-         <blockquote style="margin:0 0 24px;padding:16px 20px;background:#FFF9F2;border-left:3px solid #DFA767;border-radius:0 12px 12px 0;font-size:14px;color:#2B2B2B;line-height:1.7;">
+         <blockquote style="margin:0 0 24px;padding:16px 20px;background:#EEF5F1;border-left:3px solid #2F6B4F;border-radius:0 12px 12px 0;font-size:14px;color:#1E2422;line-height:1.7;">
            ${params.message.replace(/\n/g, "<br />")}
          </blockquote>
          <p style="margin:0 0 24px;font-size:13px;color:#9CA3AF;">
            Reply directly to ${params.visitorEmail} if you&apos;d like to follow up.
          </p>
-         <a href="${leadsUrl}" style="display:inline-block;padding:12px 24px;background:#DFA767;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+         <a href="${leadsUrl}" style="display:inline-block;padding:12px 24px;background:#2F6B4F;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
            View Dashboard
          </a>`,
       ),
@@ -338,7 +338,7 @@ export const emailService = {
   }): Promise<void> {
     const firstName = params.professionalName.split(" ")[0];
     const link = (result: string, label: string) =>
-      `<a href="${params.outcomeUrl}?result=${result}" style="display:inline-block;margin:0 8px 8px 0;padding:10px 20px;background:#2B2B2B;color:#ffffff;text-decoration:none;border-radius:100px;font-size:13px;font-weight:600;">${label}</a>`;
+      `<a href="${params.outcomeUrl}?result=${result}" style="display:inline-block;margin:0 8px 8px 0;padding:10px 20px;background:#1E2422;color:#ffffff;text-decoration:none;border-radius:100px;font-size:13px;font-weight:600;">${label}</a>`;
 
     const subject = `Quick one — did ${params.visitorName} turn into a client?`;
     await sendEmail({
@@ -346,11 +346,11 @@ export const emailService = {
       subject,
       html: htmlWrapper(
         subject,
-        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;line-height:1.3;">Did it work out with ${params.visitorName}?</h1>
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;line-height:1.3;">Did it work out with ${params.visitorName}?</h1>
          <p style="margin:0 0 20px;font-size:14px;color:#6B7280;">
            Hi ${firstName}, a few days ago you had a call with
-           <strong style="color:#2B2B2B;">${params.visitorName}</strong>
-           for <strong style="color:#2B2B2B;">${params.serviceTitle}</strong>.
+           <strong style="color:#1E2422;">${params.visitorName}</strong>
+           for <strong style="color:#1E2422;">${params.serviceTitle}</strong>.
            Mind letting us know how it went? One click, no login needed.
          </p>
          <div>
@@ -388,17 +388,17 @@ export const emailService = {
            </ul>`;
 
     const rejectionSection = params.topRejectionReasons.length
-      ? `<h2 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:#2B2B2B;">Why people didn't make it through</h2>
+      ? `<h2 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:#1E2422;">Why people didn't make it through</h2>
          ${bulletList(params.topRejectionReasons)}`
       : "";
 
     const objectionSection = params.commonObjections.length
-      ? `<h2 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:#2B2B2B;">Objections that kept coming up</h2>
+      ? `<h2 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:#1E2422;">Objections that kept coming up</h2>
          ${bulletList(params.commonObjections)}`
       : "";
 
     const suggestionSection = params.suggestion
-      ? `<div style="margin:8px 0 0;padding:14px 18px;background:#FFF9F2;border:1px solid #DFA767;border-radius:12px;font-size:14px;color:#2B2B2B;line-height:1.7;">
+      ? `<div style="margin:8px 0 0;padding:14px 18px;background:#EEF5F1;border:1px solid #2F6B4F;border-radius:12px;font-size:14px;color:#1E2422;line-height:1.7;">
            <strong>Worth trying:</strong> ${params.suggestion}
          </div>`
       : "";
@@ -409,10 +409,10 @@ export const emailService = {
       subject,
       html: htmlWrapper(
         subject,
-        `<h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#2B2B2B;line-height:1.3;">This week's patterns</h1>
+        `<h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#1E2422;line-height:1.3;">This week's patterns</h1>
          <p style="margin:0 0 8px;font-size:14px;color:#6B7280;">
            Hi ${firstName}, your gate screened
-           <strong style="color:#2B2B2B;">${params.leadCount}</strong>
+           <strong style="color:#1E2422;">${params.leadCount}</strong>
            lead${params.leadCount === 1 ? "" : "s"} this week. Here's what stood out.
          </p>
          ${rejectionSection}
@@ -442,12 +442,12 @@ export const emailService = {
       subject,
       html: htmlWrapper(
         subject,
-        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#2B2B2B;">Request not accepted</h1>
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">Request not accepted</h1>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
            Hi ${params.visitorName}, unfortunately
-           <strong style="color:#2B2B2B;">${params.professionalName}</strong>
+           <strong style="color:#1E2422;">${params.professionalName}</strong>
            is unable to accept your request for
-           <strong style="color:#2B2B2B;">${params.serviceTitle}</strong>
+           <strong style="color:#1E2422;">${params.serviceTitle}</strong>
            at this time.
          </p>
          ${slotBox(slot)}

@@ -262,7 +262,7 @@ export default function ControlRoomPage() {
               type="button"
               onClick={handlePublish}
               disabled={isPublishing || isSaving}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#DFA767,#E8BC82)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#2f6b4f,#4a8a6a)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
             >
               {isPublishing ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />
@@ -301,7 +301,7 @@ function getEmptyProfile(): ProfileState {
     bio: "",
     avatarUrl: null,
     theme: {
-      accentColor: "#DFA767",
+      accentColor: "#2f6b4f",
       backgroundColor: "#F6F2EA",
     },
     services: [

@@ -132,7 +132,7 @@ function AuraButton({
     secondary:
       "border-warm-border-soft bg-transparent text-ink hover:border-ink-soft hover:bg-ink-soft hover:text-white",
     gold:
-      "border-brand-amber bg-[linear-gradient(135deg,#2f6b4f,#4a8a6a)] text-ink hover:brightness-[1.04]",
+      "border-brand-amber bg-[linear-gradient(135deg,#3d5a42,#779370)] text-ink hover:brightness-[1.04]",
     text: "border-transparent bg-transparent px-0 text-ink-soft hover:text-ink",
   };
 
@@ -148,7 +148,7 @@ function AuraButton({
 
 export default function MarketingHomePage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,79,0.16),transparent_28%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_25%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_28%,#f0f0ef_58%,#fbfbfb_100%)] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(61,90,66,0.16),transparent_28%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_25%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_28%,#f0f0ef_58%,#fbfbfb_100%)] text-ink">
       <header className="sticky top-0 z-50 bg-gray-50/70 backdrop-blur-xl">
         <nav className="mx-auto flex h-12 max-w-6xl items-center justify-between px-4 text-[12px] text-ink">
           <Link href="/" className="font-medium tracking-wide">
@@ -166,7 +166,7 @@ export default function MarketingHomePage() {
       </header>
 
       <section className="relative overflow-hidden text-center">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(47,107,79,0.18),transparent_34%),radial-gradient(circle_at_70%_35%,rgba(71,85,105,0.10),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.86)_0%,rgba(246,242,234,0.58)_58%,rgba(243,237,226,0.68)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(61,90,66,0.18),transparent_34%),radial-gradient(circle_at_70%_35%,rgba(71,85,105,0.10),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.86)_0%,rgba(246,242,234,0.58)_58%,rgba(243,237,226,0.68)_100%)]" />
 
         <div className="relative mx-auto max-w-4xl px-4 pb-20 pt-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-brand-amber">
@@ -203,7 +203,7 @@ export default function MarketingHomePage() {
 
       <section className="relative overflow-hidden px-4 py-16 text-center">
         <div className="mx-auto max-w-3xl">
-          <div className="relative overflow-hidden rounded-section bg-[radial-gradient(circle_at_bottom_right,rgba(47,107,79,0.16),transparent_32%),linear-gradient(145deg,#1B1B1B_0%,#252525_45%,#171717_100%)] px-8 py-10 text-warm-cream shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
+          <div className="relative overflow-hidden rounded-section bg-[radial-gradient(circle_at_bottom_right,rgba(61,90,66,0.16),transparent_32%),linear-gradient(145deg,#1B1B1B_0%,#252525_45%,#171717_100%)] px-8 py-10 text-warm-cream shadow-[0_18px_50px_rgba(0,0,0,0.16)]">
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.04),transparent_42%)]" />
 
             <div className="relative">
@@ -279,7 +279,7 @@ export default function MarketingHomePage() {
                   key={tier.name}
                   className={
                     isPro
-                      ? "relative overflow-hidden rounded-section bg-[radial-gradient(circle_at_top_left,rgba(47,107,79,0.18),transparent_34%),linear-gradient(145deg,#171717_0%,#282828_48%,#1B1B1B_100%)] px-7 py-8 text-warm-cream shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition duration-500 ease-out hover:brightness-[1.03]"
+                      ? "relative overflow-hidden rounded-section bg-[radial-gradient(circle_at_top_left,rgba(61,90,66,0.18),transparent_34%),linear-gradient(145deg,#171717_0%,#282828_48%,#1B1B1B_100%)] px-7 py-8 text-warm-cream shadow-[0_18px_50px_rgba(0,0,0,0.18)] transition duration-500 ease-out hover:brightness-[1.03]"
                       : "relative overflow-hidden rounded-section border border-warm-border/80 bg-[linear-gradient(145deg,#f0f0ef_0%,#f0f0ef_54%,#fcfcfb_100%)] px-7 py-8 shadow-[0_12px_34px_rgba(120,100,80,0.07)] transition duration-500 ease-out hover:brightness-[1.015]"
                   }
                 >

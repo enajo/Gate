@@ -3,7 +3,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,79,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_45%,#f0f0ef_100%)] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(61,90,66,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_45%,#f0f0ef_100%)] text-ink">
       <header className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 text-[13px]">
         <Link href="/" className="font-medium tracking-wide">
           GATE

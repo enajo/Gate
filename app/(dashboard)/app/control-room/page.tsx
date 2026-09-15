@@ -190,7 +190,7 @@ export default function ControlRoomPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,79,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)]">
+      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(61,90,66,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)]">
         <div className="flex flex-col items-center gap-3 text-gray-500">
           <Loader2 className="size-6 animate-spin text-brand-amber" />
           <p className="text-[13px]">Loading Control Room…</p>
@@ -202,7 +202,7 @@ export default function ControlRoomPage() {
   if (!draftProfile) return null;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,79,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(61,90,66,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)] text-ink">
       <section className="mx-auto max-w-5xl px-4 py-10">
         {/* Page header — a settings screen opened many times a day doesn't
             need marketing-hero energy; a calm, functional header with the
@@ -262,7 +262,7 @@ export default function ControlRoomPage() {
               type="button"
               onClick={handlePublish}
               disabled={isPublishing || isSaving}
-              className="inline-flex h-10 items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#2f6b4f,#4a8a6a)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center rounded-full border border-brand-amber bg-[linear-gradient(135deg,#3d5a42,#779370)] px-5 text-[14px] text-ink transition hover:brightness-[1.04] disabled:opacity-60"
             >
               {isPublishing ? (
                 <Loader2 className="mr-2 size-4 animate-spin" />
@@ -301,7 +301,7 @@ function getEmptyProfile(): ProfileState {
     bio: "",
     avatarUrl: null,
     theme: {
-      accentColor: "#2f6b4f",
+      accentColor: "#3d5a42",
       backgroundColor: "#fafafa",
     },
     services: [

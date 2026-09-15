@@ -97,7 +97,7 @@ export default async function LeadsPage({
   });
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,79,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(61,90,66,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)] text-ink">
       <div className="mx-auto max-w-4xl px-4 py-10">
 
         {/* Header */}

@@ -63,24 +63,27 @@
            border-[#E4DED4] → border-warm-border
   ───────────────────────────────────────────────────────────────────────── */
 
-  /* ── Emerald ── accent colour, icons, highlights
+  /* ── Moss ── accent colour, icons, highlights
      Was amber/gold (#DFA767) — replaced to differentiate from a competitor
-     using the same warm amber-on-cream palette (itself a common default,
-     not a distinctive choice). Token names kept as "brand-amber" to avoid
-     a mass rename across every usage site — only the values changed.
-     Two-tier: deep for primary buttons/real emphasis, light for hovers
-     and soft accents — previously one value did both jobs. */
-  --color-brand-amber:       #2f6b4f;
-  --color-brand-amber-light: #4a8a6a;
-  --color-brand-amber-faint: #eef5f1;
+     using the same warm amber-on-cream palette. Grounded in a single real
+     reference rather than an invented "emerald": a raven's feather — black
+     until light hits it at an angle, revealing a deep green underneath.
+     Token names kept as "brand-amber" to avoid a mass rename across every
+     usage site — only the values changed. Two-tier: deep for primary
+     buttons/real emphasis (the green revealed at an angle), light for
+     hovers/soft accents (the sheen where light catches it directly). */
+  --color-brand-amber:       #3d5a42;
+  --color-brand-amber-light: #779370;
+  --color-brand-amber-faint: #eef1ee;
 
   /* ── Ink ── dark text, filled backgrounds
      Consolidated from three competing near-blacks (#2b2b2b/#111827/#1a1a1a)
-     used interchangeably for the same role into one charcoal ink. Token
-     names kept for the same reason as above. */
-  --color-ink:       #1e2422;
-  --color-ink-deep:  #1e2422;
-  --color-ink-dark:  #1e2422;
+     into one. Grounded in the same reference as the accent above — true
+     black feather/obsidian has a warm undertone, not a cool blue-green
+     one, so this shifted slightly from the first emerald-era pass too. */
+  --color-ink:       #171614;
+  --color-ink-deep:  #171614;
+  --color-ink-dark:  #171614;
   --color-ink-slate: #334155;
   --color-ink-soft:  #475569;
 
@@ -113,7 +116,7 @@
   /* ── Status colours ── feedback, validation
      Success now rhymes with the brand accent instead of being an unrelated
      green; error deepened/muted instead of a bright stock red. */
-  --color-success:        #2f6b4f;
+  --color-success:        #3d5a42;
   --color-error:          #9a3b35;
   --color-error-bg:       #f6ecea;
   --color-error-bg-light: #faf3f2;

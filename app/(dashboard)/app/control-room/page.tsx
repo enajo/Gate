@@ -190,7 +190,7 @@ export default function ControlRoomPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)]">
+      <main className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,79,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)]">
         <div className="flex flex-col items-center gap-3 text-gray-500">
           <Loader2 className="size-6 animate-spin text-brand-amber" />
           <p className="text-[13px]">Loading Control Room…</p>
@@ -202,7 +202,7 @@ export default function ControlRoomPage() {
   if (!draftProfile) return null;
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_44%,#F3EDE2_100%)] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,79,0.16),transparent_30%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_44%,#f0f0ef_100%)] text-ink">
       <section className="mx-auto max-w-5xl px-4 py-10">
         {/* Page header — a settings screen opened many times a day doesn't
             need marketing-hero energy; a calm, functional header with the
@@ -302,7 +302,7 @@ function getEmptyProfile(): ProfileState {
     avatarUrl: null,
     theme: {
       accentColor: "#2f6b4f",
-      backgroundColor: "#F6F2EA",
+      backgroundColor: "#fafafa",
     },
     services: [
       {

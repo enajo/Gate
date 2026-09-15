@@ -20,7 +20,7 @@ const presets: ThemePreset[] = [
     id: "aura-light",
     name: "Aura Light",
     accentColor: "#2f6b4f",
-    backgroundColor: "#F6F2EA",
+    backgroundColor: "#fafafa",
   },
   {
     id: "studio-slate",
@@ -74,7 +74,7 @@ export function AppearanceSettings({
 
   const backgroundColor = isValidHex(profile.theme.backgroundColor)
     ? profile.theme.backgroundColor
-    : "#F6F2EA";
+    : "#fafafa";
 
   const isDark = getYiq(backgroundColor) < 135;
 

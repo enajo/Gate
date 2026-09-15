@@ -114,7 +114,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(223,167,103,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#F6F2EA_45%,#F3EDE2_100%)] text-ink">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_50%_0%,rgba(47,107,79,0.18),transparent_30%),radial-gradient(circle_at_85%_22%,rgba(71,85,105,0.10),transparent_26%),linear-gradient(180deg,#F9FAFB_0%,#fafafa_45%,#f0f0ef_100%)] text-ink">
       <header className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 text-[13px]">
         <Link href="/" className="font-medium tracking-wide">
           GATE
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
 
       <section className="mx-auto grid min-h-[calc(100vh-56px)] max-w-6xl items-center gap-12 px-4 py-12 lg:grid-cols-[1fr_0.9fr]">
         {/* ── Left: live preview ────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(223,167,103,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.58),rgba(243,237,226,0.82))] p-10 shadow-warm-2xl">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(circle_at_top_left,rgba(47,107,79,0.18),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.58),rgba(243,237,226,0.82))] p-10 shadow-warm-2xl">
           <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-brand-amber/20 blur-3xl" />
 
           <div className="relative">

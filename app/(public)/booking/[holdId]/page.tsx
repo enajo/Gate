@@ -80,7 +80,7 @@ export default async function BookingStatusPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#F9FAFB_0%,#F3EDE2_100%)] px-4 py-16">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#F9FAFB_0%,#f0f0ef_100%)] px-4 py-16">
       <div className="mx-auto max-w-md">
         {/* Logo */}
         <p className="mb-10 text-center text-xs font-bold uppercase tracking-[0.22em] text-ink">

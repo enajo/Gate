@@ -84,20 +84,23 @@
   --color-ink-slate: #334155;
   --color-ink-soft:  #475569;
 
-  /* ── Neutrals ── backgrounds, card fills (shifted from warm cream to
-     charcoal-adjacent neutral to match the new accent) */
-  --color-warm-cream:       #eef1ee;
-  --color-warm-cream-light: #f2f4f2;
-  --color-warm-cream-dark:  #e2e8e3;
-  --color-warm-stone:       #dde3de;
-  --color-warm-off-white:   #f8faf9;
+  /* ── Neutrals ── backgrounds, card fills
+     First pass shifted these to a pale green tint, which at this lightness
+     still read as "cream" rather than clean — moved to a near-white/light
+     neutral gray instead, so the charcoal ink and emerald accent carry the
+     color, not the background. */
+  --color-warm-cream:       #fafafa;
+  --color-warm-cream-light: #fbfbfb;
+  --color-warm-cream-dark:  #f0f0ef;
+  --color-warm-stone:       #e8e8e6;
+  --color-warm-off-white:   #fcfcfb;
 
   /* ── Borders ── outlines, dividers */
-  --color-warm-border:        #dbe2dd;
-  --color-warm-border-mid:    #e1e6e2;
-  --color-warm-border-soft:   #cdd6cf;
-  --color-warm-border-lighter:#cfd6d1;
-  --color-warm-gray:          #8b968e;
+  --color-warm-border:        #e2e2e0;
+  --color-warm-border-mid:    #e6e6e4;
+  --color-warm-border-soft:   #d4d4d1;
+  --color-warm-border-lighter:#d6d6d3;
+  --color-warm-gray:          #96968f;
 
   /* ── Text greys ── body copy, captions
      Previously Tailwind's stock cool blue-grays, clashing with the rest of
@@ -120,12 +123,12 @@
      SHADOWS  (all use the same warm rgba(120,100,80) tint)
      Usage:  shadow-[0_18px_50px_rgba(120,100,80,0.06)]  →  shadow-warm-sm
   ───────────────────────────────────────────────────────────────────────── */
-  --shadow-warm-xs: 0 4px 16px rgba(30, 45, 38, 0.05);
-  --shadow-warm-sm: 0 18px 50px rgba(30, 45, 38, 0.06);  /* 7 uses */
-  --shadow-warm-md: 0 18px 45px rgba(30, 45, 38, 0.10);  /* 3 uses */
-  --shadow-warm-lg: 0 22px 60px rgba(30, 45, 38, 0.12);  /* 3 uses */
-  --shadow-warm-xl: 0 24px 80px rgba(30, 45, 38, 0.13);  /* 2 uses */
-  --shadow-warm-2xl:0 28px 90px rgba(30, 45, 38, 0.14);  /* 3 uses */
+  --shadow-warm-xs: 0 4px 16px rgba(30, 30, 30, 0.05);
+  --shadow-warm-sm: 0 18px 50px rgba(30, 30, 30, 0.06);  /* 7 uses */
+  --shadow-warm-md: 0 18px 45px rgba(30, 30, 30, 0.10);  /* 3 uses */
+  --shadow-warm-lg: 0 22px 60px rgba(30, 30, 30, 0.12);  /* 3 uses */
+  --shadow-warm-xl: 0 24px 80px rgba(30, 30, 30, 0.13);  /* 2 uses */
+  --shadow-warm-2xl:0 28px 90px rgba(30, 30, 30, 0.14);  /* 3 uses */
 
   /* ─────────────────────────────────────────────────────────────────────────
      BORDER RADII  (named by where they're used, not the pixel value)

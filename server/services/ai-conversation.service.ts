@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { Lead } from "@prisma/client";
 import OpenAI from "openai";
 import { z, ZodError } from "zod";
 
@@ -11,6 +12,13 @@ import { logger } from "@/lib/logger";
 export type ConversationMessage = {
   role: "assistant" | "user";
   content: string;
+};
+
+export type LabeledExample = {
+  /** Short gist of the visitor's situation — a couple of their own answers, not the full transcript. */
+  situationSummary: string;
+  correctDecision: "QUALIFIED" | "REDIRECT" | "REJECTED";
+  note?: string | null;
 };
 
 export type ConversationServiceInput = {
@@ -30,7 +38,16 @@ export type ConversationServiceInput = {
   /** Full conversation so far (assistant + user turns, oldest first). */
   history: ConversationMessage[];
   visitorName: string;
+  /**
+   * The professional's own past reviews of this service's leads — real
+   * calibration, not a hypothetical rubric. Below a minimum sample size this
+   * is omitted entirely rather than risk overfitting the gate to one or two
+   * corrections.
+   */
+  labeledExamples?: LabeledExample[];
 };
+
+const MIN_LABELED_EXAMPLES = 3;
 
 export type ConversationTurn =
   | { type: "question"; message: string; tokensUsed: number }
@@ -76,8 +93,14 @@ const aiResponseSchema = z.discriminatedUnion("type", [
 // ── System prompt ─────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(input: ConversationServiceInput): string {
-  const { professionalName, professionalTitle, professionalBio, services, targetServiceId } =
-    input;
+  const {
+    professionalName,
+    professionalTitle,
+    professionalBio,
+    services,
+    targetServiceId,
+    labeledExamples,
+  } = input;
 
   const targetService = services.find((s) => s.id === targetServiceId);
   const coreServices = services.filter((s) => !s.directPurchaseUrl);
@@ -106,6 +129,16 @@ function buildSystemPrompt(input: ConversationServiceInput): string {
 
   const bioLine = professionalBio ? `\nBIO: ${professionalBio.trim()}\n` : "";
 
+  const calibrationBlock =
+    labeledExamples && labeledExamples.length >= MIN_LABELED_EXAMPLES
+      ? `\nRECENT CALIBRATION (this expert's own review of past calls for this service — weight these heavily, they're real corrections, not a hypothetical)\n────────────────────────────────────────────────\n${labeledExamples
+          .map((ex, i) => {
+            const noteSuffix = ex.note ? ` (note: "${ex.note.trim()}")` : "";
+            return `${i + 1}. "${ex.situationSummary.trim()}" → correct call: ${ex.correctDecision}${noteSuffix}`;
+          })
+          .join("\n")}\n────────────────────────────────────────────────\n`
+      : "";
+
   return `You are a screening assistant for ${professionalName}${professionalTitle ? `, ${professionalTitle}` : ""}.${bioLine}
 
 Your job is to run a short qualification conversation and return a strict PASS/FAIL decision for ${professionalName}'s calendar.
@@ -116,7 +149,7 @@ ${coreBlock}${altBlock}
 ────────────────────────────────────────────────
 ${personaBlock}
 ────────────────────────────────────────────────
-
+${calibrationBlock}
 HOW TO RUN THE CONVERSATION
 1. On the very first turn, warmly greet the visitor by name and ask one open question about their situation.
 2. Ask ONE question per turn. If an answer is vague, ask ONE targeted follow-up.
@@ -150,9 +183,73 @@ MESSAGE GUIDELINES
 • Never ask more than one question in a single turn`;
 }
 
+// ── Calibration examples ──────────────────────────────────────────────────────
+
+/**
+ * A short gist of the visitor's own answers from a past lead's stored
+ * transcript — not the full conversation, to keep the prompt (and token
+ * cost) bounded. Defensive about shape: `answersJson` varies depending on
+ * which path created the Lead (normal AI turn vs. the token-exhausted
+ * fail-open path), and is untyped JSON at the DB layer either way.
+ */
+function summarizeAnswers(answersJson: unknown): string | null {
+  if (!answersJson || typeof answersJson !== "object") return null;
+
+  const record = answersJson as Record<string, unknown>;
+  const conversationHistory = Array.isArray(record.conversationHistory)
+    ? record.conversationHistory
+    : Array.isArray(record.history)
+      ? record.history
+      : null;
+
+  if (!conversationHistory) return null;
+
+  const userAnswers = conversationHistory
+    .filter(
+      (m): m is { role: string; content: string } =>
+        !!m &&
+        typeof m === "object" &&
+        (m as { role?: unknown }).role === "user" &&
+        typeof (m as { content?: unknown }).content === "string",
+    )
+    .map((m) => m.content.trim())
+    .filter(Boolean);
+
+  if (userAnswers.length === 0) return null;
+
+  return userAnswers.slice(-2).join(" — ");
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const aiConversationService = {
+  /**
+   * Turns a service's professional-reviewed leads (see
+   * bookingRepository.findRecentLabeledLeadsForService) into calibration
+   * examples for the qualification prompt. Whether the professional agreed
+   * with or overrode the AI's original call doesn't matter here — either
+   * way `correctedResult` is the ground-truth label for that situation.
+   */
+  buildLabeledExamples(leads: Lead[]): LabeledExample[] {
+    return leads.flatMap((lead) => {
+      if (!lead.correctedResult || lead.correctedResult === "PENDING_REVIEW") {
+        return [];
+      }
+
+      const situationSummary = summarizeAnswers(lead.answersJson);
+      if (!situationSummary) return [];
+
+      return [
+        {
+          situationSummary,
+          correctDecision:
+            lead.correctedResult === "REDIRECTED" ? "REDIRECT" : lead.correctedResult,
+          note: lead.correctionNote,
+        },
+      ];
+    });
+  },
+
   async nextTurn(input: ConversationServiceInput): Promise<ConversationTurn> {
     if (!openai) {
       logger.warn("aiConversationService: OPENAI_API_KEY not set — auto-qualifying");

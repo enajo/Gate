@@ -113,6 +113,23 @@ export const bookingRepository = {
     });
   },
 
+  /**
+   * A service's most recent professional-reviewed leads — the calibration
+   * feedback loop. `correctedResult` is set whenever a professional confirms
+   * or overrides the AI's call (see submitLeadCorrection); either way it's
+   * ground truth the qualification prompt can learn from next time.
+   */
+  async findRecentLabeledLeadsForService(
+    serviceId: string,
+    limit = 6,
+  ): Promise<Lead[]> {
+    return db.lead.findMany({
+      where: { serviceId, correctedResult: { not: null } },
+      orderBy: [{ correctedAt: "desc" }],
+      take: limit,
+    });
+  },
+
   async createLead(data: Prisma.LeadCreateInput): Promise<Lead> {
     return db.lead.create({
       data,

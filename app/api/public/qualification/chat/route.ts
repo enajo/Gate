@@ -163,6 +163,13 @@ export async function POST(request: Request) {
       input.professionalId,
     );
 
+    // 4b. This service's own reviewed leads — real calibration feedback,
+    // see ai-conversation.service.ts's MIN_LABELED_EXAMPLES for the
+    // activation floor.
+    const labeledLeads = await bookingRepository.findRecentLabeledLeadsForService(
+      input.serviceId,
+    );
+
     // 5. Call the conversational AI
     const turn = await aiConversationService.nextTurn({
       professionalName: professional.fullName,
@@ -179,6 +186,7 @@ export async function POST(request: Request) {
       targetServiceId: input.serviceId,
       history: input.history,
       visitorName: input.name,
+      labeledExamples: aiConversationService.buildLabeledExamples(labeledLeads),
     });
 
     // 6. Deduct tokens — only when the AI actually called OpenAI

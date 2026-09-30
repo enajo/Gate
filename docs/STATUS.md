@@ -18,7 +18,7 @@ _Last updated: 2026-09-02_
 - **Auth** — Google OAuth; dev-email login disabled outside development
 - **Token-balance metering** — see `docs/decisions/0002-plan-tier-billing-model.md`
 - **Background jobs (manually triggered)** — hold expiry, event-creation retry, calendar sync, token health check, outcome follow-ups, pattern reports, monthly token-balance reset — see `docs/decisions/0004-background-jobs-deferred-inngest.md`
-- **Correction / override loop** — professional can mark an AI decision wrong on any lead, captured as structured data
+- **Correction / override loop, feeding the live gate** — professional can confirm or correct the AI's decision on any lead (`Lead.correctedResult`/`correctionNote`); a service's most recent reviewed leads are now also surfaced back into the qualification prompt itself as calibration examples (`aiConversationService.buildLabeledExamples`, active once a service has 3+ reviewed leads) — real feedback, not just captured data
 - **Low-friction outcome tracking** — one-click follow-up email + magic-link page, Won/Lost/No response, optional deal value
 - **AI Pattern Report** — weekly digest on rejection patterns, objections, and a suggested refinement, metered against the same token balance as the live gate
 - **Founder-facing admin overview + legal pages** — platform-wide stats at `/admin`; `/privacy` and `/terms` live and linked from the homepage footer

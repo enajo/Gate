@@ -166,7 +166,7 @@ export default function MarketingHomePage() {
       </header>
 
       <section className="relative overflow-hidden text-center">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(14,110,82,0.18),transparent_34%),radial-gradient(circle_at_70%_35%,rgba(71,85,105,0.10),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.86)_0%,rgba(246,242,234,0.58)_58%,rgba(243,237,226,0.68)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(14,110,82,0.18),transparent_34%),radial-gradient(circle_at_70%_35%,rgba(71,85,105,0.10),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.86)_0%,rgba(246,242,234,0.5)_55%,rgba(243,237,226,0)_100%)]" />
 
         <div className="relative mx-auto max-w-4xl px-4 pb-20 pt-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-brand-amber">

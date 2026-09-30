@@ -4,7 +4,7 @@ import { CalendarProvider, CalendarSyncStatus } from "@prisma/client";
 
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { googleCalendarService } from "@/server/services/google-calendar.service";
+import { calendarProviderService } from "@/server/services/calendar-provider.service";
 
 export type SyncGoogleCalendarsJobResult = {
   startedAt: string;
@@ -22,6 +22,7 @@ export type SyncGoogleCalendarsJobResult = {
   results: Array<{
     calendarAccountId: string;
     professionalId: string;
+    provider: CalendarProvider;
     calendarName: string | null;
     providerEmail: string | null;
     success: boolean;
@@ -56,7 +57,7 @@ function classifySyncError(error: unknown): {
   message: string;
 } {
   const message =
-    error instanceof Error ? error.message : "Unknown Google sync error.";
+    error instanceof Error ? error.message : "Unknown calendar sync error.";
 
   const lowered = message.toLowerCase();
 
@@ -100,7 +101,6 @@ export async function syncGoogleCalendarsJob(): Promise<SyncGoogleCalendarsJobRe
 
   const accounts = await db.calendarAccount.findMany({
     where: {
-      provider: CalendarProvider.GOOGLE,
       isActive: true,
       useForConflictCheck: true,
     },
@@ -108,6 +108,7 @@ export async function syncGoogleCalendarsJob(): Promise<SyncGoogleCalendarsJobRe
     select: {
       id: true,
       professionalId: true,
+      provider: true,
       calendarName: true,
       providerEmail: true,
       externalCalendarId: true,
@@ -117,7 +118,7 @@ export async function syncGoogleCalendarsJob(): Promise<SyncGoogleCalendarsJobRe
 
   const results: SyncGoogleCalendarsJobResult["results"] = [];
 
-  logger.info("Starting Google calendar reconciliation job.", {
+  logger.info("Starting calendar reconciliation job.", {
     accountCount: accounts.length,
     start: window.start.toISOString(),
     end: window.end.toISOString(),
@@ -125,13 +126,14 @@ export async function syncGoogleCalendarsJob(): Promise<SyncGoogleCalendarsJobRe
 
   for (const account of accounts) {
     try {
-      const busyRanges =
-        await googleCalendarService.getBusyRangesForCalendarAccount({
-          calendarAccountId: account.id,
+      const busyRanges = await calendarProviderService.getBusyRangesForAccount(
+        account,
+        {
           start: window.start,
           end: window.end,
           timezone: account.calendarTimeZone ?? "UTC",
-        });
+        },
+      );
 
       await markCalendarStatus({
         calendarAccountId: account.id,
@@ -142,6 +144,7 @@ export async function syncGoogleCalendarsJob(): Promise<SyncGoogleCalendarsJobRe
       results.push({
         calendarAccountId: account.id,
         professionalId: account.professionalId,
+        provider: account.provider,
         calendarName: account.calendarName,
         providerEmail: account.providerEmail,
         success: true,
@@ -157,7 +160,7 @@ export async function syncGoogleCalendarsJob(): Promise<SyncGoogleCalendarsJobRe
         successful: false,
       });
 
-      logger.error("Google calendar reconciliation failed.", {
+      logger.error("Calendar reconciliation failed.", {
         calendarAccountId: account.id,
         professionalId: account.professionalId,
         calendar: getCalendarLabel(account),
@@ -167,6 +170,7 @@ export async function syncGoogleCalendarsJob(): Promise<SyncGoogleCalendarsJobRe
       results.push({
         calendarAccountId: account.id,
         professionalId: account.professionalId,
+        provider: account.provider,
         calendarName: account.calendarName,
         providerEmail: account.providerEmail,
         success: false,
@@ -196,7 +200,7 @@ export async function syncGoogleCalendarsJob(): Promise<SyncGoogleCalendarsJobRe
     results,
   };
 
-  logger.info("Finished Google calendar reconciliation job.", summary.totals);
+  logger.info("Finished calendar reconciliation job.", summary.totals);
 
   return summary;
 }

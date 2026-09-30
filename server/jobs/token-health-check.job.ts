@@ -4,7 +4,7 @@ import { CalendarProvider, CalendarSyncStatus } from "@prisma/client";
 
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { googleCalendarService } from "@/server/services/google-calendar.service";
+import { calendarProviderService } from "@/server/services/calendar-provider.service";
 
 export type TokenHealthCheckJobResult = {
   startedAt: string;
@@ -62,9 +62,8 @@ export async function tokenHealthCheckJob(): Promise<TokenHealthCheckJobResult> 
 
   logger.info("Starting token health check job.");
 
-  const googleAccounts = await db.calendarAccount.findMany({
+  const accounts = await db.calendarAccount.findMany({
     where: {
-      provider: CalendarProvider.GOOGLE,
       isActive: true,
     },
     orderBy: [{ professionalId: "asc" }, { updatedAt: "asc" }],
@@ -80,10 +79,9 @@ export async function tokenHealthCheckJob(): Promise<TokenHealthCheckJobResult> 
 
   const results: TokenHealthCheckJobResult["results"] = [];
 
-  for (const account of googleAccounts) {
+  for (const account of accounts) {
     try {
-      await googleCalendarService.getBusyRangesForCalendarAccount({
-        calendarAccountId: account.id,
+      await calendarProviderService.getBusyRangesForAccount(account, {
         start: new Date(),
         end: new Date(Date.now() + 60 * 60 * 1000),
         timezone: account.calendarTimeZone ?? "UTC",

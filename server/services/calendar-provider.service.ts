@@ -121,10 +121,24 @@ export const calendarProviderService = {
 
     throw unsupportedProviderError(account);
   },
+
+  /**
+   * Busy ranges for one specific account, dispatched by provider. Exported
+   * (rather than kept as the private helper below) so callers that need a
+   * single account's status — reconciliation/health-check jobs, not just
+   * getMergedBusyRanges above — can also go through the abstraction instead
+   * of importing a provider service directly.
+   */
+  async getBusyRangesForAccount(
+    account: Pick<CalendarAccount, "id" | "provider">,
+    params: { start: Date | string; end: Date | string; timezone: string },
+  ): Promise<MergedBusyRange[]> {
+    return getBusyRangesForAccount(account, params);
+  },
 };
 
 async function getBusyRangesForAccount(
-  account: CalendarAccount,
+  account: Pick<CalendarAccount, "id" | "provider">,
   params: { start: Date | string; end: Date | string; timezone: string },
 ): Promise<MergedBusyRange[]> {
   if (account.provider === GOOGLE_PROVIDER) {

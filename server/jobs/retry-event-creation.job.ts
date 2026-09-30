@@ -5,7 +5,7 @@ import { BookingStatus, CalendarProvider, CalendarSyncStatus } from "@prisma/cli
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { bookingService } from "@/server/services/booking.service";
-import { googleCalendarService } from "@/server/services/google-calendar.service";
+import { calendarProviderService } from "@/server/services/calendar-provider.service";
 import { googleRepository } from "@/server/repositories/google.repository";
 
 export type RetryEventCreationJobResult = {
@@ -59,11 +59,10 @@ function buildEventTitle(booking: RetryableBookingCandidate) {
   return booking.service?.title || "Booked session";
 }
 
-async function findDefaultGoogleCalendarAccount(professionalId: string) {
+async function findDefaultCalendarAccount(professionalId: string) {
   return db.calendarAccount.findFirst({
     where: {
       professionalId,
-      provider: CalendarProvider.GOOGLE,
       isActive: true,
       isDefaultEventCalendar: true,
       syncStatus: {
@@ -121,7 +120,7 @@ export async function retryEventCreationJob(): Promise<RetryEventCreationJobResu
 
   for (const booking of bookings) {
     try {
-      const defaultCalendar = await findDefaultGoogleCalendarAccount(
+      const defaultCalendar = await findDefaultCalendarAccount(
         booking.professionalId,
       );
 
@@ -132,7 +131,7 @@ export async function retryEventCreationJob(): Promise<RetryEventCreationJobResu
           leadId: booking.leadId,
           success: false,
           skipped: true,
-          reason: "No active default Google event calendar found.",
+          reason: "No active default event calendar found.",
         });
         continue;
       }
@@ -153,8 +152,9 @@ export async function retryEventCreationJob(): Promise<RetryEventCreationJobResu
 
       await bookingService.markEventCreationPending(booking.id);
 
-      const createdEvent =
-        await googleCalendarService.createCalendarEvent({
+      const createdEvent = await calendarProviderService.createEvent(
+        defaultCalendar,
+        {
           calendarAccountId: defaultCalendar.id,
           title: buildEventTitle(booking),
           start: booking.slotStart,
@@ -174,7 +174,8 @@ export async function retryEventCreationJob(): Promise<RetryEventCreationJobResu
             .filter(Boolean)
             .join("\n"),
           conferenceDataVersion: 1,
-        });
+        },
+      );
 
       // Record the calendar event and update booking status
       await googleRepository.createCalendarEventForBooking(

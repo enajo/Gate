@@ -74,6 +74,8 @@ export async function sendPatternReportsJob(): Promise<SendPatternReportsJobResu
           qualificationResult: lead.qualificationResult,
           correctedResult: lead.correctedResult,
           conversationHistory: answers?.conversationHistory,
+          referrer: lead.referrer,
+          utmSource: lead.utmSource,
         };
       });
 
@@ -86,10 +88,16 @@ export async function sendPatternReportsJob(): Promise<SendPatternReportsJobResu
         await profileRepository.deductTokenBalance(professionalId, report.tokensUsed);
       }
 
+      // A channel breakdown is only worth showing once there's more than
+      // one channel to compare — a single-channel week has nothing to
+      // contrast against.
+      const hasChannelSignal = new Set(report.channelBreakdown.map((c) => c.channel)).size > 1;
+
       const hasContent =
         report.topRejectionReasons.length > 0 ||
         report.commonObjections.length > 0 ||
-        report.suggestion.trim().length > 0;
+        report.suggestion.trim().length > 0 ||
+        hasChannelSignal;
 
       if (!hasContent) {
         skippedEmptyReport += 1;
@@ -103,6 +111,7 @@ export async function sendPatternReportsJob(): Promise<SendPatternReportsJobResu
         topRejectionReasons: report.topRejectionReasons,
         commonObjections: report.commonObjections,
         suggestion: report.suggestion,
+        channelBreakdown: hasChannelSignal ? report.channelBreakdown : [],
       });
 
       sent += 1;

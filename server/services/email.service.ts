@@ -377,6 +377,12 @@ export const emailService = {
     topRejectionReasons: string[];
     commonObjections: string[];
     suggestion: string;
+    channelBreakdown: Array<{
+      channel: string;
+      leadCount: number;
+      qualifiedCount: number;
+      qualifiedRate: number;
+    }>;
   }): Promise<void> {
     const firstName = params.professionalName.split(" ")[0];
 
@@ -403,6 +409,23 @@ export const emailService = {
          </div>`
       : "";
 
+    const channelRows = params.channelBreakdown
+      .slice(0, 5)
+      .map((c) => {
+        const pct = Math.round(c.qualifiedRate * 100);
+        return `<tr>
+          <td style="padding:6px 0;font-size:14px;color:#1E2422;">${c.channel}</td>
+          <td style="padding:6px 0;font-size:14px;color:#6B7280;text-align:right;">${c.leadCount} lead${c.leadCount === 1 ? "" : "s"}</td>
+          <td style="padding:6px 0 6px 12px;font-size:14px;color:#0E6E52;font-weight:600;text-align:right;">${pct}% qualified</td>
+        </tr>`;
+      })
+      .join("");
+
+    const channelSection = params.channelBreakdown.length
+      ? `<h2 style="margin:24px 0 8px;font-size:14px;font-weight:700;color:#1E2422;">Where your best leads come from</h2>
+         <table style="width:100%;border-collapse:collapse;margin:0 0 20px;">${channelRows}</table>`
+      : "";
+
     const subject = `Your weekly gate report — ${params.leadCount} lead${params.leadCount === 1 ? "" : "s"} screened`;
     await sendEmail({
       to: params.to,
@@ -417,6 +440,7 @@ export const emailService = {
          </p>
          ${rejectionSection}
          ${objectionSection}
+         ${channelSection}
          ${suggestionSection}`,
       ),
     });

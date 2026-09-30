@@ -3,6 +3,8 @@
 import * as React from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
+import { getLeadSourceLabel } from "@/lib/lead-source";
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type ChatMessage = { role: "assistant" | "user"; content: string };
@@ -92,21 +94,6 @@ function formatDateTime(value: Date | string) {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-/** Best-effort label for where this visitor came from — never fails on a malformed referrer. */
-function getSourceLabel(lead: Pick<LeadRow, "referrer" | "utmSource">) {
-  if (lead.utmSource) return lead.utmSource;
-
-  if (lead.referrer) {
-    try {
-      return new URL(lead.referrer).hostname.replace(/^www\./, "");
-    } catch {
-      // malformed/relative referrer — fall through to "Direct"
-    }
-  }
-
-  return "Direct";
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -253,7 +240,7 @@ function VisitPath({ visits }: { visits: VisitRow[] }) {
             className="flex items-center justify-between gap-3 rounded-[0.75rem] border border-warm-border-soft bg-white/60 px-3.5 py-2 text-[12px]"
           >
             <span className="text-gray-500">
-              {i + 1}. via <span className="font-medium text-ink">{getSourceLabel(visit)}</span>
+              {i + 1}. via <span className="font-medium text-ink">{getLeadSourceLabel(visit)}</span>
               {visit.landingPath ? (
                 <span className="text-gray-400"> · {visit.landingPath}</span>
               ) : null}
@@ -348,7 +335,7 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
         <div className="hidden shrink-0 text-right sm:block">
           <p className="text-[13px] text-gray-500">{lead.service.title}</p>
           <p className="mt-0.5 text-[11px] text-gray-400">
-            {formatDate(lead.createdAt)} · via {getSourceLabel(lead)}
+            {formatDate(lead.createdAt)} · via {getLeadSourceLabel(lead)}
           </p>
         </div>
       </button>

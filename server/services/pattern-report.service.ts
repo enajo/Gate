@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
+import { getLeadSourceLabel } from "@/lib/lead-source";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -12,12 +13,22 @@ export type PatternReportLeadInput = {
   qualificationResult: string;
   correctedResult?: string | null;
   conversationHistory?: Array<{ role: string; content: string }>;
+  referrer?: string | null;
+  utmSource?: string | null;
+};
+
+export type ChannelBreakdown = {
+  channel: string;
+  leadCount: number;
+  qualifiedCount: number;
+  qualifiedRate: number;
 };
 
 export type PatternReport = {
   topRejectionReasons: string[];
   commonObjections: string[];
   suggestion: string;
+  channelBreakdown: ChannelBreakdown[];
   tokensUsed: number;
 };
 
@@ -25,8 +36,54 @@ const EMPTY_REPORT: PatternReport = {
   topRejectionReasons: [],
   commonObjections: [],
   suggestion: "",
+  channelBreakdown: [],
   tokensUsed: 0,
 };
+
+// ── Channel breakdown (deterministic — no AI call, no token cost) ─────────────
+
+// A channel with only one or two leads in a week is too small a sample for
+// its qualified rate to mean anything — still counted, just sorted below
+// channels with real volume rather than let a lucky single lead read as
+// "this channel is 100% qualified."
+const MIN_LEADS_FOR_RELIABLE_RATE = 3;
+
+/**
+ * Which channel sends people this professional's AI actually qualifies —
+ * not just which channel sends the most traffic. Reuses the same
+ * corrected-result-takes-precedence rule as buildPrompt() below: a
+ * professional's own correction is closer to ground truth than the AI's
+ * original call.
+ */
+export function buildChannelBreakdown(
+  leads: PatternReportLeadInput[],
+): ChannelBreakdown[] {
+  const byChannel = new Map<string, { leadCount: number; qualifiedCount: number }>();
+
+  for (const lead of leads) {
+    const channel = getLeadSourceLabel(lead);
+    const effectiveResult = lead.correctedResult ?? lead.qualificationResult;
+
+    const stats = byChannel.get(channel) ?? { leadCount: 0, qualifiedCount: 0 };
+    stats.leadCount += 1;
+    if (effectiveResult === "QUALIFIED") stats.qualifiedCount += 1;
+    byChannel.set(channel, stats);
+  }
+
+  return Array.from(byChannel.entries())
+    .map(([channel, stats]) => ({
+      channel,
+      leadCount: stats.leadCount,
+      qualifiedCount: stats.qualifiedCount,
+      qualifiedRate: stats.qualifiedCount / stats.leadCount,
+    }))
+    .sort((a, b) => {
+      const aReliable = a.leadCount >= MIN_LEADS_FOR_RELIABLE_RATE;
+      const bReliable = b.leadCount >= MIN_LEADS_FOR_RELIABLE_RATE;
+      if (aReliable !== bReliable) return aReliable ? -1 : 1;
+      return b.leadCount - a.leadCount;
+    });
+}
 
 // ── OpenAI client ─────────────────────────────────────────────────────────────
 
@@ -88,9 +145,14 @@ export const patternReportService = {
     professionalName: string,
     leads: PatternReportLeadInput[],
   ): Promise<PatternReport> {
+    // Deterministic and free — computed regardless of whether the AI
+    // narrative below runs at all, so a missing/exhausted OpenAI key never
+    // blocks this part of the report.
+    const channelBreakdown = buildChannelBreakdown(leads);
+
     if (!openai) {
       logger.warn("patternReportService: OPENAI_API_KEY not set — skipping");
-      return EMPTY_REPORT;
+      return { ...EMPTY_REPORT, channelBreakdown };
     }
 
     if (leads.length === 0) return EMPTY_REPORT;
@@ -115,16 +177,16 @@ export const patternReportService = {
         parsed = JSON.parse(raw);
       } catch {
         logger.error("patternReportService: model returned non-JSON", { raw });
-        return { ...EMPTY_REPORT, tokensUsed };
+        return { ...EMPTY_REPORT, channelBreakdown, tokensUsed };
       }
 
       const validated = reportResponseSchema.parse(parsed);
-      return { ...validated, tokensUsed };
+      return { ...validated, channelBreakdown, tokensUsed };
     } catch (error) {
       logger.error("patternReportService: generation failed", {
         error: error instanceof Error ? error.message : String(error),
       });
-      return EMPTY_REPORT;
+      return { ...EMPTY_REPORT, channelBreakdown };
     }
   },
 };

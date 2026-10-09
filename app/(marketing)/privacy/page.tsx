@@ -62,7 +62,23 @@ export default function PrivacyPage() {
                 assistant — this is stored so the professional can review it,
                 and is what powers the qualification decision
               </li>
+              <li>
+                If the professional reviews and corrects that decision, an
+                anonymized summary of the conversation may later be shown to
+                the AI as a calibration example when it screens other
+                visitors for the same service — never your name or email,
+                just the substance of the situation
+              </li>
               <li>Which page referred you here, if any (for the professional&apos;s own reporting)</li>
+              <li>
+                A cookie called <code>gate_visitor_id</code> — a random
+                identifier, set by Gate itself (not a third party), that
+                lasts up to one year. It links your visits to a
+                professional&apos;s page together so that, if you go on to
+                start a conversation, the professional can see how you found
+                them. It isn&apos;t used for advertising or shared with
+                anyone else.
+              </li>
             </ul>
           </section>
 

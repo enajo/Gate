@@ -382,6 +382,13 @@ export function ConversationGate({
           {professionalName} only works with the right clients.
         </p>
 
+        <p
+          className="mt-2 text-[12px]"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          You&apos;ll be chatting with Gate&apos;s AI screening assistant, not {professionalName} directly.
+        </p>
+
         <form className="mt-8 space-y-4" onSubmit={handleIdentitySubmit}>
           <div className="space-y-1.5">
             <label className="block text-[14px] font-medium">Your name *</label>

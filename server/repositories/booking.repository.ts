@@ -155,6 +155,21 @@ export const bookingRepository = {
     });
   },
 
+  /** Confirmed bookings starting within the reminder window that haven't had a reminder sent yet. */
+  async findBookingsNeedingReminder(
+    windowStart: Date,
+    windowEnd: Date,
+  ): Promise<BookingForOutcomeFollowUp[]> {
+    return db.booking.findMany({
+      where: {
+        status: { in: ["CONFIRMED", "EVENT_CREATION_PENDING", "EVENT_CREATED"] },
+        slotStart: { gte: windowStart, lte: windowEnd },
+        reminderSentAt: null,
+      },
+      include: bookingForOutcomeFollowUpInclude,
+    });
+  },
+
   /** Confirmed bookings whose call has passed and whose lead hasn't been asked about the outcome yet. */
   async findBookingsPendingOutcomeFollowUp(
     cutoff: Date,

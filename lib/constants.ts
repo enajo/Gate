@@ -12,6 +12,11 @@ export const MAX_QUALIFICATION_QUESTIONS = 5;
 export const DEFAULT_MAX_BOOKINGS_PER_DAY = 10;
 export const LOW_TOKEN_BALANCE_THRESHOLD = 500;
 export const OUTCOME_FOLLOW_UP_DELAY_DAYS = 3;
+// Lead time is the single strongest, most-replicated predictor of no-shows —
+// same-day bookings run roughly 2% no-show vs. up to 33% for bookings 15+
+// days out. A single fixed reminder window (not configurable per professional)
+// keeps this simple while still catching the vast majority of bookings.
+export const BOOKING_REMINDER_HOURS_BEFORE = 24;
 
 // Plan tiers — limits live in code, not the database, so pricing can change
 // without a migration. maxActiveServices: null means unlimited.

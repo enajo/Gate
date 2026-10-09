@@ -481,6 +481,8 @@ model Booking {
   status               BookingStatus        @default(PENDING_CODE)
   codeValidationStatus CodeValidationStatus @default(PENDING) @map("code_validation_status")
   calendarStatus       CalendarStatus       @default(PENDING) @map("calendar_status")
+  /** Set once the pre-appointment reminder email has gone out — prevents a duplicate send, not a feature toggle. */
+  reminderSentAt       DateTime?            @map("reminder_sent_at")
   createdAt            DateTime             @default(now()) @map("created_at")
   updatedAt            DateTime             @updatedAt @map("updated_at")
 

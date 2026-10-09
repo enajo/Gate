@@ -247,6 +247,58 @@ export const emailService = {
   },
 
   /**
+   * Sent to the visitor ahead of their confirmed booking — see
+   * BOOKING_REMINDER_HOURS_BEFORE. Framed around the slot being reserved
+   * specifically for them rather than a generic reminder: specific,
+   * loss-framed reminder copy measurably outperforms neutral copy.
+   */
+  async sendBookingReminderVisitor(params: {
+    to: string;
+    visitorName: string;
+    professionalName: string;
+    serviceTitle: string;
+    slotStart: Date;
+    slotEnd: Date;
+    timezone: string;
+    holdId: string;
+    meetingUrl?: string | null;
+    appUrl: string;
+  }): Promise<void> {
+    const slot = formatSlot(params.slotStart, params.slotEnd, params.timezone);
+    const statusUrl = `${params.appUrl}/booking/${params.holdId}`;
+
+    const meetingSection = params.meetingUrl
+      ? `<p style="margin:16px 0 0;font-size:14px;color:#6B7280;">
+           <a href="${params.meetingUrl}" style="color:#7B1E3A;font-weight:600;">Join meeting link →</a>
+         </p>`
+      : "";
+
+    const subject = `Reminder — your session with ${params.professionalName} is coming up`;
+    await sendEmail({
+      to: params.to,
+      subject,
+      html: htmlWrapper(
+        subject,
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">This time is reserved for you</h1>
+         <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
+           Hi ${params.visitorName}, a quick reminder — your session with
+           <strong style="color:#1E2422;">${params.professionalName}</strong>
+           for <strong style="color:#1E2422;">${params.serviceTitle}</strong> is coming up.
+           ${params.professionalName} has set this time aside for you specifically.
+         </p>
+         ${slotBox(slot)}
+         ${meetingSection}
+         <p style="margin:20px 0 24px;font-size:13px;color:#9CA3AF;">
+           Can't make it? Let them know as early as you can so the slot can go to someone else.
+         </p>
+         <a href="${statusUrl}" style="display:inline-block;padding:12px 24px;background:#1E2422;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+           View Booking Details
+         </a>`,
+      ),
+    });
+  },
+
+  /**
    * Sent to the professional when a booking is confirmed (auto or manual).
    */
   async sendBookingConfirmedProfessional(params: {

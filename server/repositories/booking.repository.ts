@@ -148,6 +148,32 @@ export const bookingRepository = {
     });
   },
 
+  /**
+   * Atomically claims the right to send a ghost-return alert for this lead:
+   * succeeds only if no alert went out since `cooldownStart`, and stamps
+   * `now` in the same statement — so two visits arriving together can't
+   * both send one.
+   */
+  async claimGhostReturnAlert(
+    leadId: string,
+    now: Date,
+    cooldownStart: Date,
+  ): Promise<boolean> {
+    const result = await db.lead.updateMany({
+      where: {
+        id: leadId,
+        outcome: "NO_RESPONSE",
+        OR: [
+          { ghostReturnAlertedAt: null },
+          { ghostReturnAlertedAt: { lt: cooldownStart } },
+        ],
+      },
+      data: { ghostReturnAlertedAt: now },
+    });
+
+    return result.count === 1;
+  },
+
   async updateLeadById(id: string, data: Prisma.LeadUpdateInput): Promise<Lead> {
     return db.lead.update({
       where: { id },

@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 
 import { generateRandomToken } from "@/lib/crypto";
 import { logger } from "@/lib/logger";
 import { getClientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { visitRepository } from "@/server/repositories/visit.repository";
+import { ghostRecoveryService } from "@/server/services/ghost-recovery.service";
 
 const VISITOR_COOKIE = "gate_visitor_id";
 const VISITOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
       });
     }
 
-    await visitRepository.createVisit({
+    const visit = await visitRepository.createVisit({
       professionalId: input.professionalId,
       visitorId,
       referrer: input.referrer ?? null,
@@ -55,6 +56,17 @@ export async function POST(request: Request) {
       utmCampaign: input.utmCampaign ?? null,
       landingPath: input.landingPath ?? null,
     });
+
+    // After the response: the visitor never waits on a lookup + email.
+    after(() =>
+      ghostRecoveryService.handleVisit({
+        visitId: visit.id,
+        professionalId: input.professionalId,
+        visitorId: visitorId,
+        referrer: input.referrer ?? null,
+        utmSource: input.utmSource ?? null,
+      }),
+    );
 
     return NextResponse.json({ ok: true });
   } catch (error) {

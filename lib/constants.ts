@@ -110,3 +110,7 @@ export const NOTIFICATION_RECIPIENT_TYPES = [
 ] as const;
 
 export const THEME_OPTIONS = ["light", "dark", "system"] as const;
+// A "no response" lead coming back to a professional's page is a real
+// re-engagement signal, but one alert per return spree is enough — a ghost
+// browsing three pages in an afternoon shouldn't send three emails.
+export const GHOST_RETURN_ALERT_COOLDOWN_DAYS = 7;

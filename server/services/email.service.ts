@@ -453,6 +453,69 @@ export const emailService = {
   },
 
   /**
+   * Ghost recovery: a lead the professional marked "haven't heard back"
+   * just returned to their page. A specific, timely reason to reach out —
+   * Gate tells the professional, it never contacts the visitor itself.
+   */
+  async sendGhostReturnedProfessional(params: {
+    to: string;
+    professionalName: string;
+    visitorName: string;
+    visitorEmail: string;
+    serviceTitle: string;
+    /** When the professional marked the lead NO_RESPONSE, if known. */
+    markedNoResponseAt: Date | null;
+    /** e.g. "linkedin.com", "newsletter", "Direct". */
+    returnSource: string;
+    appUrl: string;
+  }): Promise<void> {
+    const firstName = escapeHtml(params.professionalName.split(" ")[0]);
+    const visitorName = escapeHtml(params.visitorName);
+    const visitorEmail = escapeHtml(params.visitorEmail);
+    const serviceTitle = escapeHtml(params.serviceTitle);
+    const leadsUrl = `${params.appUrl}/app/leads`;
+
+    const daysAgo = params.markedNoResponseAt
+      ? Math.max(
+          1,
+          Math.round((Date.now() - params.markedNoResponseAt.getTime()) / 86_400_000),
+        )
+      : null;
+    const whenMarked = daysAgo
+      ? ` ${daysAgo} day${daysAgo === 1 ? "" : "s"} ago`
+      : "";
+    const via =
+      params.returnSource === "Direct"
+        ? "directly"
+        : `via ${escapeHtml(params.returnSource)}`;
+
+    const subject = `${params.visitorName} came back to your page`;
+    await sendEmail({
+      to: params.to,
+      subject,
+      html: htmlWrapper(
+        escapeHtml(subject),
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;line-height:1.3;">${visitorName} came back</h1>
+         <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
+           Hi ${firstName}, you marked
+           <strong style="color:#1E2422;">${visitorName}</strong>
+           (${serviceTitle}) as &ldquo;haven&apos;t heard back&rdquo;${whenMarked}.
+           They just visited your page again, ${via}.
+         </p>
+         <p style="margin:0 0 24px;font-size:14px;color:#6B7280;">
+           People rarely come back without a reason. This could be a good moment for a short, personal follow-up.
+         </p>
+         <a href="mailto:${visitorEmail}" style="display:inline-block;margin:0 8px 8px 0;padding:12px 24px;background:#7B1E3A;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+           Email ${visitorName}
+         </a>
+         <a href="${leadsUrl}" style="display:inline-block;margin:0 8px 8px 0;padding:12px 24px;background:#1E2422;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+           View their path
+         </a>`,
+      ),
+    });
+  },
+
+  /**
    * Weekly digest for the professional: patterns across recent AI-screened
    * leads — why people are getting rejected, what objections keep coming up,
    * and a concrete suggestion for tightening their ideal-client description.

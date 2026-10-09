@@ -7,7 +7,7 @@ commit as the feature it describes.
 
 _Last updated: 2026-10-09_
 
-## Already built (24)
+## Already built (25)
 
 - **Core AI qualification gate** — conversational screening, QUALIFIED / REDIRECT / REJECTED
 - **Gate-setup compiler** — turns an expert's 4 answers into a qualification prompt + sample conversation
@@ -30,16 +30,16 @@ _Last updated: 2026-10-09_
 - **Pre-call briefing** — AI summary of a lead's qualification transcript, cached on the Lead, surfaced in the Bookings dialog before a call. Built ahead of the interview-validation question per direct instruction — worth confirming it's actually wanted once those interviews happen.
 - **Visitor warm-up note** (`visitor-warmup.service.ts`) — the briefing's mirror image: the same qualification transcript, turned into a short "Before your call" section in the *visitor's* booking confirmation email (restates their situation with the concrete details they gave, plus up to 3 things to have ready). Built into the existing confirmation rather than a second email. Generated in `postConfirmAsync` alongside calendar event creation, metered against the token balance and skipped once it's exhausted, and skipped without an AI call when the visitor wrote under 80 characters (the model otherwise writes generic filler). Fails open to the plain confirmation; AI text is HTML-escaped
 - **Ghost recovery** (`ghost-recovery.service.ts`) — when a lead the professional marked `NO_RESPONSE` comes back to their page (same `gate_visitor_id` browser), the return visit is linked onto the lead's path and the professional gets a "came back" email with how they returned and a one-click email link. Gate never contacts the visitor itself. Runs via `after()` in `/api/public/visits` so the visitor never waits; one alert per lead per `GHOST_RETURN_ALERT_COOLDOWN_DAYS` (7), claimed atomically via `Lead.ghostReturnAlertedAt` so concurrent visits can't double-send. Fails silently
+- **Protected time (shadow calendaring, protective-only)** — Control Room "Protected time" card (`protected-time-settings.tsx`): a professional claims a range for a stated goal and Gate never offers it as bookable, even inside weekly hours. Backed by the existing `BlockedDate` model, which slot generation already treated as busy (professional buffers apply to it like any busy range); the UI for it had only lived on the orphaned `/app/availability` page. Times are entered in the profile timezone (not the browser's). Added `PATCH`/`DELETE /api/app/availability/blocked-dates/[id]` — edit/delete on the old page had been silently 422ing against the strict create schema. Deliberately never touches the professional's real calendar (no auto-decline, no reschedule)
 - **Plan tier data model + enforcement** — see `docs/decisions/0002-plan-tier-billing-model.md`. Data model and enforcement only — Stripe billing is not built.
 - **Dynamic slot priority** — the AI's QUALIFIED call now also carries `isStrongFit` (stored on `Lead`, only ever set by a real AI judgment, never a fail-open path). A professional can mark availability rules `priorityOnly` (held back for strong-fit leads) and set a narrower `Service.standardAvailabilityExposure` window for everyone else. Strong-fit status is re-derived server-side from the `leadId` in both `/api/public/slots` and the hold/confirm slot check in `booking.service.ts` — never trusted from the client. The narrower standard window is applied client-side only (a perk, not a security boundary); priority-only slots are excluded server-side.
 - **AI disclosure + value-first fit signal** — visitors are told up front they're chatting with Gate's AI screening assistant (identity form line + the AI's first turn), and the AI confirms honestly if asked. On a clearly strong answer it may affirm the fit mid-conversation instead of staying neutral until the final decision.
 - **Outlook calendar integration (code)** — `outlook-auth.service.ts`, `outlook-calendar.service.ts`, `outlook-sync.service.ts`, the `OUTLOOK` branch in `calendar-provider.service.ts`, `/api/app/outlook/{connect,callback}` routes, `OutlookConnectButton` on both calendar UI surfaces. Not usable until the credentials below exist.
 
-## Buildable now (3)
+## Buildable now (2)
 
 - **Stripe billing — checkout, subscriptions, webhooks.** The piece that actually moves a professional between tiers and collects money. Blocked on a Stripe account + API keys — can't be built and verified live without them. Policy already decided (see decision 0002): non-payment soft-locks new leads/bookings after Stripe's retry window, existing confirmed bookings are never touched.
 - **Outlook credentials** — code is built (see above); blocked purely on a real Azure AD (Microsoft Entra ID) app registration + `MICROSOFT_CLIENT_ID`/`SECRET`. See `.env.example` for the registration steps.
-- **Shadow calendaring (protective-only)** — a professional claims a block of time for a stated goal and Gate won't offer it as bookable. Deliberately does *not* auto-decline or reschedule existing invites. Reuses the calendar-provider abstraction.
 
 ## Gated on the lawyer interviews (6)
 

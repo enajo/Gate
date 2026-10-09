@@ -229,8 +229,10 @@ export default function AvailabilityPage() {
       const isEdit =
         blockedDateDialogMode === "edit" && selectedBlockedDate?.id;
 
-      const endpoint = "/api/app/availability/blocked-dates";
-      const method = "POST";
+      const endpoint = isEdit
+        ? `/api/app/availability/blocked-dates/${selectedBlockedDate!.id}`
+        : "/api/app/availability/blocked-dates";
+      const method = isEdit ? "PATCH" : "POST";
 
       const response = await fetch(endpoint, {
         method,
@@ -241,7 +243,6 @@ export default function AvailabilityPage() {
           startDateTime,
           endDateTime,
           reason: values.reason,
-          id: isEdit ? selectedBlockedDate?.id : undefined,
         }),
       });
 
@@ -296,16 +297,10 @@ export default function AvailabilityPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/app/availability/blocked-dates", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: blockedDate.id,
-          deleted: true,
-        }),
-      });
+      const response = await fetch(
+        `/api/app/availability/blocked-dates/${blockedDate.id}`,
+        { method: "DELETE" },
+      );
 
       const data = (await response.json()) as BlockedDatesResponse;
 

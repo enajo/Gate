@@ -6,6 +6,7 @@ import { AppearanceSettings } from "./appearance-settings";
 import { AvailabilitySettings } from "./availability-settings";
 import { GateSettings } from "./gate-settings";
 import { ProfileSettings, type ProfileState } from "./profile-settings";
+import { ProtectedTimeSettings } from "./protected-time-settings";
 import { cn } from "@/lib/utils";
 
 interface ControlRoomFormProps {
@@ -17,6 +18,7 @@ const SECTIONS = [
   { id: "profile", label: "Profile" },
   { id: "gate", label: "Gate Control" },
   { id: "availability", label: "Availability" },
+  { id: "protected-time", label: "Protected time" },
   { id: "appearance", label: "Appearance" },
 ] as const;
 
@@ -77,6 +79,8 @@ export function ControlRoomForm({ profile, setProfile }: ControlRoomFormProps) {
         <GateSettings profile={profile} setProfile={setProfile} />
 
         <AvailabilitySettings />
+
+        <ProtectedTimeSettings timezone={profile.timezone || "UTC"} />
 
         <AppearanceSettings profile={profile} setProfile={setProfile} />
       </div>

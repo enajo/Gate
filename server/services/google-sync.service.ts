@@ -204,21 +204,12 @@ export async function ensureDefaultEventCalendar(professionalId: string) {
 }
 
 export const googleSyncService = {
-  async getAuthorizationUrl(params?: {
-    professionalId?: string;
-    returnTo?: string;
-    nonce?: string;
-  }): Promise<string> {
-    const state = googleAuthService.encodeState({
-      professionalId: params?.professionalId,
-      returnTo: params?.returnTo,
-      nonce: params?.nonce,
-    });
-
+  /** `state` must come from createOAuthState (lib/oauth-state.ts). */
+  async getAuthorizationUrl(params: { state: string }): Promise<string> {
     return googleAuthService.getAuthorizationUrl({
       accessType: "offline",
       prompt: "consent",
-      state,
+      state: params.state,
     });
   },
 

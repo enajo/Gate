@@ -95,18 +95,9 @@ async function fetchRemoteCalendars(
 }
 
 export const outlookSyncService = {
-  async getAuthorizationUrl(params?: {
-    professionalId?: string;
-    returnTo?: string;
-    nonce?: string;
-  }): Promise<string> {
-    const state = outlookAuthService.encodeState({
-      professionalId: params?.professionalId,
-      returnTo: params?.returnTo,
-      nonce: params?.nonce,
-    });
-
-    return outlookAuthService.getAuthorizationUrl({ state });
+  /** `state` must come from createOAuthState (lib/oauth-state.ts). */
+  async getAuthorizationUrl(params: { state: string }): Promise<string> {
+    return outlookAuthService.getAuthorizationUrl({ state: params.state });
   },
 
   async connectOutlookAccountFromCallback(

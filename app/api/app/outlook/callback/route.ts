@@ -1,7 +1,14 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { outlookAuthService } from "@/server/services/outlook-auth.service";
+import {
+  oauthNonceCookieName,
+  oauthNonceCookiePath,
+  readReturnToUnverified,
+  verifyOAuthState,
+} from "@/lib/oauth-state";
+import { profileService } from "@/server/services/profile.service";
 import { outlookSyncService } from "@/server/services/outlook-sync.service";
 import { outlookCallbackPayloadSchema } from "@/server/validators/outlook.validator";
 
@@ -39,26 +46,28 @@ function buildRedirectUrl(
   return url;
 }
 
-function safeDecodeReturnTo(state?: string | null) {
-  try {
-    const decoded = outlookAuthService.decodeState(state);
-    return decoded?.returnTo ?? "/app/calendars";
-  } catch {
-    return "/app/calendars";
-  }
+/** One-time use: the nonce cookie is cleared on every callback outcome. */
+function redirectAndClearNonce(target: URL) {
+  const response = NextResponse.redirect(target);
+  response.cookies.set(oauthNonceCookieName("outlook"), "", {
+    path: oauthNonceCookiePath("outlook"),
+    maxAge: 0,
+  });
+  return response;
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const state = url.searchParams.get("state");
-  const returnTo = safeDecodeReturnTo(state);
+  // Replaced by the verified value below; only used for error redirects.
+  let returnTo = readReturnToUnverified(state);
 
   try {
     const session = await auth();
     const userId = session?.user?.id ?? null;
 
     if (!userId) {
-      return NextResponse.redirect(
+      return redirectAndClearNonce(
         buildRedirectUrl(request, {
           returnTo: "/login",
           status: "error",
@@ -71,12 +80,28 @@ export async function GET(request: Request) {
     const oauthErrorDescription = url.searchParams.get("error_description");
 
     if (oauthError) {
-      return NextResponse.redirect(
+      return redirectAndClearNonce(
         buildRedirectUrl(request, {
           returnTo,
           status: "error",
           message: oauthErrorDescription || oauthError,
         }),
+      );
+    }
+
+    const cookieStore = await cookies();
+    const verified = verifyOAuthState({
+      provider: "outlook",
+      state,
+      cookieNonce: cookieStore.get(oauthNonceCookieName("outlook"))?.value,
+    });
+    returnTo = verified.returnTo;
+
+    // The flow must finish as the same professional who started it.
+    const profile = await profileService.getProfileByUserId(userId);
+    if (!profile || profile.id !== verified.professionalId) {
+      throw new Error(
+        "This calendar connection was started from a different account. Please try connecting again.",
       );
     }
 
@@ -90,7 +115,7 @@ export async function GET(request: Request) {
       payload,
     );
 
-    return NextResponse.redirect(
+    return redirectAndClearNonce(
       buildRedirectUrl(request, {
         returnTo,
         status: "success",
@@ -105,7 +130,7 @@ export async function GET(request: Request) {
         ? error.message
         : "Failed to connect Outlook Calendar.";
 
-    return NextResponse.redirect(
+    return redirectAndClearNonce(
       buildRedirectUrl(request, {
         returnTo,
         status: "error",

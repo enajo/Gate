@@ -11,7 +11,6 @@ export interface GoogleConnectButtonProps
     "onClick" | "onError"
   > {
   returnTo?: string;
-  nonce?: string;
   /** Called after the popup closes and OAuth completed (success or fail). */
   onSuccess?: () => void;
   onError?: (message: string) => void;
@@ -73,7 +72,6 @@ function openAuthPopup(
 
 export function GoogleConnectButton({
   returnTo = "/app/oauth/close",
-  nonce,
   onSuccess,
   onError,
   disabled,
@@ -88,7 +86,7 @@ export function GoogleConnectButton({
       const response = await fetch("/api/app/google/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ returnTo, nonce }),
+        body: JSON.stringify({ returnTo }),
       });
 
       const data = (await response.json()) as

@@ -2,6 +2,7 @@ import {
   createCipheriv,
   createDecipheriv,
   createHash,
+  createHmac,
   randomBytes,
   timingSafeEqual,
 } from "node:crypto";
@@ -49,6 +50,32 @@ export function verifyAccessCode(
   }
 
   return timingSafeEqual(inputHash, savedHash);
+}
+
+/**
+ * Keyed signature over `value`, using the same server secret as encryption.
+ * `purpose` is mixed in so a signature made for one use (e.g. OAuth state)
+ * can never be replayed as valid for another.
+ */
+export function hmacSign(value: string, purpose: string): string {
+  return createHmac("sha256", getEncryptionSecret())
+    .update(`${purpose}:${value}`)
+    .digest("base64url");
+}
+
+export function hmacVerify(
+  value: string,
+  signature: string,
+  purpose: string,
+): boolean {
+  const expected = Buffer.from(hmacSign(value, purpose));
+  const actual = Buffer.from(signature);
+
+  if (expected.length !== actual.length) {
+    return false;
+  }
+
+  return timingSafeEqual(expected, actual);
 }
 
 export function generateRandomToken(size = 32): string {

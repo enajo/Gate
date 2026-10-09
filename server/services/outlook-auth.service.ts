@@ -34,12 +34,6 @@ type OutlookUserProfile = {
   displayName?: string | null;
 };
 
-type OutlookOAuthStatePayload = {
-  professionalId?: string;
-  returnTo?: string;
-  nonce?: string;
-};
-
 type OutlookTokenResponse = {
   access_token: string;
   refresh_token?: string;
@@ -78,14 +72,6 @@ function getMicrosoftRedirectUri(): string {
   }
 
   return value;
-}
-
-function toUrlSafeBase64(value: string): string {
-  return Buffer.from(value, "utf8").toString("base64url");
-}
-
-function fromUrlSafeBase64(value: string): string {
-  return Buffer.from(value, "base64url").toString("utf8");
 }
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -129,23 +115,6 @@ export const outlookAuthService = {
     }
 
     return `${MICROSOFT_AUTH_URL}?${query.toString()}`;
-  },
-
-  encodeState(payload: OutlookOAuthStatePayload): string {
-    return toUrlSafeBase64(JSON.stringify(payload));
-  },
-
-  decodeState(state?: string | null): OutlookOAuthStatePayload | null {
-    if (!state) {
-      return null;
-    }
-
-    try {
-      const decoded = fromUrlSafeBase64(state);
-      return JSON.parse(decoded) as OutlookOAuthStatePayload;
-    } catch {
-      throw new Error("Invalid Outlook OAuth state.");
-    }
   },
 
   async exchangeCodeForTokens(

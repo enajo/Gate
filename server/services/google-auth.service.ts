@@ -34,12 +34,6 @@ type GoogleUserInfo = {
   picture?: string;
 };
 
-type GoogleOAuthStatePayload = {
-  professionalId?: string;
-  returnTo?: string;
-  nonce?: string;
-};
-
 type GoogleTokenResponse = {
   access_token: string;
   refresh_token?: string;
@@ -79,14 +73,6 @@ function getGoogleRedirectUri(): string {
   }
 
   return value;
-}
-
-function toUrlSafeBase64(value: string): string {
-  return Buffer.from(value, "utf8").toString("base64url");
-}
-
-function fromUrlSafeBase64(value: string): string {
-  return Buffer.from(value, "base64url").toString("utf8");
 }
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -135,23 +121,6 @@ export const googleAuthService = {
     }
 
     return `${GOOGLE_AUTH_URL}?${query.toString()}`;
-  },
-
-  encodeState(payload: GoogleOAuthStatePayload): string {
-    return toUrlSafeBase64(JSON.stringify(payload));
-  },
-
-  decodeState(state?: string | null): GoogleOAuthStatePayload | null {
-    if (!state) {
-      return null;
-    }
-
-    try {
-      const decoded = fromUrlSafeBase64(state);
-      return JSON.parse(decoded) as GoogleOAuthStatePayload;
-    } catch {
-      throw new Error("Invalid Google OAuth state.");
-    }
   },
 
   async exchangeCodeForTokens(

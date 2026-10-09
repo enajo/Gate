@@ -77,7 +77,8 @@ export const googleOAuthUrlParamsSchema = z
     prompt: z.enum(["consent", "none", "select_account"]).optional(),
     state: z.preprocess(
       emptyStringToUndefined,
-      z.string().trim().min(1).max(500).optional(),
+      // Signed state carries returnTo (≤500 chars) plus nonce and signature.
+      z.string().trim().min(1).max(2048).optional(),
     ),
   })
   .strict();

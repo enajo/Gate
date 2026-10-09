@@ -7,12 +7,13 @@ commit as the feature it describes.
 
 _Last updated: 2026-10-09_
 
-## Already built (21)
+## Already built (22)
 
 - **Core AI qualification gate** — conversational screening, QUALIFIED / REDIRECT / REJECTED
 - **Gate-setup compiler** — turns an expert's 4 answers into a qualification prompt + sample conversation
 - **Booking flow** — holds, access codes, slot picking, confirmation
 - **Google Calendar integration** — multi-calendar conflict checking, default event calendar; multiple Google calendars per professional already supported
+- **Signed, browser-bound OAuth `state`** (`lib/oauth-state.ts`, shared by Google and Outlook connect) — HMAC-signed, 10-minute expiry, nonce matched against an httpOnly cookie scoped to the provider's callback route, and the callback must finish as the same professional who started it. Blocks account-linking CSRF (an attacker's calendar silently attached to a victim's account, receiving their bookings) and the `returnTo` open redirect; `returnTo` is limited to same-origin paths
 - **Public branded professional page** — hero, services, testimonials, the gate itself
 - **Dashboard** — leads inbox, bookings, calendars, availability, services, access codes, profile, settings
 - **Auth** — Google OAuth; dev-email login disabled outside development
@@ -32,11 +33,10 @@ _Last updated: 2026-10-09_
 - **AI disclosure + value-first fit signal** — visitors are told up front they're chatting with Gate's AI screening assistant (identity form line + the AI's first turn), and the AI confirms honestly if asked. On a clearly strong answer it may affirm the fit mid-conversation instead of staying neutral until the final decision.
 - **Outlook calendar integration (code)** — `outlook-auth.service.ts`, `outlook-calendar.service.ts`, `outlook-sync.service.ts`, the `OUTLOOK` branch in `calendar-provider.service.ts`, `/api/app/outlook/{connect,callback}` routes, `OutlookConnectButton` on both calendar UI surfaces. Not usable until the credentials below exist.
 
-## Buildable now (6)
+## Buildable now (5)
 
 - **Stripe billing — checkout, subscriptions, webhooks.** The piece that actually moves a professional between tiers and collects money. Blocked on a Stripe account + API keys — can't be built and verified live without them. Policy already decided (see decision 0002): non-payment soft-locks new leads/bookings after Stripe's retry window, existing confirmed bookings are never touched.
 - **Outlook credentials** — code is built (see above); blocked purely on a real Azure AD (Microsoft Entra ID) app registration + `MICROSOFT_CLIENT_ID`/`SECRET`. See `.env.example` for the registration steps.
-- **Sign and verify OAuth `state`** — Google and Outlook connect flows both send an unsigned base64url `state`; the `nonce` is plumbed through but never verified on callback. Shared code, so one fix (HMAC-signing the state, or server-side nonce storage) covers both. Should land before real testers connect calendars.
 - **Pre-call warm-up email for the visitor** — on booking confirmation, a short personalized note referencing the visitor's own stated situation. Reuses `Lead.answersJson` and the summarization pattern in `pre-call-briefing.service.ts`; new surface is just an email + prompt.
 - **Ghost recovery** — when a `NO_RESPONSE` lead generates a new matching `Visit`, trigger a contextual re-engagement follow-up. Reuses visit stitching + outcome data.
 - **Shadow calendaring (protective-only)** — a professional claims a block of time for a stated goal and Gate won't offer it as bookable. Deliberately does *not* auto-decline or reschedule existing invites. Reuses the calendar-provider abstraction.

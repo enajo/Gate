@@ -2,13 +2,18 @@ import { NextResponse } from "next/server";
 import { z, ZodError } from "zod";
 
 import { auth } from "@/lib/auth";
+import {
+  OAUTH_NONCE_COOKIE_MAX_AGE_SECONDS,
+  createOAuthState,
+  oauthNonceCookieName,
+  oauthNonceCookiePath,
+} from "@/lib/oauth-state";
 import { profileService } from "@/server/services/profile.service";
 import { outlookSyncService } from "@/server/services/outlook-sync.service";
 
 const outlookConnectRequestSchema = z
   .object({
     returnTo: z.string().trim().min(1).max(500).optional(),
-    nonce: z.string().trim().min(1).max(255).optional(),
   })
   .strict();
 
@@ -70,18 +75,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const authorizationUrl = await outlookSyncService.getAuthorizationUrl({
+    const { state, nonce } = createOAuthState({
+      provider: "outlook",
       professionalId: profile.id,
       returnTo: input.returnTo,
-      nonce: input.nonce,
     });
 
-    return NextResponse.json(
+    const authorizationUrl = await outlookSyncService.getAuthorizationUrl({
+      state,
+    });
+
+    const response = NextResponse.json(
       {
         authorizationUrl,
       },
       { status: 200 },
     );
+
+    // Binds this flow to this browser — the callback rejects any state
+    // whose nonce doesn't match. SameSite=Lax is still sent on the
+    // provider's top-level redirect back to the callback.
+    response.cookies.set(oauthNonceCookieName("outlook"), nonce, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: oauthNonceCookiePath("outlook"),
+      maxAge: OAUTH_NONCE_COOKIE_MAX_AGE_SECONDS,
+    });
+
+    return response;
   } catch (error) {
     return errorResponse(error);
   }

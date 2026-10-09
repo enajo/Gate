@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 
 import { CalendarsTable } from "@/components/calendars/calendars-table";
 import { GoogleConnectButton } from "@/components/calendars/google-connect-button";
+import { OutlookConnectButton } from "@/components/calendars/outlook-connect-button";
 import { PageShell } from "@/components/layout/page-shell";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingState } from "@/components/shared/loading-state";
@@ -26,7 +27,7 @@ export function CalendarsView() {
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Single connect button instance — shared between the header and the empty state
+  // Connect button instances — shared between the header and the empty state
   const connectButton = (
     <GoogleConnectButton
       returnTo="/app/calendars"
@@ -35,15 +36,28 @@ export function CalendarsView() {
     />
   );
 
+  const outlookConnectButton = (
+    <OutlookConnectButton
+      returnTo="/app/calendars"
+      onSuccess={() => void loadCalendars()}
+      onError={(msg) => setError(msg)}
+    />
+  );
+
   // ── Popup mode: if we land here inside the OAuth popup, signal the opener
   //    and close the popup so the parent can refresh its calendar list.
+  //    Provider-neutral — see oauth-close-view.tsx for the shared message
+  //    contract this mirrors.
   React.useEffect(() => {
     const googleStatus = searchParams.get("google");
-    if (!googleStatus) return;
+    const outlookStatus = searchParams.get("outlook");
+    const provider = googleStatus ? "google" : outlookStatus ? "outlook" : null;
+    const status = googleStatus ?? outlookStatus;
+    if (!status) return;
 
     if (window.opener && !window.opener.closed) {
       window.opener.postMessage(
-        { type: "GOOGLE_AUTH_COMPLETE", status: googleStatus },
+        { type: "CALENDAR_AUTH_COMPLETE", provider, status },
         window.location.origin,
       );
       window.close();
@@ -151,7 +165,7 @@ export function CalendarsView() {
       header={
         <SectionHeading
           title="Calendars"
-          description="Connect Google Calendar, choose which calendars block availability, and define the default calendar where booking events are created."
+          description="Connect Google or Outlook Calendar, choose which calendars block availability, and define the default calendar where booking events are created."
           maxWidth="full"
         />
       }
@@ -170,6 +184,7 @@ export function CalendarsView() {
           </Button>
 
           {connectButton}
+          {outlookConnectButton}
         </div>
       }
     >
@@ -197,7 +212,12 @@ export function CalendarsView() {
 
           <CalendarsTable
             calendars={calendars}
-            connectButton={connectButton}
+            connectButton={
+              <div className="flex flex-wrap justify-center gap-2">
+                {connectButton}
+                {outlookConnectButton}
+              </div>
+            }
             onToggleActive={(cal) => void handleToggleActive(cal)}
             onToggleConflictCheck={(cal) =>
               void handleToggleConflictCheck(cal)

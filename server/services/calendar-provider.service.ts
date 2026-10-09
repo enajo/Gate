@@ -16,6 +16,8 @@ import {
   mergeBusyRanges,
 } from "@/server/services/google-calendar.service";
 import { GOOGLE_PROVIDER } from "@/server/services/google-auth.service";
+import { outlookCalendarService } from "@/server/services/outlook-calendar.service";
+import { OUTLOOK_PROVIDER } from "@/server/services/outlook-auth.service";
 
 function unsupportedProviderError(account: CalendarAccount): Error {
   return new Error(
@@ -77,6 +79,10 @@ export const calendarProviderService = {
       return googleCalendarService.createCalendarEvent(input);
     }
 
+    if (account.provider === OUTLOOK_PROVIDER) {
+      return outlookCalendarService.createCalendarEvent(input);
+    }
+
     throw unsupportedProviderError(account);
   },
 
@@ -89,6 +95,10 @@ export const calendarProviderService = {
   ): Promise<CreatedCalendarEvent> {
     if (account.provider === GOOGLE_PROVIDER) {
       return googleCalendarService.updateCalendarEvent(input);
+    }
+
+    if (account.provider === OUTLOOK_PROVIDER) {
+      return outlookCalendarService.updateCalendarEvent(input);
     }
 
     throw unsupportedProviderError(account);
@@ -105,6 +115,10 @@ export const calendarProviderService = {
       return googleCalendarService.cancelCalendarEvent(params);
     }
 
+    if (account.provider === OUTLOOK_PROVIDER) {
+      return outlookCalendarService.cancelCalendarEvent(params);
+    }
+
     throw unsupportedProviderError(account);
   },
 
@@ -117,6 +131,10 @@ export const calendarProviderService = {
   ): Promise<GoogleCalendarListItem[]> {
     if (account.provider === GOOGLE_PROVIDER) {
       return googleCalendarService.listRemoteCalendars(account.id);
+    }
+
+    if (account.provider === OUTLOOK_PROVIDER) {
+      return outlookCalendarService.listRemoteCalendars(account.id);
     }
 
     throw unsupportedProviderError(account);
@@ -143,6 +161,15 @@ async function getBusyRangesForAccount(
 ): Promise<MergedBusyRange[]> {
   if (account.provider === GOOGLE_PROVIDER) {
     return googleCalendarService.getBusyRangesForCalendarAccount({
+      calendarAccountId: account.id,
+      start: params.start,
+      end: params.end,
+      timezone: params.timezone,
+    });
+  }
+
+  if (account.provider === OUTLOOK_PROVIDER) {
+    return outlookCalendarService.getBusyRangesForCalendarAccount({
       calendarAccountId: account.id,
       start: params.start,
       end: params.end,

@@ -18,7 +18,7 @@ export interface CalendarsTableProps
   calendars: CalendarRowValue[];
   emptyTitle?: string;
   emptyDescription?: string;
-  /** Rendered as the CTA inside the empty state. Pass a <GoogleConnectButton> from the parent. */
+  /** Rendered as the CTA inside the empty state. Pass connect button(s) from the parent. */
   connectButton?: React.ReactNode;
   onToggleActive?: (calendar: CalendarRowValue) => void;
   onToggleConflictCheck?: (calendar: CalendarRowValue) => void;
@@ -28,7 +28,7 @@ export interface CalendarsTableProps
 export function CalendarsTable({
   calendars,
   emptyTitle = "No connected calendars",
-  emptyDescription = "Connect your Google Calendar to sync availability, avoid conflicts, and choose where booking events should be created.",
+  emptyDescription = "Connect your Google or Outlook Calendar to sync availability, avoid conflicts, and choose where booking events should be created.",
   connectButton,
   onToggleActive,
   onToggleConflictCheck,

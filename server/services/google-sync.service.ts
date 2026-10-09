@@ -174,7 +174,10 @@ function buildBookingEventDescription(params: {
   return sections.join("\n\n");
 }
 
-async function ensureDefaultEventCalendar(professionalId: string) {
+// Exported (not just used internally) — pure repository orchestration with
+// no Google-specific logic, so outlook-sync.service.ts reuses this directly
+// instead of duplicating it.
+export async function ensureDefaultEventCalendar(professionalId: string) {
   const existingDefault =
     await googleRepository.findDefaultEventCalendarByProfessionalId(
       professionalId,

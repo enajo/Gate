@@ -4,6 +4,7 @@ import * as React from "react";
 import { ArrowRight, CalendarDays, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 
 import { GoogleConnectButton } from "@/components/calendars/google-connect-button";
+import { OutlookConnectButton } from "@/components/calendars/outlook-connect-button";
 import { SyncStatusBadge } from "@/components/calendars/sync-status-badge";
 import {
   Dialog,
@@ -176,6 +177,12 @@ function CalendarModalContent() {
             onSuccess={() => void loadCalendars()}
             onError={(msg) => setError(msg)}
           />
+
+          <OutlookConnectButton
+            returnTo="/app/oauth/close"
+            onSuccess={() => void loadCalendars()}
+            onError={(msg) => setError(msg)}
+          />
         </div>
       </div>
 
@@ -256,7 +263,7 @@ export function CalendarModalCard({ pendingHoldsCount }: CalendarModalCardProps)
           </h2>
 
           <p className="mt-3 text-[14px] leading-[1.7] text-gray-500">
-            Connect Google Calendar for conflict checking and event creation.
+            Connect Google or Outlook Calendar for conflict checking and event creation.
           </p>
 
           <div className="mt-7 inline-flex items-center text-[14px] text-ink-soft">
@@ -275,7 +282,7 @@ export function CalendarModalCard({ pendingHoldsCount }: CalendarModalCardProps)
               Calendar
             </DialogTitle>
             <DialogDescription>
-              Connect Google Calendar, toggle conflict checking, and set your default booking calendar.
+              Connect Google or Outlook Calendar, toggle conflict checking, and set your default booking calendar.
             </DialogDescription>
           </DialogHeader>
 

@@ -38,11 +38,17 @@ function openAuthPopup(
     return;
   }
 
-  // Primary: listen for postMessage from the popup page
+  // Primary: listen for postMessage from the popup page. Shared message
+  // contract with OutlookConnectButton — {type, provider, status} — since
+  // only one popup is ever open per button, the provider field doesn't
+  // strictly need filtering, but it's included for correctness.
   function handleMessage(event: MessageEvent) {
+    const data = event.data as { type?: string; provider?: string } | undefined;
+
     if (
       event.origin === window.location.origin &&
-      (event.data as { type?: string })?.type === "GOOGLE_AUTH_COMPLETE"
+      data?.type === "CALENDAR_AUTH_COMPLETE" &&
+      data?.provider === "google"
     ) {
       cleanup();
       onDone();

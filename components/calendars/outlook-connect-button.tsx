@@ -1,0 +1,137 @@
+"use client";
+
+import * as React from "react";
+import { CalendarDays, Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+
+export interface OutlookConnectButtonProps
+  extends Omit<
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    "onClick" | "onError"
+  > {
+  returnTo?: string;
+  nonce?: string;
+  /** Called after the popup closes and OAuth completed (success or fail). */
+  onSuccess?: () => void;
+  onError?: (message: string) => void;
+}
+
+function openAuthPopup(
+  authorizationUrl: string,
+  onDone: () => void,
+): void {
+  const w = 500;
+  const h = 660;
+  const left = Math.round(window.screenX + (window.outerWidth - w) / 2);
+  const top = Math.round(window.screenY + (window.outerHeight - h) / 2);
+
+  const popup = window.open(
+    authorizationUrl,
+    "outlook-oauth",
+    `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`,
+  );
+
+  if (!popup) {
+    // Popup blocked — fall back to full redirect
+    window.location.href = authorizationUrl;
+    return;
+  }
+
+  // Primary: listen for postMessage from the popup page. Shared message
+  // contract with GoogleConnectButton — {type, provider, status} — since
+  // only one popup is ever open per button, the provider field doesn't
+  // strictly need filtering, but it's included for correctness.
+  function handleMessage(event: MessageEvent) {
+    const data = event.data as { type?: string; provider?: string } | undefined;
+
+    if (
+      event.origin === window.location.origin &&
+      data?.type === "CALENDAR_AUTH_COMPLETE" &&
+      data?.provider === "outlook"
+    ) {
+      cleanup();
+      onDone();
+    }
+  }
+
+  // Fallback: poll for popup close (covers cases where postMessage isn't sent)
+  const pollInterval = setInterval(() => {
+    if (popup.closed) {
+      cleanup();
+      onDone();
+    }
+  }, 600);
+
+  function cleanup() {
+    clearInterval(pollInterval);
+    window.removeEventListener("message", handleMessage);
+  }
+
+  window.addEventListener("message", handleMessage);
+}
+
+export function OutlookConnectButton({
+  returnTo = "/app/oauth/close",
+  nonce,
+  onSuccess,
+  onError,
+  disabled,
+  ...props
+}: OutlookConnectButtonProps) {
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  async function handleConnect() {
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/app/outlook/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ returnTo, nonce }),
+      });
+
+      const data = (await response.json()) as
+        | { authorizationUrl?: string; error?: string }
+        | undefined;
+
+      if (!response.ok || !data?.authorizationUrl) {
+        throw new Error(data?.error ?? "Failed to start Outlook connection.");
+      }
+
+      openAuthPopup(data.authorizationUrl, () => {
+        setIsLoading(false);
+        onSuccess?.();
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to start Outlook connection.";
+      onError?.(message);
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => void handleConnect()}
+      disabled={disabled || isLoading}
+      {...props}
+    >
+      {isLoading ? (
+        <>
+          <Loader2 className="size-4 animate-spin" />
+          Connecting…
+        </>
+      ) : (
+        <>
+          <CalendarDays className="size-4" />
+          Connect Outlook Calendar
+        </>
+      )}
+    </Button>
+  );
+}

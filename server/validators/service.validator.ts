@@ -54,6 +54,7 @@ export const createServiceSchema = z
     accessCodeRequired: z.boolean().optional(),
     manualApprovalRequired: z.boolean().optional(),
     availabilityExposure: availabilityExposureSchema.optional(),
+    standardAvailabilityExposure: availabilityExposureSchema.nullable().optional(),
     sortOrder: z.coerce.number().int().min(0).max(9999).optional(),
     active: z.boolean().optional(),
   })

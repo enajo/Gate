@@ -137,6 +137,10 @@ export async function POST(request: Request) {
             history: input.history,
           } as Prisma.InputJsonValue,
           qualificationResult: "QUALIFIED",
+          // Fail-open path, not a real AI judgment — must never grant
+          // slot priority, so this is set explicitly rather than left to
+          // the schema default.
+          isStrongFit: false,
           referrer: input.referrer ?? null,
           utmSource: input.utmSource ?? null,
           utmMedium: input.utmMedium ?? null,
@@ -150,6 +154,7 @@ export async function POST(request: Request) {
         type: "final",
         decision: "QUALIFIED",
         redirectService: null,
+        isStrongFit: false,
         message: "Sounds like a great fit — let me pull up some available times.",
         leadId: lead.id,
         tokensUsed: 0,
@@ -239,6 +244,10 @@ export async function POST(request: Request) {
             redirectServiceId: turn.redirectServiceId ?? null,
           } as Prisma.InputJsonValue,
           qualificationResult,
+          // The one path where the AI actually made the call — already
+          // guaranteed false for any non-QUALIFIED decision by
+          // aiConversationService's own defensive guard.
+          isStrongFit: turn.isStrongFit,
           referrer: input.referrer ?? null,
           utmSource: input.utmSource ?? null,
           utmMedium: input.utmMedium ?? null,
@@ -252,6 +261,7 @@ export async function POST(request: Request) {
         type: "final",
         decision: turn.decision,
         redirectService,
+        isStrongFit: turn.isStrongFit,
         message: turn.message,
         leadId: lead.id,
         tokensUsed: turn.tokensUsed,

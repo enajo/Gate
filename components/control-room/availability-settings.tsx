@@ -28,6 +28,7 @@ type AvailabilityRule = {
   startTime: string;
   endTime: string;
   active: boolean;
+  priorityOnly: boolean;
 };
 
 // Per-weekday UI state
@@ -36,6 +37,8 @@ type DayState = {
   startTime: string;
   endTime: string;
   ruleId: string | null;  // null = not yet saved
+  /** Reserves this day's window for strong-fit leads only — see dynamic slot priority. */
+  priorityOnly: boolean;
   saving: boolean;
 };
 
@@ -52,6 +55,7 @@ function buildDayStates(rules: AvailabilityRule[]): Record<Weekday, DayState> {
       startTime: rule?.startTime ?? DEFAULT_START,
       endTime: rule?.endTime ?? DEFAULT_END,
       ruleId: rule?.id ?? null,
+      priorityOnly: rule?.priorityOnly ?? false,
       saving: false,
     };
   }
@@ -122,6 +126,7 @@ export function AvailabilitySettings() {
               ...current[weekday],
               enabled: false,
               ruleId: null,
+              priorityOnly: false,
               saving: false,
             },
           };
@@ -224,6 +229,41 @@ export function AvailabilitySettings() {
     }
   }
 
+  // ── Toggle reserved-for-priority-leads ─────────────────────────────────────
+
+  async function togglePriorityOnly(weekday: Weekday) {
+    if (!days) return;
+    const day = days[weekday];
+    if (day.saving || !day.ruleId) return;
+
+    const nextValue = !day.priorityOnly;
+    setDaySaving(weekday, true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/app/availability/rules/${day.ruleId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priorityOnly: nextValue }),
+      });
+      if (!res.ok) {
+        const payload = (await res.json()) as { error?: string };
+        throw new Error(payload.error ?? "Failed to update reserved slots.");
+      }
+      setDays((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          [weekday]: { ...current[weekday], priorityOnly: nextValue },
+        };
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update reserved slots.");
+    } finally {
+      setDaySaving(weekday, false);
+    }
+  }
+
   // ── Local time change (not yet saved) ─────────────────────────────────────
 
   function handleTimeChange(
@@ -253,7 +293,8 @@ export function AvailabilitySettings() {
             </p>
             <p className="mt-1 text-[12px] text-gray-500">
               Set which days and hours you accept bookings. Changes take effect
-              immediately on your public page.
+              immediately on your public page. Mark a day &ldquo;Reserved&rdquo; to
+              keep it visible only to strong-fit leads.
             </p>
           </div>
         </div>
@@ -346,6 +387,33 @@ export function AvailabilitySettings() {
                       {day.saving ? (
                         <Loader2 className="size-3.5 animate-spin text-brand-amber" />
                       ) : null}
+
+                      <button
+                        type="button"
+                        onClick={() => void togglePriorityOnly(weekday.value)}
+                        disabled={day.saving}
+                        title="Reserve this day for strong-fit leads only"
+                        className="flex items-center gap-1.5 disabled:opacity-60"
+                      >
+                        <span
+                          className={
+                            day.priorityOnly
+                              ? "relative h-5 w-9 rounded-full bg-brand-amber"
+                              : "relative h-5 w-9 rounded-full bg-warm-border-lighter"
+                          }
+                        >
+                          <span
+                            className={
+                              day.priorityOnly
+                                ? "absolute right-0.5 top-0.5 size-4 rounded-full bg-white"
+                                : "absolute left-0.5 top-0.5 size-4 rounded-full bg-white"
+                            }
+                          />
+                        </span>
+                        <span className="text-[11px] text-gray-500">
+                          Reserved
+                        </span>
+                      </button>
                     </div>
                   ) : (
                     <span className="ml-1 text-[12px] text-gray-400">

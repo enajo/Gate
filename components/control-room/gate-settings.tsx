@@ -433,6 +433,37 @@ export function GateSettings({ profile, setProfile }: GateSettingsProps) {
                   ))}
                 </select>
               </div>
+
+              <div className="mt-2 flex max-w-xl items-center justify-between gap-4 rounded-[0.875rem] border border-warm-border-soft bg-white/70 px-4 py-3">
+                <div>
+                  <p className="text-[13px] font-medium text-ink">
+                    Standard availability
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-gray-500">
+                    Narrower window for leads who aren&apos;t a strong fit — leave
+                    as &ldquo;Same as above&rdquo; unless you want to hold extra
+                    slots back.
+                  </p>
+                </div>
+                <select
+                  value={activeService.standardAvailabilityExposure ?? ""}
+                  onChange={(e) =>
+                    updateService(
+                      activeService.id,
+                      "standardAvailabilityExposure",
+                      e.target.value === "" ? null : e.target.value,
+                    )
+                  }
+                  className="rounded-lg border border-warm-border-soft bg-white px-3 py-1.5 text-[13px] text-ink outline-none transition focus:border-ink"
+                >
+                  <option value="">Same as above</option>
+                  {availabilityExposureOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         )}

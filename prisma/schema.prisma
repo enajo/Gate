@@ -266,6 +266,7 @@ model Service {
   accessCodeRequired      Boolean   @default(false) @map("access_code_required")
   manualApprovalRequired  Boolean   @default(false) @map("manual_approval_required")
   availabilityExposure    AvailabilityExposure @default(TWO_WEEKS) @map("availability_exposure")
+  standardAvailabilityExposure AvailabilityExposure? @map("standard_availability_exposure")
   sortOrder               Int       @default(0) @map("sort_order")
   active                  Boolean   @default(true)
   createdAt               DateTime  @default(now()) @map("created_at")
@@ -312,6 +313,7 @@ model AvailabilityRule {
   startTime      String    @map("start_time")
   endTime        String    @map("end_time")
   active         Boolean   @default(true)
+  priorityOnly   Boolean   @default(false) @map("priority_only")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
@@ -394,6 +396,8 @@ model Lead {
   email               String
   answersJson         Json                    @map("answers_json")
   qualificationResult LeadQualificationResult @map("qualification_result")
+  /** Only ever true from a real AI "final, QUALIFIED" judgment — never set by a fail-open or skip-qualification path. Drives dynamic slot priority. */
+  isStrongFit         Boolean                 @default(false) @map("is_strong_fit")
   /** Referrer header captured on the visitor's first hit to the public page (e.g. "https://chatgpt.com/"). */
   referrer            String?
   utmSource           String?                 @map("utm_source")

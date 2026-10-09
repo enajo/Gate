@@ -296,6 +296,7 @@ function getEmptyProfile(): ProfileState {
   const defaultServiceId = crypto.randomUUID();
 
   return {
+    slug: "",
     name: "",
     role: "",
     bio: "",

@@ -21,8 +21,12 @@ const MAX_EXPOSURE_DAYS = 62;
  * template needs:
  *  - availableDates  — one entry per calendar day that has ≥ 1 slot
  *  - slotsPerDate    — map of YYYY-MM-DD → AvailabilityTime[] (id = "start__end")
+ *
+ * Exported so the dynamic-slot-priority fetch in /api/public/slots can reuse
+ * the exact same shaping (including the ISO-id encoding the booking-hold
+ * step depends on) instead of a second implementation client-side.
  */
-function transformSlots(
+export function transformSlots(
   slots: BookableSlot[],
   timezone: string,
 ): {
@@ -57,7 +61,11 @@ function transformSlots(
     // Encode start + end into the time id so the template can pass them to
     // the holds endpoint without a separate lookup.
     const timeId = `${slot.start.toISOString()}__${slot.end.toISOString()}`;
-    dateMap.get(dateKey)!.times.push({ id: timeId, label: timeLabel });
+    dateMap.get(dateKey)!.times.push({
+      id: timeId,
+      label: timeLabel,
+      isPriority: slot.isPriority,
+    });
   }
 
   const sorted = [...dateMap.entries()].sort(([a], [b]) =>
@@ -118,6 +126,11 @@ export async function getPublicSalesPageData(
         startDate: now,
         endDate,
         timezone,
+        // Initial page load happens before any qualification exists — no
+        // lead to be strong-fit yet, so priority-only slots must never
+        // reach this payload. Explicit, not relying on the default, since
+        // this is the security-sensitive side of dynamic slot priority.
+        includePriorityRules: false,
       });
 
       const transformed = transformSlots(result.slots, timezone);
@@ -131,6 +144,7 @@ export async function getPublicSalesPageData(
 
   return {
     ...data,
+    slug,
     activeServiceId,
     professionalId: professional.id,
     availableDates,

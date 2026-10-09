@@ -91,6 +91,7 @@ function mapAvailabilityRule(
     startTime: rule.startTime,
     endTime: rule.endTime,
     active: rule.active,
+    priorityOnly: rule.priorityOnly,
     createdAt: rule.createdAt,
     updatedAt: rule.updatedAt,
   };
@@ -321,7 +322,15 @@ function generateSlotsFromWindows(input: SlotGenerationInput & {
     );
 
     const existingBookingsThatDay = bookingsPerDay.get(dayKey) ?? 0;
-    const dayRules = activeRules.filter((rule) => rule.weekday === weekday);
+    // priorityOnly rules are excluded here, not just filtered client-side —
+    // this is the actual security boundary for reserved slots. The caller
+    // must have already verified the requester is a strong-fit lead before
+    // ever passing includePriorityRules: true.
+    const dayRules = activeRules.filter(
+      (rule) =>
+        rule.weekday === weekday &&
+        (input.includePriorityRules || !rule.priorityOnly),
+    );
 
     if (
       dayRules.length > 0 &&
@@ -360,6 +369,7 @@ function generateSlotsFromWindows(input: SlotGenerationInput & {
             slots.push({
               start: new Date(slotStart),
               end: new Date(slotEnd),
+              isPriority: rule.priorityOnly === true,
             });
           }
 
@@ -429,6 +439,7 @@ export const availabilityService = {
       startTime: rule.startTime,
       endTime: rule.endTime,
       active: rule.active,
+      priorityOnly: rule.priorityOnly,
     }));
   },
 
@@ -446,6 +457,7 @@ export const availabilityService = {
         startTime: parsed.startTime,
         endTime: parsed.endTime,
         active: parsed.active ?? true,
+        priorityOnly: parsed.priorityOnly ?? false,
       },
     );
 
@@ -479,6 +491,9 @@ export const availabilityService = {
           : {}),
         ...(parsed.endTime !== undefined ? { endTime: parsed.endTime } : {}),
         ...(parsed.active !== undefined ? { active: parsed.active } : {}),
+        ...(parsed.priorityOnly !== undefined
+          ? { priorityOnly: parsed.priorityOnly }
+          : {}),
       },
     );
 
@@ -618,6 +633,8 @@ export const availabilityService = {
     endDate: Date | string;
     timezone?: string;
     externalBusyRanges?: BusyTimeRange[];
+    /** Caller must have already verified strong-fit status before passing true. */
+    includePriorityRules?: boolean;
   }): Promise<AvailabilityComputationResult> {
     const professional = await profileRepository.findById(params.professionalId);
 
@@ -685,6 +702,7 @@ export const availabilityService = {
       maxBookingsPerDay: professional.maxBookingsPerDay,
       bookings,
       holds,
+      includePriorityRules: params.includePriorityRules,
     });
   },
 
@@ -695,6 +713,8 @@ export const availabilityService = {
     endDate: Date | string;
     timezone?: string;
     externalBusyRanges?: BusyTimeRange[];
+    /** Caller must have already verified strong-fit status before passing true. */
+    includePriorityRules?: boolean;
   }): Promise<AvailabilityComputationResult> {
     const professional = await requireProfessionalBySlug(params.slug);
 
@@ -705,6 +725,7 @@ export const availabilityService = {
       endDate: params.endDate,
       timezone: params.timezone,
       externalBusyRanges: params.externalBusyRanges,
+      includePriorityRules: params.includePriorityRules,
     });
   },
 };

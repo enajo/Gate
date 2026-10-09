@@ -55,6 +55,8 @@ export type ConversationTurn =
       type: "final";
       decision: "QUALIFIED" | "REDIRECT" | "REJECTED";
       redirectServiceId: string | null;
+      /** Only ever true when decision === "QUALIFIED" — see nextTurn's defensive guard. */
+      isStrongFit: boolean;
       message: string;
       tokensUsed: number;
     };
@@ -65,6 +67,8 @@ const FALLBACK_TURN: ConversationTurn = {
   type: "final",
   decision: "QUALIFIED",
   redirectServiceId: null,
+  // Fail-open, not a real judgment — must never grant slot priority.
+  isStrongFit: false,
   message: "Sounds like a great fit — let me pull up some available times.",
   tokensUsed: 0,
 };
@@ -86,6 +90,7 @@ const aiResponseSchema = z.discriminatedUnion("type", [
     type: z.literal("final"),
     decision: z.enum(["QUALIFIED", "REDIRECT", "REJECTED"]),
     redirectServiceId: z.string().nullable(),
+    isStrongFit: z.boolean().optional(),
     message: z.string().min(1).max(800),
   }),
 ]);
@@ -175,13 +180,21 @@ CRITICAL: The "decision" field and the "message" field must ALWAYS agree.
 • If decision is REJECTED, the message must be a polite, firm close — never offer hope or suggest a future call.
 • NEVER output a QUALIFIED decision with a message that sounds like rejection. NEVER output a REJECTED decision with a message that sounds welcoming.
 
+STRONG-FIT FLAG (only when decision is QUALIFIED)
+Set "isStrongFit": true only when the visitor doesn't just clear the bar in
+IDEAL CLIENT FOR THIS SERVICE above but is a standout match against it —
+multiple strong positive signals, no hedging answers, exactly the profile
+described. If it's a closer call, set false. When genuinely unsure, set
+false — this flag only ever grants extra access, never use it to soften a
+rejection. Omit it entirely (or set false) for REDIRECT/REJECTED.
+
 OUTPUT FORMAT — return ONLY valid JSON, no markdown, no code fences:
 
 While gathering information:
 { "type": "question", "message": "..." }
 
 When ready to decide:
-{ "type": "final", "decision": "QUALIFIED" | "REDIRECT" | "REJECTED", "redirectServiceId": null | "<service-id>", "message": "..." }
+{ "type": "final", "decision": "QUALIFIED" | "REDIRECT" | "REJECTED", "redirectServiceId": null | "<service-id>", "isStrongFit": true | false, "message": "..." }
 
 MESSAGE GUIDELINES
 • Write as a warm, confident human assistant — never robotic
@@ -328,6 +341,7 @@ export const aiConversationService = {
             type: "final",
             decision: "REJECTED",
             redirectServiceId: null,
+            isStrongFit: false,
             message: validated.message,
             tokensUsed,
           };
@@ -339,6 +353,12 @@ export const aiConversationService = {
         decision: validated.decision,
         redirectServiceId:
           validated.type === "final" ? validated.redirectServiceId : null,
+        // Defensive: strength only ever modifies a real QUALIFIED decision,
+        // never trust it on any other outcome even if the model is confused.
+        isStrongFit:
+          validated.decision === "QUALIFIED"
+            ? (validated.isStrongFit ?? false)
+            : false,
         message: validated.message,
         tokensUsed,
       };

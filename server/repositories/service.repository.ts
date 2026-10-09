@@ -181,6 +181,7 @@ export const serviceRepository = {
       accessCodeRequired: boolean;
       manualApprovalRequired: boolean;
       availabilityExposure: string;
+      standardAvailabilityExposure?: string | null;
       sortOrder: number;
       active: boolean;
       directPurchaseUrl?: string | null;
@@ -222,6 +223,9 @@ export const serviceRepository = {
           manualApprovalRequired: svc.manualApprovalRequired,
           // Cast: the value is validated against the enum before reaching here.
           availabilityExposure: svc.availabilityExposure as Service["availabilityExposure"],
+          standardAvailabilityExposure:
+            (svc.standardAvailabilityExposure as Service["standardAvailabilityExposure"]) ??
+            null,
           sortOrder: svc.sortOrder ?? index,
           active: svc.active,
           directPurchaseUrl: svc.directPurchaseUrl ?? null,

@@ -48,6 +48,8 @@ export type AvailabilityDate = {
 export type AvailabilityTime = {
   id: string;
   label: string;
+  /** True when this slot is only visible because the visitor turned out to be a strong-fit lead. */
+  isPriority?: boolean;
 };
 
 export type PublicMetric = {
@@ -77,6 +79,8 @@ export type PublicService = {
   accessCodeRequired: boolean;
   manualApprovalRequired: boolean;
   availabilityExposure: AvailabilityExposure;
+  /** Narrower window for standard (non-strong-fit) leads. Unset/null = same as availabilityExposure. */
+  standardAvailabilityExposure?: AvailabilityExposure | null;
   currentAccessCode?: string;
   /** When set, marks this as a direct-buy alternative (no calendar). */
   directPurchaseUrl?: string | null;
@@ -99,6 +103,8 @@ export type VisitorSource = {
 };
 
 export type PublicSalesPageTemplateData = {
+  /** The professional's public slug — used to fetch priority slots post-qualification. */
+  slug: string;
   name: string;
   role: string;
   bio?: string;
@@ -192,6 +198,7 @@ function rebucketSlotsForTimezone(
       buckets.get(dateKey)!.times.push({
         id: time.id,
         label: formatInTimeZone(start, targetTimezone, "h:mm a"),
+        isPriority: time.isPriority,
       });
     }
   }
@@ -292,6 +299,12 @@ export function PublicSalesPageTemplate({
   const [guestEmail, setGuestEmail] = useState("");
   const [guestNotes, setGuestNotes] = useState("");
   const [leadId, setLeadId] = useState<string | null>(null);
+  // Populated only once a strong-fit lead's post-qualification fetch
+  // succeeds — null means "show the standard set" (the safe default).
+  const [prioritySlots, setPrioritySlots] = useState<{
+    availableDates: AvailabilityDate[];
+    slotsPerDate: Record<string, AvailabilityTime[]>;
+  } | null>(null);
   const [holdId, setHoldId] = useState<string | null>(null);
   const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -347,11 +360,17 @@ export function PublicSalesPageTemplate({
   // this only affects what's shown, never what gets booked.
   const { availableDates: displayAvailableDates, slotsPerDate: displaySlotsPerDate } =
     useMemo(() => {
-      if (!visitorTimezone || !data.slotsPerDate) {
-        return { availableDates: data.availableDates, slotsPerDate: data.slotsPerDate ?? {} };
+      // prioritySlots, once loaded, is a strict superset of the standard
+      // set — it was computed server-side with the same inputs plus
+      // includePriorityRules: true, so preferring it here is safe.
+      const sourceAvailableDates = prioritySlots?.availableDates ?? data.availableDates;
+      const sourceSlotsPerDate = prioritySlots?.slotsPerDate ?? data.slotsPerDate;
+
+      if (!visitorTimezone || !sourceSlotsPerDate) {
+        return { availableDates: sourceAvailableDates, slotsPerDate: sourceSlotsPerDate ?? {} };
       }
-      return rebucketSlotsForTimezone(data.slotsPerDate, visitorTimezone);
-    }, [data.availableDates, data.slotsPerDate, visitorTimezone]);
+      return rebucketSlotsForTimezone(sourceSlotsPerDate, visitorTimezone);
+    }, [data.availableDates, data.slotsPerDate, prioritySlots, visitorTimezone]);
 
   // If rebucketing moved the already-selected time into a different day
   // bucket (e.g. a professional's 11pm slot is the visitor's next morning),
@@ -390,7 +409,14 @@ export function PublicSalesPageTemplate({
   const backgroundColor = data.theme.backgroundColor;
   const isDark = getYiq(backgroundColor) < 135;
 
-  const exposureLimit = getExposureLimit(activeService.availabilityExposure);
+  // Standard (narrower) window until a strong-fit lead's priority fetch
+  // resolves — then the service's full configured ceiling applies.
+  const exposureLimit = getExposureLimit(
+    prioritySlots
+      ? activeService.availabilityExposure
+      : (activeService.standardAvailabilityExposure ??
+          activeService.availabilityExposure),
+  );
   const exposedDates = displayAvailableDates.slice(0, exposureLimit);
 
   const selectedDate = exposedDates.find((date) => date.id === selectedDateId);
@@ -439,6 +465,46 @@ export function PublicSalesPageTemplate({
     setStep(getInitialStep(nextService));
     setAccessCode("");
     setAccessCodeError("");
+  }
+
+  // Post-qualification upgrade, fired only once a strong-fit lead is
+  // confirmed (see onQualified below). Re-fetches /api/public/slots with
+  // the leadId so the server can re-derive strength itself and include
+  // priorityOnly-rule slots the initial SSR payload deliberately excluded.
+  // Fails soft — on any error, the standard set already shown stays as-is;
+  // this must never block the booking flow.
+  async function fetchPrioritySlots(targetLeadId: string) {
+    try {
+      const now = new Date();
+      const endDate = new Date(now.getTime() + 62 * 24 * 60 * 60 * 1000);
+      const params = new URLSearchParams({
+        slug: data.slug,
+        serviceId: activeService.id,
+        startDate: now.toISOString(),
+        endDate: endDate.toISOString(),
+        timezone: data.timezone,
+        leadId: targetLeadId,
+      });
+
+      const res = await fetch(`/api/public/slots?${params.toString()}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+
+      const json = (await res.json()) as {
+        availableDates?: AvailabilityDate[];
+        slotsPerDate?: Record<string, AvailabilityTime[]>;
+      };
+
+      if (json.availableDates && json.slotsPerDate) {
+        setPrioritySlots({
+          availableDates: json.availableDates,
+          slotsPerDate: json.slotsPerDate,
+        });
+      }
+    } catch {
+      // Fail soft — keep showing the standard set already loaded.
+    }
   }
 
   async function continueAfterAccessCode() {
@@ -847,11 +913,12 @@ export function PublicSalesPageTemplate({
                           ? "TRIAGE"
                           : "GATEKEEPER"
                       }
-                      onQualified={({ leadId, name, email }) => {
+                      onQualified={({ leadId, name, email, isStrongFit }) => {
                         setLeadId(leadId);
                         setGuestName(name);
                         setGuestEmail(email);
                         setStep("time");
+                        if (isStrongFit) void fetchPrioritySlots(leadId);
                       }}
                     />
                   ) : (
@@ -1060,6 +1127,12 @@ export function PublicSalesPageTemplate({
                                     }
                                   >
                                     {time.label}
+                                    {time.isPriority ? (
+                                      <span className="ml-2 inline-flex items-center gap-1 align-middle text-[10px] font-medium uppercase tracking-wide opacity-80">
+                                        <Star className="size-3" fill="currentColor" />
+                                        For you
+                                      </span>
+                                    ) : null}
                                   </button>
 
                                   {active ? (

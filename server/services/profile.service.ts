@@ -292,6 +292,8 @@ export const profileService = {
           manualApprovalRequired: svc.manualApprovalRequired,
           availabilityExposure:
             svc.availabilityExposure as PublicSalesPageTemplateData["services"][number]["availabilityExposure"],
+          standardAvailabilityExposure:
+            svc.standardAvailabilityExposure as PublicSalesPageTemplateData["services"][number]["standardAvailabilityExposure"],
           currentAccessCode: activeCode?.codeLabel ?? undefined,
           directPurchaseUrl: svc.directPurchaseUrl ?? null,
           idealPersonaDescription: svc.idealPersonaDescription ?? null,
@@ -300,6 +302,7 @@ export const profileService = {
       });
 
     const profileData: PublicSalesPageTemplateData = {
+      slug: professional.slug ?? "",
       name: professional.fullName,
       role: professional.title ?? "",
       bio: professional.bio ?? undefined,
@@ -479,6 +482,8 @@ export const profileService = {
           manualApprovalRequired: svc.manualApprovalRequired,
           availabilityExposure:
             svc.availabilityExposure as PublicSalesPageTemplateData["services"][number]["availabilityExposure"],
+          standardAvailabilityExposure:
+            svc.standardAvailabilityExposure as PublicSalesPageTemplateData["services"][number]["standardAvailabilityExposure"],
           currentAccessCode: undefined,
           directPurchaseUrl: svc.directPurchaseUrl ?? null,
           questions: [],
@@ -486,6 +491,7 @@ export const profileService = {
       });
 
     return {
+      slug,
       name: professional.fullName,
       role: professional.title ?? "",
       bio: professional.bio ?? undefined,

@@ -34,6 +34,8 @@ export function mapService(service: PrismaService): Service {
     accessCodeRequired: service.accessCodeRequired,
     manualApprovalRequired: service.manualApprovalRequired,
     availabilityExposure: service.availabilityExposure as AvailabilityExposure,
+    standardAvailabilityExposure:
+      service.standardAvailabilityExposure as AvailabilityExposure | null,
     sortOrder: service.sortOrder,
     active: service.active,
     createdAt: service.createdAt,
@@ -63,6 +65,8 @@ export function mapPublicService(service: PrismaService): PublicService {
     accessCodeRequired: service.accessCodeRequired,
     manualApprovalRequired: service.manualApprovalRequired,
     availabilityExposure: service.availabilityExposure as AvailabilityExposure,
+    standardAvailabilityExposure:
+      service.standardAvailabilityExposure as AvailabilityExposure | null,
     active: service.active,
   };
 }

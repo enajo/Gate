@@ -230,6 +230,7 @@ export const serviceCatalogService = {
         accessCodeRequired: parsed.accessCodeRequired ?? false,
         manualApprovalRequired: parsed.manualApprovalRequired ?? false,
         availabilityExposure: parsed.availabilityExposure ?? "TWO_WEEKS",
+        standardAvailabilityExposure: parsed.standardAvailabilityExposure ?? null,
         sortOrder: parsed.sortOrder ?? 0,
         active: parsed.active ?? true,
       },
@@ -284,6 +285,7 @@ export const serviceCatalogService = {
       ...(parsed.accessCodeRequired !== undefined ? { accessCodeRequired: parsed.accessCodeRequired } : {}),
       ...(parsed.manualApprovalRequired !== undefined ? { manualApprovalRequired: parsed.manualApprovalRequired } : {}),
       ...(parsed.availabilityExposure !== undefined ? { availabilityExposure: parsed.availabilityExposure } : {}),
+      ...(parsed.standardAvailabilityExposure !== undefined ? { standardAvailabilityExposure: parsed.standardAvailabilityExposure } : {}),
       ...(parsed.sortOrder !== undefined ? { sortOrder: parsed.sortOrder } : {}),
       ...(parsed.active !== undefined ? { active: parsed.active } : {}),
     });

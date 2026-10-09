@@ -34,6 +34,7 @@ export const createAvailabilityRuleSchema = z
       .trim()
       .regex(timeRegex, "endTime must be in HH:mm format."),
     active: z.boolean().optional(),
+    priorityOnly: z.boolean().optional(),
   })
   .strict()
   .refine((value) => value.startTime < value.endTime, {
@@ -55,6 +56,7 @@ export const updateAvailabilityRuleSchema = z
       .regex(timeRegex, "endTime must be in HH:mm format.")
       .optional(),
     active: z.boolean().optional(),
+    priorityOnly: z.boolean().optional(),
   })
   .strict()
   .refine((value) => Object.keys(value).length > 0, {

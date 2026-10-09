@@ -55,6 +55,8 @@ type ChatApiResponse = {
     directPurchaseUrl: string;
   } | null;
   leadId?: string;
+  /** Only meaningful when decision === "QUALIFIED" — see ai-conversation.service.ts's defensive guard. */
+  isStrongFit?: boolean;
   tokensUsed: number;
   tokenBalance: number;
   lowBalance: boolean;
@@ -83,7 +85,12 @@ export interface ConversationGateProps {
    * looking at slots, same as a QUALIFIED outcome.
    */
   qualificationMode: "TRIAGE" | "GATEKEEPER";
-  onQualified: (params: { leadId: string; name: string; email: string }) => void;
+  onQualified: (params: {
+    leadId: string;
+    name: string;
+    email: string;
+    isStrongFit: boolean;
+  }) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -113,6 +120,10 @@ export function ConversationGate({
 
   // Outcome
   const [rejectedLeadId, setRejectedLeadId] = React.useState<string | null>(null);
+  // Reused across TRIAGE/QUALIFIED outcomes — the server already guarantees
+  // this is false for any non-QUALIFIED decision, so it's safe to carry
+  // through either branch below unconditionally.
+  const [isStrongFit, setIsStrongFit] = React.useState(false);
   const [redirectData, setRedirectData] = React.useState<{
     service: { id: string; title: string; directPurchaseUrl: string };
     message: string;
@@ -177,12 +188,13 @@ export function ConversationGate({
             leadId: rejectedLeadId ?? "",
             name,
             email,
+            isStrongFit,
           });
         }
       }, 1200);
       return () => window.clearTimeout(timer);
     }
-  }, [phase, history, rejectedLeadId, name, email, onQualified]);
+  }, [phase, history, rejectedLeadId, isStrongFit, name, email, onQualified]);
 
   // ── API call ──────────────────────────────────────────────────────────────
 
@@ -227,9 +239,11 @@ export function ConversationGate({
         // "opening up the calendar" transition a QUALIFIED visitor gets.
         if (qualificationMode === "TRIAGE") {
           setRejectedLeadId(leadId);
+          setIsStrongFit(data.isStrongFit ?? false);
           setPhase("qualified");
         } else if (data.decision === "QUALIFIED") {
           setRejectedLeadId(leadId); // reuse field for leadId storage
+          setIsStrongFit(data.isStrongFit ?? false);
           setPhase("qualified");
         } else if (data.decision === "REDIRECT" && data.redirectService) {
           setRedirectData({

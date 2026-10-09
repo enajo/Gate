@@ -21,6 +21,8 @@ export type AvailabilityRule = {
   startTime: string;
   endTime: string;
   active: boolean;
+  /** Reserves this weekday's window for strong-fit leads only — see dynamic slot priority. */
+  priorityOnly: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -40,6 +42,7 @@ export type CreateAvailabilityRuleInput = {
   startTime: string;
   endTime: string;
   active?: boolean;
+  priorityOnly?: boolean;
 };
 
 export type UpdateAvailabilityRuleInput = Partial<CreateAvailabilityRuleInput>;
@@ -67,6 +70,8 @@ export type BookableSlot = {
   id?: string;
   start: Date;
   end: Date;
+  /** True when this slot came from a priorityOnly rule or lies beyond the standard exposure window — only ever populated when the caller opted into priority computation. */
+  isPriority?: boolean;
 };
 
 export type PublicBookableSlot = {
@@ -102,6 +107,8 @@ export type SlotGenerationInput = {
   minimumNoticeMinutes?: number;
   maxBookingsPerDay?: number | null;
   availabilityExposure?: AvailabilityExposure;
+  /** When true, includes priorityOnly-rule slots and tags them isPriority. Caller must have already verified the requester is a strong-fit lead — this flag is never a safe default. */
+  includePriorityRules?: boolean;
 };
 
 export type AvailabilityComputationResult = {
@@ -130,7 +137,7 @@ export type BookingConflictCheckInput = {
 
 export type AvailabilityRuleListItem = Pick<
   AvailabilityRule,
-  "id" | "weekday" | "startTime" | "endTime" | "active"
+  "id" | "weekday" | "startTime" | "endTime" | "active" | "priorityOnly"
 >;
 
 export type BlockedDateListItem = Pick<

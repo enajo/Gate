@@ -30,6 +30,8 @@ export type Service = {
   accessCodeRequired: boolean;
   manualApprovalRequired: boolean;
   availabilityExposure: AvailabilityExposure;
+  /** Narrower window for standard (non-strong-fit) leads. Null means no differentiation — falls back to availabilityExposure everywhere. */
+  standardAvailabilityExposure?: AvailabilityExposure | null;
   sortOrder: number;
   active: boolean;
   createdAt: Date;
@@ -54,6 +56,7 @@ export type PublicService = Pick<
   | "accessCodeRequired"
   | "manualApprovalRequired"
   | "availabilityExposure"
+  | "standardAvailabilityExposure"
   | "active"
 >;
 
@@ -72,6 +75,7 @@ export type CreateServiceInput = {
   accessCodeRequired?: boolean;
   manualApprovalRequired?: boolean;
   availabilityExposure?: AvailabilityExposure;
+  standardAvailabilityExposure?: AvailabilityExposure | null;
   sortOrder?: number;
   active?: boolean;
 };

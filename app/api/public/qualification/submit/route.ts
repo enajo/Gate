@@ -130,6 +130,9 @@ export async function POST(request: Request) {
           skippedQualification: true,
         } as Prisma.InputJsonValue,
         qualificationResult: "QUALIFIED",
+        // OPEN-mode skip-qualification path — never invokes the AI, must
+        // not rely on the column's schema default by accident.
+        isStrongFit: false,
         referrer: input.referrer ?? null,
         utmSource: input.utmSource ?? null,
         utmMedium: input.utmMedium ?? null,

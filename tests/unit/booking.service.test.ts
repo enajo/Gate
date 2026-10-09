@@ -217,6 +217,51 @@ describe("bookingService", () => {
       expect(result.status).toBe("ACTIVE");
     });
 
+    it("includes priority-only slots when validating a strong-fit lead's hold", async () => {
+      mockBookingRepository.findLeadByIdForProfessional.mockResolvedValue({
+        id: LEAD_ID,
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        name: "Sarah Founder",
+        email: "sarah@example.com",
+        qualificationResult: "QUALIFIED",
+        isStrongFit: true,
+      });
+      mockBookingRepository.findActiveBookingHold.mockResolvedValue(null);
+      mockBookingRepository.createBookingHoldForProfessional.mockResolvedValue(BASE_HOLD);
+
+      await bookingService.createHold({
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        slotStart: SLOT_START.toISOString(),
+        slotEnd: SLOT_END.toISOString(),
+        timezone: TIMEZONE,
+      });
+
+      expect(mockAvailabilityService.getBookableSlotsForService).toHaveBeenCalledWith(
+        expect.objectContaining({ includePriorityRules: true }),
+      );
+    });
+
+    it("excludes priority-only slots when validating a standard lead's hold", async () => {
+      mockBookingRepository.findActiveBookingHold.mockResolvedValue(null);
+      mockBookingRepository.createBookingHoldForProfessional.mockResolvedValue(BASE_HOLD);
+
+      await bookingService.createHold({
+        professionalId: PROFESSIONAL_ID,
+        serviceId: SERVICE_ID,
+        leadId: LEAD_ID,
+        slotStart: SLOT_START.toISOString(),
+        slotEnd: SLOT_END.toISOString(),
+        timezone: TIMEZONE,
+      });
+
+      expect(mockAvailabilityService.getBookableSlotsForService).toHaveBeenCalledWith(
+        expect.objectContaining({ includePriorityRules: false }),
+      );
+    });
+
     it("returns the existing hold when the same lead already holds the slot", async () => {
       mockBookingRepository.findActiveBookingHold.mockResolvedValue(BASE_HOLD);
 

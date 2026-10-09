@@ -143,3 +143,72 @@ describe("aiConversationService.buildLabeledExamples", () => {
     expect(result[0]?.situationSummary).toBe("Just exploring options.");
   });
 });
+
+describe("aiConversationService.nextTurn isStrongFit", () => {
+  beforeEach(() => {
+    mockCreate.mockReset();
+  });
+
+  function mockFinalTurn(overrides: Record<string, unknown>) {
+    mockCreate.mockResolvedValue({
+      usage: { total_tokens: 80 },
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              type: "final",
+              decision: "QUALIFIED",
+              redirectServiceId: null,
+              message: "Great — let me pull up some times.",
+              ...overrides,
+            }),
+          },
+        },
+      ],
+    });
+  }
+
+  it("falls back to FALLBACK_TURN (isStrongFit: false) when the OpenAI call fails", async () => {
+    mockCreate.mockRejectedValueOnce(new Error("network down"));
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ type: "final", decision: "QUALIFIED", isStrongFit: false });
+  });
+
+  it("passes isStrongFit: true through unchanged when decision is QUALIFIED", async () => {
+    mockFinalTurn({ isStrongFit: true });
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ decision: "QUALIFIED", isStrongFit: true });
+  });
+
+  it("defaults isStrongFit to false when the model omits it on a QUALIFIED decision", async () => {
+    mockFinalTurn({});
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ decision: "QUALIFIED", isStrongFit: false });
+  });
+
+  it("forces isStrongFit to false on REJECTED even if the model confusingly sets it true", async () => {
+    mockFinalTurn({ decision: "REJECTED", isStrongFit: true });
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ decision: "REJECTED", isStrongFit: false });
+  });
+
+  it("forces isStrongFit to false on REDIRECT even if the model confusingly sets it true", async () => {
+    mockFinalTurn({
+      decision: "REDIRECT",
+      redirectServiceId: "svc-1",
+      isStrongFit: true,
+    });
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ decision: "REDIRECT", isStrongFit: false });
+  });
+});

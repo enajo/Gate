@@ -304,6 +304,8 @@ async function assertRequestedSlotIsStillBookable(params: {
   slotStart: Date;
   slotEnd: Date;
   timezone: string;
+  /** Caller must have already verified strong-fit status before passing true. */
+  includePriorityRules: boolean;
 }) {
   const rangeStart = startOfDay(params.slotStart);
   const rangeEnd = endOfDay(params.slotEnd);
@@ -314,6 +316,7 @@ async function assertRequestedSlotIsStillBookable(params: {
     startDate: rangeStart,
     endDate: rangeEnd,
     timezone: params.timezone,
+    includePriorityRules: params.includePriorityRules,
   });
 
   const matchingSlot = availability.slots.find(
@@ -389,7 +392,7 @@ export const bookingService = {
       professionalId: params.professionalId,
       serviceId: parsed.serviceId,
     });
-    await requireLead({
+    const lead = await requireLead({
       professionalId: params.professionalId,
       serviceId: parsed.serviceId,
       leadId: params.leadId,
@@ -405,6 +408,9 @@ export const bookingService = {
       slotStart,
       slotEnd,
       timezone: parsed.timezone,
+      // Same re-derivation /api/public/slots does — without it, a strong-fit
+      // lead could see a priority slot but never actually hold it.
+      includePriorityRules: lead.isStrongFit === true,
     });
 
     const existingActiveHold = await bookingRepository.findActiveBookingHold({
@@ -495,7 +501,7 @@ export const bookingService = {
       professionalId: parsed.professionalId,
       serviceId: parsed.serviceId,
     });
-    await requireLead({
+    const lead = await requireLead({
       professionalId: parsed.professionalId,
       serviceId: parsed.serviceId,
       leadId: parsed.leadId,
@@ -577,6 +583,7 @@ export const bookingService = {
       slotStart: hold.slotStart,
       slotEnd: hold.slotEnd,
       timezone: parsed.timezone,
+      includePriorityRules: lead.isStrongFit === true,
     });
 
     if (existingBooking) {

@@ -47,7 +47,7 @@ function LandsVisual() {
   return (
     <div className="mx-auto w-full max-w-sm overflow-hidden rounded-card border border-warm-border/80 bg-white/80 shadow-warm-lg">
       <div className="flex h-8 items-center gap-2 border-b border-warm-border px-4">
-        <span className="size-2.5 rounded-full bg-brand-amber/50" />
+        <span className="size-2.5 rounded-full bg-[#8C2A47]/50" />
         <span className="size-2.5 rounded-full bg-warm-gray/35" />
         <span className="size-2.5 rounded-full bg-slate-300" />
       </div>
@@ -71,24 +71,21 @@ function LandsVisual() {
   );
 }
 
+// Continues the exact exchange the hero's Josef's Gate widget opened with
+// (components/marketing/hero-qualification-teaser.tsx) — same visitor, same
+// case, picked up right where that widget left off mid-typing.
 function AsksVisual() {
   return (
     <div className="mx-auto w-full max-w-sm space-y-3 overflow-hidden rounded-card border border-warm-border/80 bg-white/80 p-7 shadow-warm-lg">
       <div className="flex justify-start">
         <div className="max-w-[85%] rounded-[1.1rem] rounded-tl-sm border border-warm-border-soft bg-white px-4 py-2.5 text-[13px] leading-6 text-ink">
-          What are you hoping to get out of this session?
+          Got it. Have you had a real mock case study since your last
+          rejection?
         </div>
       </div>
       <div className="flex justify-end">
         <div className="max-w-[85%] rounded-[1.1rem] rounded-tr-sm bg-ink px-4 py-2.5 text-[13px] leading-6 text-white">
-          I need help fixing a broken hiring pipeline before Q3.
-        </div>
-      </div>
-      <div className="flex justify-start">
-        <div className="flex items-center gap-1 rounded-[1.1rem] rounded-tl-sm border border-warm-border-soft bg-white px-4 py-3">
-          <span className="size-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:0ms]" />
-          <span className="size-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:150ms]" />
-          <span className="size-1.5 animate-bounce rounded-full bg-gray-400 [animation-delay:300ms]" />
+          No — just been reading frameworks on my own.
         </div>
       </div>
     </div>
@@ -98,8 +95,8 @@ function AsksVisual() {
 function DecidesVisual() {
   const outcomes = [
     { label: "Qualified", tone: "bg-success/10 text-success border-success/30" },
-    { label: "Redirected", tone: "bg-brand-amber/10 text-brand-amber border-brand-amber/30" },
-    { label: "Rejected", tone: "bg-gray-500/10 text-gray-500 border-gray-400/30" },
+    { label: "Redirected", tone: "bg-[#7B1E3A]/5 text-[#7B1E3A]/40 border-[#7B1E3A]/15" },
+    { label: "Rejected", tone: "bg-gray-500/5 text-gray-400 border-gray-300/40" },
   ];
 
   return (
@@ -117,9 +114,10 @@ function DecidesVisual() {
         ))}
       </div>
 
-      <p className="mt-7 text-[13px] leading-6 text-gray-500">
-        Every visitor gets exactly one of these outcomes — automatically.
-      </p>
+      <div className="mt-7 rounded-[1.1rem] rounded-tl-sm border border-success/30 bg-success/10 px-4 py-3 text-[13px] leading-6 text-ink">
+        <span className="font-medium">Qualified ✓</span> — this looks like a
+        strong fit. Here are Josef&apos;s open times this week.
+      </div>
     </div>
   );
 }
@@ -144,7 +142,7 @@ function BooksVisual() {
             <span
               key={`${day}-${index}`}
               className={
-                day === "14" ? "rounded-lg bg-brand-amber py-1 text-ink" : "py-1"
+                day === "14" ? "rounded-lg bg-[#8C2A47] py-1 text-ink" : "py-1"
               }
             >
               {day}
@@ -213,9 +211,9 @@ export function HowItWorksSection() {
   const ActiveVisual = VISUALS[STEPS[activeIndex].id];
 
   return (
-    <section id="how-it-works" className="relative px-4 py-24">
+    <section id="how-it-works" className="relative scroll-mt-20 px-4 py-24">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs uppercase tracking-[0.26em] text-brand-amber">
+        <p className="text-xs uppercase tracking-[0.26em] text-[#7B1E3A]">
           How it works
         </p>
 
@@ -239,7 +237,7 @@ export function HowItWorksSection() {
               style={{
                 borderColor:
                   index === activeIndex
-                    ? "var(--color-brand-amber)"
+                    ? "#7B1E3A"
                     : "var(--color-warm-border-soft)",
               }}
             >
@@ -248,7 +246,7 @@ export function HowItWorksSection() {
                 style={{
                   color:
                     index === activeIndex
-                      ? "var(--color-brand-amber)"
+                      ? "#7B1E3A"
                       : "var(--color-text-subtle)",
                 }}
               >

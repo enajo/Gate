@@ -53,11 +53,11 @@ function htmlWrapper(title: string, body: string): string {
 }
 
 function accentDot(): string {
-  return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#0E6E52;margin-right:8px;vertical-align:middle;"></span>`;
+  return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#7B1E3A;margin-right:8px;vertical-align:middle;"></span>`;
 }
 
 function slotBox(slotText: string): string {
-  return `<div style="margin:20px 0;padding:14px 18px;background:#EEF1EE;border:1px solid #0E6E52;border-radius:12px;font-size:14px;color:#1E2422;">
+  return `<div style="margin:20px 0;padding:14px 18px;background:#FBEEF1;border:1px solid #7B1E3A;border-radius:12px;font-size:14px;color:#1E2422;">
     ${accentDot()}<strong>${slotText}</strong>
   </div>`;
 }
@@ -184,14 +184,14 @@ export const emailService = {
         `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">New booking request</h1>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
            <strong style="color:#1E2422;">${params.visitorName}</strong>
-           (<a href="mailto:${params.visitorEmail}" style="color:#0E6E52;">${params.visitorEmail}</a>)
+           (<a href="mailto:${params.visitorEmail}" style="color:#7B1E3A;">${params.visitorEmail}</a>)
            has requested a <strong style="color:#1E2422;">${params.serviceTitle}</strong> session.
          </p>
          ${slotBox(slot)}
          <p style="margin:0 0 24px;font-size:13px;color:#9CA3AF;">
            This slot is temporarily held while you review the request. Approve or decline from your dashboard.
          </p>
-         <a href="${approveUrl}" style="display:inline-block;padding:12px 24px;background:#0E6E52;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+         <a href="${approveUrl}" style="display:inline-block;padding:12px 24px;background:#7B1E3A;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
            Review Request
          </a>`,
       ),
@@ -218,7 +218,7 @@ export const emailService = {
 
     const meetingSection = params.meetingUrl
       ? `<p style="margin:16px 0 0;font-size:14px;color:#6B7280;">
-           <a href="${params.meetingUrl}" style="color:#0E6E52;font-weight:600;">Join meeting link →</a>
+           <a href="${params.meetingUrl}" style="color:#7B1E3A;font-weight:600;">Join meeting link →</a>
          </p>`
       : "";
 
@@ -324,7 +324,7 @@ export const emailService = {
         `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">Booking confirmed ✓</h1>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
            <strong style="color:#1E2422;">${params.visitorName}</strong>
-           (<a href="mailto:${params.visitorEmail}" style="color:#0E6E52;">${params.visitorEmail}</a>)
+           (<a href="mailto:${params.visitorEmail}" style="color:#7B1E3A;">${params.visitorEmail}</a>)
            is confirmed for <strong style="color:#1E2422;">${params.serviceTitle}</strong>.
            A calendar event has been added to your calendar.
          </p>
@@ -359,17 +359,17 @@ export const emailService = {
         `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">Someone reached out directly</h1>
          <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
            <strong style="color:#1E2422;">${params.visitorName}</strong>
-           (<a href="mailto:${params.visitorEmail}" style="color:#0E6E52;">${params.visitorEmail}</a>)
+           (<a href="mailto:${params.visitorEmail}" style="color:#7B1E3A;">${params.visitorEmail}</a>)
            was not a fit for <strong style="color:#1E2422;">${params.serviceTitle}</strong> but
            left you a message:
          </p>
-         <blockquote style="margin:0 0 24px;padding:16px 20px;background:#EEF1EE;border-left:3px solid #0E6E52;border-radius:0 12px 12px 0;font-size:14px;color:#1E2422;line-height:1.7;">
+         <blockquote style="margin:0 0 24px;padding:16px 20px;background:#FBEEF1;border-left:3px solid #7B1E3A;border-radius:0 12px 12px 0;font-size:14px;color:#1E2422;line-height:1.7;">
            ${params.message.replace(/\n/g, "<br />")}
          </blockquote>
          <p style="margin:0 0 24px;font-size:13px;color:#9CA3AF;">
            Reply directly to ${params.visitorEmail} if you&apos;d like to follow up.
          </p>
-         <a href="${leadsUrl}" style="display:inline-block;padding:12px 24px;background:#0E6E52;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
+         <a href="${leadsUrl}" style="display:inline-block;padding:12px 24px;background:#7B1E3A;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
            View Dashboard
          </a>`,
       ),
@@ -456,7 +456,7 @@ export const emailService = {
       : "";
 
     const suggestionSection = params.suggestion
-      ? `<div style="margin:8px 0 0;padding:14px 18px;background:#EEF1EE;border:1px solid #0E6E52;border-radius:12px;font-size:14px;color:#1E2422;line-height:1.7;">
+      ? `<div style="margin:8px 0 0;padding:14px 18px;background:#FBEEF1;border:1px solid #7B1E3A;border-radius:12px;font-size:14px;color:#1E2422;line-height:1.7;">
            <strong>Worth trying:</strong> ${params.suggestion}
          </div>`
       : "";
@@ -468,7 +468,7 @@ export const emailService = {
         return `<tr>
           <td style="padding:6px 0;font-size:14px;color:#1E2422;">${c.channel}</td>
           <td style="padding:6px 0;font-size:14px;color:#6B7280;text-align:right;">${c.leadCount} lead${c.leadCount === 1 ? "" : "s"}</td>
-          <td style="padding:6px 0 6px 12px;font-size:14px;color:#0E6E52;font-weight:600;text-align:right;">${pct}% qualified</td>
+          <td style="padding:6px 0 6px 12px;font-size:14px;color:#7B1E3A;font-weight:600;text-align:right;">${pct}% qualified</td>
         </tr>`;
       })
       .join("");

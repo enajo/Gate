@@ -308,7 +308,7 @@ export const profileService = {
       bio: professional.bio ?? undefined,
       avatarUrl: professional.avatarUrl ?? null,
       theme: {
-        accentColor: brandSettings?.accentColor ?? "#0e6e52",
+        accentColor: brandSettings?.accentColor ?? "#7B1E3A",
         backgroundColor: brandSettings?.backgroundColor ?? "#fafafa",
       },
       services,
@@ -497,7 +497,7 @@ export const profileService = {
       bio: professional.bio ?? undefined,
       avatarUrl: professional.avatarUrl ?? null,
       theme: {
-        accentColor: brandSettings?.accentColor ?? "#0e6e52",
+        accentColor: brandSettings?.accentColor ?? "#7B1E3A",
         backgroundColor: brandSettings?.backgroundColor ?? "#fafafa",
       },
       services,

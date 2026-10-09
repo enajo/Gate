@@ -55,6 +55,22 @@
   --font-display: var(--font-fraunces, ui-serif, Georgia, serif);
   --font-body: var(--font-ibm-plex-sans, ui-sans-serif, system-ui, sans-serif);
 
+  /* Overrides Tailwind's own --font-mono default (same fallback stack) so
+     `font-mono` resolves to IBM Plex Mono only where the marketing layout's
+     --font-ibm-plex-mono var is actually defined — everywhere else this is
+     identical to Tailwind's untouched default. */
+  --font-mono: var(
+    --font-ibm-plex-mono,
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    "Courier New",
+    monospace
+  );
+
   /* ─────────────────────────────────────────────────────────────────────────
      BRAND PALETTE
      How to use: replace [#HEX] arbitrary values with the named token below.
@@ -63,18 +79,17 @@
            border-[#E4DED4] → border-warm-border
   ───────────────────────────────────────────────────────────────────────── */
 
-  /* ── Moss ── accent colour, icons, highlights
-     Was amber/gold (#DFA767) — replaced to differentiate from a competitor
-     using the same warm amber-on-cream palette. Grounded in a single real
-     reference rather than an invented "emerald": a raven's feather — black
-     until light hits it at an angle, revealing a deep green underneath.
-     Token names kept as "brand-amber" to avoid a mass rename across every
-     usage site — only the values changed. Two-tier: deep for primary
-     buttons/real emphasis (the green revealed at an angle), light for
-     hovers/soft accents (the sheen where light catches it directly). */
-  --color-brand-amber:       #0e6e52;
-  --color-brand-amber-light: #2f9e73;
-  --color-brand-amber-faint: #eef1ee;
+  /* ── Burgundy ── accent colour, icons, highlights
+     Was amber/gold (#DFA767), then moss green (#0e6e52, the raven-feather
+     era) — now the same deep burgundy chosen during the homepage redesign
+     (real WCAG-checked: 7B1E3A passes 4.5:1 for text/buttons; 8C2A47 is the
+     lighter decorative-only shade; FBEEF1 the pale backing). Applied here so
+     the whole app matches the homepage instead of the homepage being the
+     only place that got the update. Token names kept as "brand-amber" to
+     avoid a mass rename across every usage site — only the values changed. */
+  --color-brand-amber:       #7B1E3A;
+  --color-brand-amber-light: #8C2A47;
+  --color-brand-amber-faint: #FBEEF1;
 
   /* ── Ink ── dark text, filled backgrounds
      Consolidated from three competing near-blacks (#2b2b2b/#111827/#1a1a1a)

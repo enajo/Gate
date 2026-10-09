@@ -34,6 +34,10 @@ import { googleRepository } from "@/server/repositories/google.repository";
 import { calendarProviderService } from "@/server/services/calendar-provider.service";
 import { preCallBriefingService } from "@/server/services/pre-call-briefing.service";
 import {
+  visitorWarmUpService,
+  type VisitorWarmUpNote,
+} from "@/server/services/visitor-warmup.service";
+import {
   bookingSlotSelectionSchema,
   confirmBookingSchema,
 } from "@/server/validators/booking.validator";
@@ -258,6 +262,49 @@ async function requireService(params: {
   }
 
   return service;
+}
+
+/**
+ * Personalized "before your call" note for the visitor's confirmation email.
+ * Metered against the same token balance as the live gate, and skipped
+ * entirely once that's exhausted. Never throws: any failure just means the
+ * plain confirmation goes out.
+ */
+async function generateVisitorWarmUp(params: {
+  professionalId: string;
+  professionalName: string;
+  tokenBalance: number;
+  visitorName: string;
+  serviceTitle: string;
+  answersJson: Prisma.JsonValue;
+}): Promise<VisitorWarmUpNote | null> {
+  if (params.tokenBalance <= 0) return null;
+
+  try {
+    const answers = params.answersJson as {
+      conversationHistory?: Array<{ role: string; content: string }>;
+      history?: Array<{ role: string; content: string }>;
+    } | null;
+
+    const warmUp = await visitorWarmUpService.generate({
+      visitorName: params.visitorName,
+      professionalName: params.professionalName,
+      serviceTitle: params.serviceTitle,
+      conversationHistory: answers?.conversationHistory ?? answers?.history ?? [],
+    });
+
+    if (warmUp.tokensUsed > 0) {
+      await profileRepository.deductTokenBalance(
+        params.professionalId,
+        warmUp.tokensUsed,
+      );
+    }
+
+    return warmUp.note;
+  } catch (error) {
+    logger.error("Visitor warm-up failed", { error });
+    return null;
+  }
 }
 
 async function requireValidActiveHold(params: {
@@ -977,6 +1024,17 @@ export const bookingService = {
 
       const professionalEmail = professional.user.email;
 
+      // Started now, awaited before the emails — runs alongside calendar
+      // event creation rather than adding its latency on top.
+      const warmUpPromise = generateVisitorWarmUp({
+        professionalId: params.professionalId,
+        professionalName: professional.fullName,
+        tokenBalance: professional.tokenBalance,
+        visitorName: booking.lead.name,
+        serviceTitle: booking.service.title,
+        answersJson: booking.lead.answersJson,
+      });
+
       // ── Google Calendar event ─────────────────────────────────────────────
       let meetingUrl: string | null = null;
 
@@ -1021,6 +1079,8 @@ export const bookingService = {
         await bookingRepository.markEventFailed(params.bookingId);
       }
 
+      const warmUp = await warmUpPromise;
+
       // ── Confirmation emails ───────────────────────────────────────────────
       await Promise.allSettled([
         emailService.sendBookingConfirmedVisitor({
@@ -1034,6 +1094,7 @@ export const bookingService = {
           holdId: booking.holdId,
           meetingUrl,
           appUrl,
+          warmUp,
         }),
         emailService.sendBookingConfirmedProfessional({
           to: professionalEmail,

@@ -72,6 +72,10 @@ const mockPreCallBriefingService = vi.hoisted(() => ({
   generate: vi.fn(),
 }));
 
+const mockVisitorWarmUpService = vi.hoisted(() => ({
+  generate: vi.fn(),
+}));
+
 vi.mock("@/server/repositories/profile.repository", () => ({
   profileRepository: mockProfileRepository,
 }));
@@ -106,6 +110,10 @@ vi.mock("@/server/services/calendar-provider.service", () => ({
 
 vi.mock("@/server/services/pre-call-briefing.service", () => ({
   preCallBriefingService: mockPreCallBriefingService,
+}));
+
+vi.mock("@/server/services/visitor-warmup.service", () => ({
+  visitorWarmUpService: mockVisitorWarmUpService,
 }));
 
 import { bookingService } from "@/server/services/booking.service";
@@ -773,6 +781,89 @@ describe("bookingService", () => {
       await expect(
         bookingService.getPreCallBriefing(USER_ID, "nonexistent"),
       ).rejects.toThrow("Lead not found.");
+    });
+  });
+
+  // ── postConfirmAsync (visitor warm-up) ────────────────────────────────────
+
+  describe("postConfirmAsync visitor warm-up", () => {
+    const CONVERSATION = [
+      { role: "user", content: "I'm switching from engineering into product and my interview is in two weeks." },
+    ];
+
+    const WARM_UP_NOTE = {
+      acknowledgement: "You're moving from engineering into product, with an interview in two weeks.",
+      prepPoints: ["The job description for the role"],
+    };
+
+    function setUpBooking(tokenBalance: number) {
+      mockBookingRepository.findBookingByIdWithRelations.mockResolvedValue({
+        ...BASE_BOOKING,
+        lead: {
+          id: LEAD_ID,
+          name: "Sarah Founder",
+          email: "sarah@example.com",
+          answersJson: { conversationHistory: CONVERSATION },
+        },
+        service: { id: SERVICE_ID, title: "Strategy Session" },
+      });
+      mockProfileRepository.findByIdWithUser.mockResolvedValue({
+        id: PROFESSIONAL_ID,
+        fullName: "John Carter",
+        tokenBalance,
+        user: { email: "john@example.com" },
+      });
+      mockGoogleRepository.findDefaultEventCalendarByProfessionalId.mockResolvedValue(null);
+    }
+
+    it("adds the warm-up note to the visitor's confirmation and meters its tokens", async () => {
+      setUpBooking(10_000);
+      mockVisitorWarmUpService.generate.mockResolvedValue({ note: WARM_UP_NOTE, tokensUsed: 180 });
+
+      await bookingService.postConfirmAsync({
+        bookingId: "booking_1",
+        professionalId: PROFESSIONAL_ID,
+        timezone: TIMEZONE,
+      });
+
+      expect(mockVisitorWarmUpService.generate).toHaveBeenCalledWith(
+        expect.objectContaining({ conversationHistory: CONVERSATION }),
+      );
+      expect(mockProfileRepository.deductTokenBalance).toHaveBeenCalledWith(PROFESSIONAL_ID, 180);
+      expect(mockEmailService.sendBookingConfirmedVisitor).toHaveBeenCalledWith(
+        expect.objectContaining({ warmUp: WARM_UP_NOTE }),
+      );
+    });
+
+    it("skips the AI call when the token balance is exhausted, still sending the plain confirmation", async () => {
+      setUpBooking(0);
+
+      await bookingService.postConfirmAsync({
+        bookingId: "booking_1",
+        professionalId: PROFESSIONAL_ID,
+        timezone: TIMEZONE,
+      });
+
+      expect(mockVisitorWarmUpService.generate).not.toHaveBeenCalled();
+      expect(mockEmailService.sendBookingConfirmedVisitor).toHaveBeenCalledWith(
+        expect.objectContaining({ warmUp: null }),
+      );
+    });
+
+    it("still sends the confirmation when warm-up generation throws", async () => {
+      setUpBooking(10_000);
+      mockVisitorWarmUpService.generate.mockRejectedValue(new Error("boom"));
+
+      await bookingService.postConfirmAsync({
+        bookingId: "booking_1",
+        professionalId: PROFESSIONAL_ID,
+        timezone: TIMEZONE,
+      });
+
+      expect(mockEmailService.sendBookingConfirmedVisitor).toHaveBeenCalledWith(
+        expect.objectContaining({ warmUp: null }),
+      );
+      expect(mockEmailService.sendBookingConfirmedProfessional).toHaveBeenCalled();
     });
   });
 });

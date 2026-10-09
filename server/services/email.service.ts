@@ -3,6 +3,7 @@ import "server-only";
 import { formatInTimeZone } from "date-fns-tz";
 import { EMAIL_FROM, resend } from "@/lib/email";
 import { logger } from "@/lib/logger";
+import type { VisitorWarmUpNote } from "@/server/services/visitor-warmup.service";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,37 @@ function accentDot(): string {
 function slotBox(slotText: string): string {
   return `<div style="margin:20px 0;padding:14px 18px;background:#FBEEF1;border:1px solid #7B1E3A;border-radius:12px;font-size:14px;color:#1E2422;">
     ${accentDot()}<strong>${slotText}</strong>
+  </div>`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** AI-written, so every string is escaped. Empty string when there's no note. */
+function warmUpSection(note: VisitorWarmUpNote | null | undefined): string {
+  if (!note) return "";
+
+  const acknowledgement = note.acknowledgement
+    ? `<p style="margin:0 0 10px;font-size:14px;color:#1E2422;">${escapeHtml(note.acknowledgement)}</p>`
+    : "";
+
+  const points = note.prepPoints.length
+    ? `<p style="margin:0 0 6px;font-size:13px;color:#6B7280;">Worth having ready:</p>
+       <ul style="margin:0;padding-left:20px;font-size:14px;color:#1E2422;">
+         ${note.prepPoints.map((point) => `<li style="margin:0 0 4px;">${escapeHtml(point)}</li>`).join("")}
+       </ul>`
+    : "";
+
+  return `<div style="margin:20px 0 0;padding:16px 18px;border-left:3px solid #7B1E3A;background:#FAFAF9;">
+    <p style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#7B1E3A;">Before your call</p>
+    ${acknowledgement}
+    ${points}
   </div>`;
 }
 
@@ -212,6 +244,8 @@ export const emailService = {
     holdId: string;
     meetingUrl?: string | null;
     appUrl: string;
+    /** Optional personalized prep note — see visitor-warmup.service.ts. */
+    warmUp?: VisitorWarmUpNote | null;
   }): Promise<void> {
     const slot = formatSlot(params.slotStart, params.slotEnd, params.timezone);
     const statusUrl = `${params.appUrl}/booking/${params.holdId}`;
@@ -236,6 +270,7 @@ export const emailService = {
          </p>
          ${slotBox(slot)}
          ${meetingSection}
+         ${warmUpSection(params.warmUp)}
          <p style="margin:20px 0 24px;font-size:13px;color:#9CA3AF;">
            A calendar invite has been sent. You can view your booking details below.
          </p>

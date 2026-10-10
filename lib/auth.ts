@@ -6,6 +6,7 @@ import Google from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { env } from "@/lib/env";
 import { db } from "@/lib/db";
+import { emailLoginService } from "@/server/services/email-login.service";
 import type { NextAuthOptions, Session } from "next-auth";
 
 // ─── Dev credentials provider ─────────────────────────────────────────────────
@@ -39,6 +40,23 @@ const devCredentialsProvider = CredentialsProvider({
   },
 });
 
+// ─── Email code provider ──────────────────────────────────────────────────────
+// Real passwordless sign-in: the code is requested via /api/public/login-code
+// and checked here. Enabled in every environment — in development without
+// Resend, the code is printed to the server log instead of emailed.
+const emailCodeProvider = CredentialsProvider({
+  id: "email-code",
+  name: "Email code",
+  credentials: {
+    email: { label: "Email", type: "email" },
+    code: { label: "Code", type: "text" },
+  },
+  async authorize(credentials) {
+    if (!credentials?.email || !credentials.code) return null;
+    return emailLoginService.verifyCode(credentials.email, credentials.code);
+  },
+});
+
 // ─── Auth options ──────────────────────────────────────────────────────────────
 export const authOptions: NextAuthOptions = {
   secret: env.AUTH_SECRET,
@@ -48,6 +66,8 @@ export const authOptions: NextAuthOptions = {
     // Never include this outside development — it accepts any email with
     // zero verification, which would let anyone log in as anyone.
     ...(env.NODE_ENV !== "production" ? [devCredentialsProvider] : []),
+
+    emailCodeProvider,
 
     // Production: Google OAuth (requires AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET in .env)
     ...(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET

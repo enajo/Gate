@@ -135,6 +135,32 @@ export const emailService = {
    * If requiresApproval is true → "pending review" messaging.
    * If false → "confirmed, check your inbox" messaging.
    */
+  /** Passwordless sign-in code — see email-login.service.ts. */
+  async sendLoginCode(params: {
+    to: string;
+    code: string;
+    ttlMinutes: number;
+  }): Promise<void> {
+    const subject = `${params.code} is your Gate sign-in code`;
+    await sendEmail({
+      to: params.to,
+      subject,
+      html: htmlWrapper(
+        subject,
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;">Your sign-in code</h1>
+         <p style="margin:0 0 20px;font-size:14px;color:#6B7280;">
+           Enter this code on the Gate sign-in page. It expires in ${params.ttlMinutes} minutes and works once.
+         </p>
+         <div style="margin:0 0 24px;padding:18px 0;background:#FBEEF1;border:1px solid #7B1E3A;border-radius:12px;text-align:center;font-size:30px;font-weight:700;letter-spacing:0.35em;color:#1E2422;font-family:'SFMono-Regular',Menlo,Consolas,monospace;">
+           ${escapeHtml(params.code)}
+         </div>
+         <p style="margin:0;font-size:13px;color:#9CA3AF;">
+           Didn&apos;t ask for this? You can ignore this email. Nobody can sign in without the code.
+         </p>`,
+      ),
+    });
+  },
+
   async sendHoldCreatedVisitor(params: {
     to: string;
     visitorName: string;

@@ -31,11 +31,11 @@ export default function LoginPage() {
 
           <div className="mt-8 grid max-w-md gap-3 text-[14px] text-gray-500">
             <div className="border-l border-brand-amber pl-4">
-              Continue with Google, Microsoft, LinkedIn, or a secure email code.
+              Continue with Google, or with a one-time code sent to your email.
             </div>
             <div className="border-l border-warm-border-soft pl-4">
-              No passwords to remember. Your account stays controlled by your
-              trusted identity provider.
+              No passwords to remember. Codes expire after 10 minutes and work
+              only once.
             </div>
           </div>
         </div>

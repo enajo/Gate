@@ -193,6 +193,21 @@ model Session {
   @@map("sessions")
 }
 
+/// One active sign-in code per email. The code itself is never stored, only
+/// a keyed hash (lib/crypto.ts hmacSign). `attempts` lives in the database
+/// rather than the in-memory rate limiter so the brute-force cap holds across
+/// serverless instances.
+model EmailLoginCode {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  codeHash  String   @map("code_hash")
+  expiresAt DateTime @map("expires_at")
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("email_login_codes")
+}
+
 model VerificationToken {
   identifier String
   token      String   @unique

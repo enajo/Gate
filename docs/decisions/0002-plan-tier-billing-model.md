@@ -20,15 +20,23 @@ includes, and what happens when a paid professional stops paying.
   booking volume. Chosen because Cal.com's generosity comes from
   per-seat/team monetization (doesn't fit a solo-expert audience), and
   HubSpot's free scheduler is a CRM loss-leader, not a comparable case.
-- **AI qualification is capped even on paid-adjacent free usage** — it costs
-  real per-call OpenAI money, unlike bookings or calendar sync. Free tier:
-  15,000 tokens/month (~10 qualification conversations). Exhausting it still
-  fails open to auto-qualify (existing behavior, unchanged) rather than
-  blocking a visitor.
-- **Final tiers**: FREE ($0, 1 service, 15k tokens/mo) → PRO ($29/mo,
-  unlimited services, 150k tokens/mo) → BUSINESS ($79/mo, unlimited services,
-  750k tokens/mo). Limits live in code (`lib/constants.ts` `PLAN_TIER_LIMITS`),
-  not the database, so pricing can change without a migration.
+- **AI screening is capped on the lower tiers** — it costs real per-call
+  OpenAI money, unlike bookings or calendar sync. Exhausting the allowance
+  still fails open to auto-qualify rather than blocking a visitor, and the
+  expert is emailed once per period.
+- **Metered in conversations, not tokens (changed 2026-10-12).** One
+  conversation = one visitor's whole screening chat. Tokens were the wrong
+  unit to sell: experts can't reason about them, and live tests showed a
+  real conversation costs ~3–5k tokens, not the ~1.5k the old 15k-token
+  free tier assumed — it was really ~4 conversations, not the ~10 promised.
+  Cost per conversation is still bounded server-side (server-held history,
+  `MAX_AI_CALLS_PER_CONVERSATION`).
+- **Final tiers**: FREE ($0, 1 service, 10 conversations/mo) → PRO ($29/mo,
+  unlimited services, 100 conversations/mo) → BUSINESS ($79/mo, unlimited
+  services, unlimited conversations under fair use — abuse is bounded by
+  per-visitor caps and rate limits, not an allowance). Limits live in code
+  (`lib/constants.ts` `PLAN_TIER_LIMITS`), not the database, so pricing can
+  change without a migration.
 - **Non-payment handling: soft-lock, never touch existing commitments.** Once
   Stripe's dunning/retries exhaust and a subscription goes `unpaid`: stop new
   lead intake and new bookings for that professional, but leave bookings
@@ -53,7 +61,7 @@ has a real, non-zero marginal cost.
   processing the client's payment directly) — a much bigger business-model
   shift (becoming a payments intermediary), treated as a separate, future
   decision, not conflated with these tiers.
-- **Pay-as-you-go token top-ups** instead of flat tiers for overage. Rejected
+- **Pay-as-you-go top-ups** instead of flat tiers for overage. Rejected
   in favor of flat tiers — a wallet/credits system means two billing
   mechanisms (subscriptions + one-time charges) instead of one, which cuts
   against the project's standing "keep it simple" bias (a beta-tester

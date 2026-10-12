@@ -22,13 +22,13 @@ const EMAIL_WINDOW = 60 * 60 * 1000;
 // POST /api/public/login-code — emails a 6-digit sign-in code.
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const ipResult = rateLimit(`login-code:ip:${ip}`, IP_LIMIT, IP_WINDOW);
+  const ipResult = await rateLimit(`login-code:ip:${ip}`, IP_LIMIT, IP_WINDOW);
   if (!ipResult.allowed) return tooManyRequests(ipResult.resetAt);
 
   try {
     const input = requestCodeSchema.parse(await request.json());
 
-    const emailResult = rateLimit(
+    const emailResult = await rateLimit(
       `login-code:email:${normalizeEmail(input.email)}`,
       EMAIL_LIMIT,
       EMAIL_WINDOW,

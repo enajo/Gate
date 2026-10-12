@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-export function TokenBalanceButton({
+export function ConversationBalanceButton({
   professionalId,
   fullName,
   currentBalance,
@@ -51,21 +51,21 @@ export function TokenBalanceButton({
     setError(null);
 
     try {
-      const res = await fetch(`/api/admin/professionals/${professionalId}/token-balance`, {
+      const res = await fetch(`/api/admin/professionals/${professionalId}/conversation-balance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tokenBalance: parsed }),
+        body: JSON.stringify({ conversationBalance: parsed }),
       });
 
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error ?? "Failed to update token balance.");
+        throw new Error(data?.error ?? "Failed to update conversation balance.");
       }
 
       setOpen(false);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update token balance.");
+      setError(err instanceof Error ? err.message : "Failed to update conversation balance.");
     } finally {
       setLoading(false);
     }
@@ -76,13 +76,13 @@ export function TokenBalanceButton({
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Coins />
-          Tokens
+          Conversations
         </Button>
       </DialogTrigger>
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Set {fullName}&apos;s token balance</DialogTitle>
+          <DialogTitle>Set {fullName}&apos;s conversation balance</DialogTitle>
           <DialogDescription>
             Adjusts their remaining AI qualification allowance directly.
             This doesn&apos;t change their monthly reset schedule — it&apos;s
@@ -92,7 +92,7 @@ export function TokenBalanceButton({
 
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-slate-900">
-            Token balance
+            Conversations left
           </span>
           <Input
             type="number"

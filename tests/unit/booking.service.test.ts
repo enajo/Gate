@@ -4,7 +4,6 @@ const mockProfileRepository = vi.hoisted(() => ({
   findById: vi.fn(),
   findByUserId: vi.fn(),
   findByIdWithUser: vi.fn(),
-  deductTokenBalance: vi.fn(),
 }));
 
 const mockServiceRepository = vi.hoisted(() => ({
@@ -720,7 +719,7 @@ describe("bookingService", () => {
       expect(result.generatedAt).toBe(generatedAt);
     });
 
-    it("generates, persists, and deducts tokens on first call", async () => {
+    it("generates and persists the briefing on first call", async () => {
       mockBookingRepository.findLeadWithServiceByIdForProfessional.mockResolvedValue(
         LEAD_WITH_SERVICE,
       );
@@ -739,10 +738,6 @@ describe("bookingService", () => {
         serviceName: "Strategy Session",
         conversationHistory: LEAD_WITH_SERVICE.answersJson.conversationHistory,
       });
-      expect(mockProfileRepository.deductTokenBalance).toHaveBeenCalledWith(
-        PROFESSIONAL_ID,
-        250,
-      );
       expect(mockBookingRepository.updateLeadById).toHaveBeenCalledWith(
         LEAD_ID,
         expect.objectContaining({
@@ -754,25 +749,6 @@ describe("bookingService", () => {
         }),
       );
       expect(result.summary).toBe("Fresh summary");
-    });
-
-    it("does not deduct tokens when the AI call used zero tokens (fail-open)", async () => {
-      mockBookingRepository.findLeadWithServiceByIdForProfessional.mockResolvedValue({
-        ...LEAD_WITH_SERVICE,
-        answersJson: { autoQualified: true, history: [] },
-      });
-      mockPreCallBriefingService.generate.mockResolvedValue({
-        summary: "",
-        keyPoints: [],
-        suggestedOpening: "",
-        tokensUsed: 0,
-      });
-      mockBookingRepository.updateLeadById.mockResolvedValue({});
-
-      const result = await bookingService.getPreCallBriefing(USER_ID, LEAD_ID);
-
-      expect(mockProfileRepository.deductTokenBalance).not.toHaveBeenCalled();
-      expect(result.summary).toBe("");
     });
 
     it("throws when the lead does not exist for this professional", async () => {
@@ -796,7 +772,7 @@ describe("bookingService", () => {
       prepPoints: ["The job description for the role"],
     };
 
-    function setUpBooking(tokenBalance: number) {
+    function setUpBooking() {
       mockBookingRepository.findBookingByIdWithRelations.mockResolvedValue({
         ...BASE_BOOKING,
         lead: {
@@ -810,14 +786,13 @@ describe("bookingService", () => {
       mockProfileRepository.findByIdWithUser.mockResolvedValue({
         id: PROFESSIONAL_ID,
         fullName: "John Carter",
-        tokenBalance,
         user: { email: "john@example.com" },
       });
       mockGoogleRepository.findDefaultEventCalendarByProfessionalId.mockResolvedValue(null);
     }
 
-    it("adds the warm-up note to the visitor's confirmation and meters its tokens", async () => {
-      setUpBooking(10_000);
+    it("adds the warm-up note to the visitor's confirmation", async () => {
+      setUpBooking();
       mockVisitorWarmUpService.generate.mockResolvedValue({ note: WARM_UP_NOTE, tokensUsed: 180 });
 
       await bookingService.postConfirmAsync({
@@ -829,29 +804,13 @@ describe("bookingService", () => {
       expect(mockVisitorWarmUpService.generate).toHaveBeenCalledWith(
         expect.objectContaining({ conversationHistory: CONVERSATION }),
       );
-      expect(mockProfileRepository.deductTokenBalance).toHaveBeenCalledWith(PROFESSIONAL_ID, 180);
       expect(mockEmailService.sendBookingConfirmedVisitor).toHaveBeenCalledWith(
         expect.objectContaining({ warmUp: WARM_UP_NOTE }),
       );
     });
 
-    it("skips the AI call when the token balance is exhausted, still sending the plain confirmation", async () => {
-      setUpBooking(0);
-
-      await bookingService.postConfirmAsync({
-        bookingId: "booking_1",
-        professionalId: PROFESSIONAL_ID,
-        timezone: TIMEZONE,
-      });
-
-      expect(mockVisitorWarmUpService.generate).not.toHaveBeenCalled();
-      expect(mockEmailService.sendBookingConfirmedVisitor).toHaveBeenCalledWith(
-        expect.objectContaining({ warmUp: null }),
-      );
-    });
-
     it("still sends the confirmation when warm-up generation throws", async () => {
-      setUpBooking(10_000);
+      setUpBooking();
       mockVisitorWarmUpService.generate.mockRejectedValue(new Error("boom"));
 
       await bookingService.postConfirmAsync({

@@ -10,7 +10,8 @@ export const DEFAULT_HOLD_DURATION_MINUTES = 10;
 export const DEFAULT_CALENDAR_SYNC_WINDOW_DAYS = 90;
 export const MAX_QUALIFICATION_QUESTIONS = 5;
 export const DEFAULT_MAX_BOOKINGS_PER_DAY = 10;
-export const LOW_TOKEN_BALANCE_THRESHOLD = 500;
+// Screening conversations left before the dashboard warns the expert.
+export const LOW_CONVERSATION_BALANCE_THRESHOLD = 2;
 export const OUTCOME_FOLLOW_UP_DELAY_DAYS = 3;
 // Lead time is the single strongest, most-replicated predictor of no-shows —
 // same-day bookings run roughly 2% no-show vs. up to 33% for bookings 15+
@@ -19,15 +20,28 @@ export const OUTCOME_FOLLOW_UP_DELAY_DAYS = 3;
 export const BOOKING_REMINDER_HOURS_BEFORE = 24;
 
 // Plan tiers — limits live in code, not the database, so pricing can change
-// without a migration. maxActiveServices: null means unlimited.
+// without a migration. null means unlimited. AI screening is metered in
+// conversations (one visitor's whole screening chat), not tokens — the unit
+// an expert can actually reason about. BUSINESS is unlimited under fair use;
+// abuse is bounded by per-visitor caps and rate limits, not an allowance.
 export const PLAN_TIER_LIMITS: Record<
   "FREE" | "PRO" | "BUSINESS",
-  { label: string; maxActiveServices: number | null; monthlyTokenAllowance: number; priceUsd: number }
+  { label: string; maxActiveServices: number | null; monthlyConversations: number | null; priceUsd: number }
 > = {
-  FREE: { label: "Free", maxActiveServices: 1, monthlyTokenAllowance: 15_000, priceUsd: 0 },
-  PRO: { label: "Pro", maxActiveServices: null, monthlyTokenAllowance: 150_000, priceUsd: 29 },
-  BUSINESS: { label: "Business", maxActiveServices: null, monthlyTokenAllowance: 750_000, priceUsd: 79 },
+  FREE: { label: "Free", maxActiveServices: 1, monthlyConversations: 10, priceUsd: 0 },
+  PRO: { label: "Pro", maxActiveServices: null, monthlyConversations: 100, priceUsd: 29 },
+  BUSINESS: { label: "Business", maxActiveServices: null, monthlyConversations: null, priceUsd: 79 },
 };
+
+// One screening conversation's ceiling on AI calls. The gate is told to
+// decide within 2–4 exchanges; this bounds a conversation that never does
+// (or someone deliberately stringing one along) without touching real ones.
+export const MAX_AI_CALLS_PER_CONVERSATION = 8;
+
+// New screening conversations one visitor (by IP) can start with one
+// expert per day — stops someone burning a FREE expert's monthly allowance
+// on purpose. Generous for a real person who refreshes or retries.
+export const MAX_CONVERSATIONS_PER_VISITOR_PER_DAY = 5;
 
 export const ROUTES = {
   home: "/",

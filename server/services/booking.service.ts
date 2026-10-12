@@ -266,20 +266,16 @@ async function requireService(params: {
 
 /**
  * Personalized "before your call" note for the visitor's confirmation email.
- * Metered against the same token balance as the live gate, and skipped
- * entirely once that's exhausted. Never throws: any failure just means the
+ * Not metered — screening is billed by conversation, and this runs at
+ * most once per confirmed booking. Never throws: any failure just means the
  * plain confirmation goes out.
  */
 async function generateVisitorWarmUp(params: {
-  professionalId: string;
   professionalName: string;
-  tokenBalance: number;
   visitorName: string;
   serviceTitle: string;
   answersJson: Prisma.JsonValue;
 }): Promise<VisitorWarmUpNote | null> {
-  if (params.tokenBalance <= 0) return null;
-
   try {
     const answers = params.answersJson as {
       conversationHistory?: Array<{ role: string; content: string }>;
@@ -292,13 +288,6 @@ async function generateVisitorWarmUp(params: {
       serviceTitle: params.serviceTitle,
       conversationHistory: answers?.conversationHistory ?? answers?.history ?? [],
     });
-
-    if (warmUp.tokensUsed > 0) {
-      await profileRepository.deductTokenBalance(
-        params.professionalId,
-        warmUp.tokensUsed,
-      );
-    }
 
     return warmUp.note;
   } catch (error) {
@@ -945,10 +934,6 @@ export const bookingService = {
       conversationHistory: answers?.conversationHistory ?? answers?.history ?? [],
     });
 
-    if (briefing.tokensUsed > 0) {
-      await profileRepository.deductTokenBalance(professional.id, briefing.tokensUsed);
-    }
-
     const stored: StoredBriefing = {
       summary: briefing.summary,
       keyPoints: briefing.keyPoints,
@@ -1027,9 +1012,7 @@ export const bookingService = {
       // Started now, awaited before the emails — runs alongside calendar
       // event creation rather than adding its latency on top.
       const warmUpPromise = generateVisitorWarmUp({
-        professionalId: params.professionalId,
         professionalName: professional.fullName,
-        tokenBalance: professional.tokenBalance,
         visitorName: booking.lead.name,
         serviceTitle: booking.service.title,
         answersJson: booking.lead.answersJson,

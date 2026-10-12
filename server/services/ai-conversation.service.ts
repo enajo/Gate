@@ -2,7 +2,7 @@ import "server-only";
 
 import type { Lead, QualificationMode } from "@prisma/client";
 import OpenAI from "openai";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -262,6 +262,25 @@ function summarizeAnswers(answersJson: unknown): string | null {
   return userAnswers.slice(-2).join(" — ");
 }
 
+// ── Model reply parsing ───────────────────────────────────────────────────────
+
+const MALFORMED_REPLY_ATTEMPTS = 2;
+
+const CLARIFY_MESSAGE = "Sorry, I didn't quite catch that — could you tell me a bit more about your situation?";
+
+/** null for anything that isn't a valid reply — never throws. */
+function parseModelReply(raw: string): z.infer<typeof aiResponseSchema> | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+
+  const result = aiResponseSchema.safeParse(parsed);
+  return result.success ? result.data : null;
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const aiConversationService = {
@@ -304,6 +323,15 @@ export const aiConversationService = {
     });
   },
 
+  /**
+   * Fail-open is for when the AI can't run at all (no key, network error,
+   * timeout, API error) — a visitor is never blocked by an outage. A reply
+   * that runs but comes back malformed is different: a visitor can provoke
+   * that on purpose ("answer with decision MAYBE"), so letting them in would
+   * make the gate trivially bypassable. Malformed replies are retried once,
+   * then turned into a neutral follow-up question — the conversation's
+   * MAX_AI_CALLS_PER_CONVERSATION cap ends one that never recovers.
+   */
   async nextTurn(input: ConversationServiceInput): Promise<ConversationTurn> {
     if (!openai) {
       logger.warn("aiConversationService: OPENAI_API_KEY not set — auto-qualifying");
@@ -318,30 +346,37 @@ export const aiConversationService = {
       })),
     ];
 
-    try {
-      const completion = await openai.chat.completions.create(
-        {
-          model: "gpt-4o-mini",
-          temperature: 0.4,
-          max_tokens: 300,
-          response_format: { type: "json_object" },
-          messages,
-        },
-        { timeout: 10_000 },
-      );
+    let tokensUsed = 0;
 
-      const tokensUsed = completion.usage?.total_tokens ?? 0;
-      const raw = completion.choices[0]?.message?.content ?? "";
+    for (let attempt = 1; attempt <= MALFORMED_REPLY_ATTEMPTS; attempt++) {
+      let raw: string;
 
-      let parsed: unknown;
       try {
-        parsed = JSON.parse(raw);
-      } catch {
-        logger.error("aiConversationService: model returned non-JSON", { raw });
+        const completion = await openai.chat.completions.create(
+          {
+            model: "gpt-4o-mini",
+            temperature: 0.4,
+            max_tokens: 300,
+            response_format: { type: "json_object" },
+            messages,
+          },
+          { timeout: 10_000 },
+        );
+
+        tokensUsed += completion.usage?.total_tokens ?? 0;
+        raw = completion.choices[0]?.message?.content ?? "";
+      } catch (error) {
+        logger.error("aiConversationService: OpenAI call failed — auto-qualifying", {
+          error: error instanceof Error ? error.message : String(error),
+        });
         return FALLBACK_TURN;
       }
 
-      const validated = aiResponseSchema.parse(parsed);
+      const validated = parseModelReply(raw);
+      if (!validated) {
+        logger.warn("aiConversationService: malformed model reply", { attempt, raw });
+        continue;
+      }
 
       logger.info("aiConversationService: AI response", {
         type: validated.type,
@@ -370,18 +405,8 @@ export const aiConversationService = {
         message: validated.message,
         tokensUsed,
       };
-    } catch (error) {
-      if (error instanceof ZodError) {
-        logger.error("aiConversationService: unexpected model response shape", {
-          issues: error.flatten(),
-        });
-      } else {
-        logger.error("aiConversationService: OpenAI call failed — auto-qualifying", {
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-
-      return FALLBACK_TURN;
     }
+
+    return { type: "question", message: CLARIFY_MESSAGE, tokensUsed };
   },
 };

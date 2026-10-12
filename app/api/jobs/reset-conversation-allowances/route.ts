@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
-import { resetTokenBalancesJob } from "@/server/jobs/reset-token-balances.job";
+import { resetConversationAllowancesJob } from "@/server/jobs/reset-conversation-allowances.job";
 
 function unauthorizedResponse() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,7 +27,7 @@ export async function POST() {
       return unauthorizedResponse();
     }
 
-    const result = await resetTokenBalancesJob();
+    const result = await resetConversationAllowancesJob();
 
     return NextResponse.json(
       {

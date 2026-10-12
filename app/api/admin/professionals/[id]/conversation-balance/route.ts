@@ -17,18 +17,18 @@ export async function POST(
     if (!isAdmin(session)) return forbiddenResponse();
 
     const { id } = await params;
-    const body = (await request.json()) as { tokenBalance?: unknown };
+    const body = (await request.json()) as { conversationBalance?: unknown };
 
-    if (typeof body.tokenBalance !== "number") {
+    if (typeof body.conversationBalance !== "number") {
       return NextResponse.json(
-        { error: "tokenBalance must be a number." },
+        { error: "conversationBalance must be a number." },
         { status: 400 },
       );
     }
 
-    await adminService.setTokenBalance(id, body.tokenBalance);
+    await adminService.setConversationBalance(id, body.conversationBalance);
 
-    return NextResponse.json({ message: "Token balance updated." }, { status: 200 });
+    return NextResponse.json({ message: "Conversation balance updated." }, { status: 200 });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "An unexpected error occurred.";

@@ -123,10 +123,12 @@ export default async function SettingsPage() {
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  AI qualification balance
+                  AI screening conversations
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-900">
-                  {professional.tokenBalance.toLocaleString()} / {tier.monthlyTokenAllowance.toLocaleString()} tokens
+                  {tier.monthlyConversations === null
+                    ? "Unlimited"
+                    : `${Math.max(0, professional.conversationBalance)} of ${tier.monthlyConversations} left this month`}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
                   Resets monthly. Running out never blocks a booking — the

@@ -60,7 +60,7 @@ const CONFIRM_WINDOW = 10 * 60 * 1000;
 
 export async function POST(request: Request) {
   const ip     = getClientIp(request);
-  const result = rateLimit(`bookings:confirm:${ip}`, CONFIRM_LIMIT, CONFIRM_WINDOW);
+  const result = await rateLimit(`bookings:confirm:${ip}`, CONFIRM_LIMIT, CONFIRM_WINDOW);
   if (!result.allowed) return tooManyRequests(result.resetAt);
 
   try {

@@ -57,9 +57,8 @@ type ChatApiResponse = {
   leadId?: string;
   /** Only meaningful when decision === "QUALIFIED" — see ai-conversation.service.ts's defensive guard. */
   isStrongFit?: boolean;
-  tokensUsed: number;
-  tokenBalance: number;
-  lowBalance: boolean;
+  /** The server owns the transcript — every later turn sends this back. */
+  conversationId?: string | null;
 };
 
 type Phase = "identity" | "chatting" | "rejected" | "redirect" | "qualified";
@@ -114,6 +113,8 @@ export function ConversationGate({
   // Conversation
   const [phase, setPhase] = React.useState<Phase>("identity");
   const [history, setHistory] = React.useState<ChatMessage[]>([]);
+  // A ref, not state — callChat reads it right after the first turn sets it.
+  const conversationIdRef = React.useRef<string | null>(null);
   const [inputValue, setInputValue] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [apiError, setApiError] = React.useState<string | null>(null);
@@ -198,7 +199,11 @@ export function ConversationGate({
 
   // ── API call ──────────────────────────────────────────────────────────────
 
-  async function callChat(currentHistory: ChatMessage[]) {
+  /**
+   * `message` is the visitor's new reply (absent on the opening turn).
+   * `currentHistory` is only for display — the server keeps the transcript.
+   */
+  async function callChat(currentHistory: ChatMessage[], message?: string) {
     setIsLoading(true);
     setApiError(null);
 
@@ -211,7 +216,8 @@ export function ConversationGate({
           serviceId,
           name: name.trim(),
           email: email.trim(),
-          history: currentHistory,
+          conversationId: conversationIdRef.current ?? undefined,
+          message,
           referrer: visitorSource?.referrer ?? undefined,
           utmSource: visitorSource?.utmSource ?? undefined,
           utmMedium: visitorSource?.utmMedium ?? undefined,
@@ -225,6 +231,7 @@ export function ConversationGate({
       }
 
       const data = (await res.json()) as ChatApiResponse;
+      if (data.conversationId) conversationIdRef.current = data.conversationId;
 
       const aiMessage: ChatMessage = { role: "assistant", content: data.message };
       const nextHistory = [...currentHistory, aiMessage];
@@ -308,7 +315,7 @@ export function ConversationGate({
       inputRef.current.style.height = "auto";
     }
 
-    void callChat(nextHistory);
+    void callChat(nextHistory, text);
   }
 
   function handleInputKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {

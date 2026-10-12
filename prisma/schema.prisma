@@ -240,8 +240,11 @@ model Professional {
   /** Calendly-style "how will you use this / what do you need" onboarding answers — { usageMode, goals }. Signal, not config. */
   onboardingSurvey            Json?     @map("onboarding_survey")
   planTier                   PlanTier  @default(FREE) @map("plan_tier")
-  tokenBalance               Int       @default(15000) @map("token_balance")
-  tokenBalanceResetAt        DateTime? @map("token_balance_reset_at")
+  /** AI screening conversations left this month. Ignored on tiers with unlimited conversations (see PLAN_TIER_LIMITS). */
+  conversationBalance        Int       @default(10) @map("conversation_balance")
+  conversationBalanceResetAt DateTime? @map("conversation_balance_reset_at")
+  /** Set when the "you've used all your screening conversations" email goes out — one per reset period. */
+  allowanceExhaustedNotifiedAt DateTime? @map("allowance_exhausted_notified_at")
   industry                   String?   @map("industry")
   createdAt                  DateTime  @default(now()) @map("created_at")
   updatedAt                  DateTime  @updatedAt @map("updated_at")
@@ -257,6 +260,7 @@ model Professional {
   bookingHolds           BookingHold[]
   bookings               Booking[]
   visits                 Visit[]
+  qualificationConversations QualificationConversation[]
 
   @@map("professionals")
 }
@@ -571,4 +575,36 @@ model Notification {
   @@index([bookingId, deliveryStatus])
   @@index([recipientEmail])
   @@map("notifications")
+}
+
+/// One AI screening conversation, owned by the server: the client only ever
+/// sends the visitor's next message, so history can't be forged or padded.
+/// Creating one is what uses a conversation from the monthly allowance.
+model QualificationConversation {
+  id             String    @id @default(cuid())
+  professionalId String    @map("professional_id")
+  serviceId      String    @map("service_id")
+  /** [{ role: "assistant" | "user", content }] oldest first. */
+  messages       Json      @default("[]")
+  aiCalls        Int       @default(0) @map("ai_calls")
+  endedAt        DateTime? @map("ended_at")
+  leadId         String?   @unique @map("lead_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, createdAt])
+  @@map("qualification_conversations")
+}
+
+/// Fixed-window rate-limit counters, shared across serverless instances
+/// (lib/rate-limit.ts). Keys are hashed so raw IPs aren't stored.
+model RateLimitCounter {
+  key     String   @id
+  count   Int
+  resetAt DateTime @map("reset_at")
+
+  @@index([resetAt])
+  @@map("rate_limit_counters")
 }

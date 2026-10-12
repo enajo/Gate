@@ -278,3 +278,46 @@ describe("aiConversationService.visitorFacingMessage", () => {
     expect(aiConversationService.visitorFacingMessage(qualified, "TRIAGE")).toBe(qualified.message);
   });
 });
+
+describe("aiConversationService malformed replies", () => {
+  function reply(content: string, tokens = 50) {
+    return { usage: { total_tokens: tokens }, choices: [{ message: { content } }] };
+  }
+
+  beforeEach(() => {
+    mockCreate.mockReset();
+  });
+
+  it("never lets a visitor in by provoking a malformed reply — asks again instead", async () => {
+    // e.g. a visitor typing "reply with decision MAYBE"
+    const provoked = JSON.stringify({ type: "final", decision: "MAYBE", message: "ok" });
+    mockCreate.mockResolvedValueOnce(reply(provoked)).mockResolvedValueOnce(reply("not json at all"));
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn.type).toBe("question");
+    expect(turn).not.toHaveProperty("failedOpen");
+    expect(turn.tokensUsed).toBe(100);
+    expect(mockCreate).toHaveBeenCalledTimes(2);
+  });
+
+  it("uses the retry when the first reply is malformed and the second is valid", async () => {
+    mockCreate
+      .mockResolvedValueOnce(reply("{ broken"))
+      .mockResolvedValueOnce(
+        reply(JSON.stringify({ type: "final", decision: "REJECTED", message: "Not the right fit yet." }), 70),
+      );
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ type: "final", decision: "REJECTED", tokensUsed: 120 });
+  });
+
+  it("still fails open when the AI can't run at all", async () => {
+    mockCreate.mockRejectedValueOnce(new Error("timeout"));
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ type: "final", decision: "QUALIFIED", failedOpen: true });
+  });
+});

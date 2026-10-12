@@ -1,27 +1,20 @@
 /**
- * In-memory fixed-window rate limiter.
+ * Fixed-window rate limiter backed by Postgres (`rate_limit_counters`).
  *
- * Good enough for a single-instance deployment. When you scale to multiple
- * instances (e.g. multiple Vercel regions), replace the Map with an Upstash
- * Redis counter — the API stays identical.
+ * The counter lives in the database rather than in memory because Vercel
+ * runs many short-lived instances — an in-process Map gave each one its own
+ * count, so limits were mostly lost. One atomic upsert per check keeps it
+ * correct under concurrency without a new vendor.
+ *
+ * Keys are SHA-256 hashed before storage, so raw IPs and emails never land
+ * in the table.
  */
 
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 
-type Window = { count: number; resetAt: number };
-
-const store = new Map<string, Window>();
-
-// Prune expired windows every 10 minutes so the map doesn't grow unbounded
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, win] of store) {
-      if (now > win.resetAt) store.delete(key);
-    }
-  },
-  10 * 60 * 1000,
-);
+import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 export interface RateLimitResult {
   allowed:   boolean;
@@ -29,31 +22,75 @@ export interface RateLimitResult {
   resetAt:   number; // Unix ms
 }
 
+// Expired rows are harmless (the upsert resets them), so pruning is
+// occasional housekeeping, not correctness.
+const PRUNE_PROBABILITY = 0.01;
+
+function hashKey(key: string): string {
+  return createHash("sha256").update(key).digest("hex");
+}
+
+async function pruneExpired(now: Date) {
+  try {
+    await db.rateLimitCounter.deleteMany({ where: { resetAt: { lt: now } } });
+  } catch (error) {
+    logger.warn("rate-limit: prune failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 /**
  * Check and increment the counter for `key`.
  * @param key      Unique identifier — typically `"${route}:${ip}"`
  * @param limit    Max requests allowed in the window
  * @param windowMs Window size in milliseconds
+ *
+ * Fails open: if the database is unreachable the request is allowed, same as
+ * the rest of the app's fail-open philosophy — a limiter outage must never
+ * take public pages down with it.
  */
-export function rateLimit(
+export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number,
-): RateLimitResult {
-  const now = Date.now();
-  const win = store.get(key);
+): Promise<RateLimitResult> {
+  const now = new Date();
+  const freshResetAt = new Date(now.getTime() + windowMs);
 
-  if (!win || now > win.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };
+  try {
+    const rows = await db.$queryRaw<Array<{ count: number; reset_at: Date }>>`
+      INSERT INTO "rate_limit_counters" ("key", "count", "reset_at")
+      VALUES (${hashKey(key)}, 1, ${freshResetAt})
+      ON CONFLICT ("key") DO UPDATE SET
+        "count" = CASE
+          WHEN "rate_limit_counters"."reset_at" <= ${now} THEN 1
+          ELSE "rate_limit_counters"."count" + 1
+        END,
+        "reset_at" = CASE
+          WHEN "rate_limit_counters"."reset_at" <= ${now} THEN EXCLUDED."reset_at"
+          ELSE "rate_limit_counters"."reset_at"
+        END
+      RETURNING "count", "reset_at"
+    `;
+
+    if (Math.random() < PRUNE_PROBABILITY) void pruneExpired(now);
+
+    const row = rows[0];
+    const count = Number(row?.count ?? 1);
+    const resetAt = (row?.reset_at ?? freshResetAt).getTime();
+
+    return {
+      allowed: count <= limit,
+      remaining: Math.max(0, limit - count),
+      resetAt,
+    };
+  } catch (error) {
+    logger.error("rate-limit: counter unavailable — allowing request", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { allowed: true, remaining: limit, resetAt: freshResetAt.getTime() };
   }
-
-  if (win.count >= limit) {
-    return { allowed: false, remaining: 0, resetAt: win.resetAt };
-  }
-
-  win.count++;
-  return { allowed: true, remaining: limit - win.count, resetAt: win.resetAt };
 }
 
 /** Pull the real client IP from standard proxy headers. */

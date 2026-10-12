@@ -27,7 +27,7 @@ const VISIT_WINDOW = 5 * 60 * 1000;
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const result = rateLimit(`public:visits:${ip}`, VISIT_LIMIT, VISIT_WINDOW);
+  const result = await rateLimit(`public:visits:${ip}`, VISIT_LIMIT, VISIT_WINDOW);
   if (!result.allowed) return tooManyRequests(result.resetAt);
 
   try {

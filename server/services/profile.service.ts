@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Prisma } from "@prisma/client";
+import { Prisma, type PlanTier } from "@prisma/client";
 import type {
   BrandSettings,
   CreateTestimonialInput,
@@ -22,6 +22,7 @@ import {
   socialLinksSchema,
   upsertProfessionalProfileSchema,
 } from "@/server/validators/profile.validator";
+import { PLAN_TIER_LIMITS } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
@@ -146,6 +147,14 @@ async function assertSlugAvailable(slug: string, userId: string) {
 
 // ── Service ───────────────────────────────────────────────────────────────────
 
+function screeningAllowance(professional: { planTier: PlanTier; conversationBalance: number }) {
+  const monthly = PLAN_TIER_LIMITS[professional.planTier].monthlyConversations;
+  return {
+    remaining: monthly === null ? null : Math.max(0, professional.conversationBalance),
+    monthly,
+  };
+}
+
 export const profileService = {
   // ── Basic profile ────────────────────────────────────────────────────────────
 
@@ -246,7 +255,12 @@ export const profileService = {
    */
   async getControlRoomState(
     userId: string,
-  ): Promise<{ profile: PublicSalesPageTemplateData; publishedAt: string | null; tokenBalance: number }> {
+  ): Promise<{
+    profile: PublicSalesPageTemplateData;
+    publishedAt: string | null;
+    /** AI screening conversations — null means unlimited on this plan. */
+    screening: { remaining: number | null; monthly: number | null };
+  }> {
     const professional =
       await profileRepository.findByUserIdForControlRoom(userId);
 
@@ -265,7 +279,7 @@ export const profileService = {
           availableTimes: [], // Phase 2
         },
         publishedAt: professional.publishedAt?.toISOString() ?? null,
-        tokenBalance: professional.tokenBalance,
+        screening: screeningAllowance(professional),
       };
     }
 
@@ -323,7 +337,7 @@ export const profileService = {
     return {
       profile: profileData,
       publishedAt: professional.publishedAt?.toISOString() ?? null,
-      tokenBalance: professional.tokenBalance,
+      screening: screeningAllowance(professional),
     };
   },
 

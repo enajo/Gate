@@ -89,7 +89,7 @@ const SUBMIT_WINDOW = 5 * 60 * 1000;
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
-  const result = rateLimit(`qualification:submit:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW);
+  const result = await rateLimit(`qualification:submit:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW);
   if (!result.allowed) return tooManyRequests(result.resetAt);
 
   try {

@@ -18,7 +18,6 @@ export type SendPatternReportsJobResult = {
   totals: {
     eligible: number;
     sent: number;
-    skippedNoBalance: number;
     skippedEmptyReport: number;
     failed: number;
   };
@@ -45,7 +44,6 @@ export async function sendPatternReportsJob(): Promise<SendPatternReportsJobResu
   );
 
   let sent = 0;
-  let skippedNoBalance = 0;
   let skippedEmptyReport = 0;
   let failed = 0;
 
@@ -55,11 +53,6 @@ export async function sendPatternReportsJob(): Promise<SendPatternReportsJobResu
 
       if (!professional) {
         failed += 1;
-        continue;
-      }
-
-      if (professional.tokenBalance <= 0) {
-        skippedNoBalance += 1;
         continue;
       }
 
@@ -83,10 +76,6 @@ export async function sendPatternReportsJob(): Promise<SendPatternReportsJobResu
         professional.fullName,
         leadInputs,
       );
-
-      if (report.tokensUsed > 0) {
-        await profileRepository.deductTokenBalance(professionalId, report.tokensUsed);
-      }
 
       // A channel breakdown is only worth showing once there's more than
       // one channel to compare — a single-channel week has nothing to
@@ -132,7 +121,6 @@ export async function sendPatternReportsJob(): Promise<SendPatternReportsJobResu
     totals: {
       eligible: professionalIds.length,
       sent,
-      skippedNoBalance,
       skippedEmptyReport,
       failed,
     },

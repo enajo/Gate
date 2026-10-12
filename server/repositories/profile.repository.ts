@@ -282,44 +282,51 @@ export const profileRepository = {
   },
 
   /**
-   * Atomically deduct `amount` tokens from the professional's balance.
-   * Uses `decrement` so concurrent requests don't race.
-   * Returns the updated record so the caller can read the new balance.
+   * Atomically uses one screening conversation from the monthly allowance.
+   * false means the allowance is exhausted. The `> 0` guard sits in the same
+   * UPDATE, so concurrent visitors can't push the balance below zero.
    */
-  async deductTokenBalance(
-    id: string,
-    amount: number,
-  ): Promise<Professional> {
-    return db.professional.update({
-      where: { id },
-      data: { tokenBalance: { decrement: amount } },
+  async claimConversation(id: string): Promise<boolean> {
+    const { count } = await db.professional.updateMany({
+      where: { id, conversationBalance: { gt: 0 } },
+      data: { conversationBalance: { decrement: 1 } },
     });
+    return count > 0;
   },
 
-  async setTokenBalance(
+  /**
+   * Claims the once-per-reset-period "allowance used up" email. Atomic, so
+   * concurrent exhausted visitors send it once. Cleared by
+   * setConversationBalance on the monthly reset.
+   */
+  async claimAllowanceExhaustedNotice(id: string): Promise<boolean> {
+    const { count } = await db.professional.updateMany({
+      where: { id, allowanceExhaustedNotifiedAt: null },
+      data: { allowanceExhaustedNotifiedAt: new Date() },
+    });
+    return count > 0;
+  },
+
+  async setConversationBalance(
     id: string,
     amount: number,
     resetAt: Date,
   ): Promise<Professional> {
     return db.professional.update({
       where: { id },
-      data: { tokenBalance: amount, tokenBalanceResetAt: resetAt },
+      data: {
+        conversationBalance: amount,
+        conversationBalanceResetAt: resetAt,
+        allowanceExhaustedNotifiedAt: null,
+      },
     });
   },
 
-  async findAllForTokenReset(): Promise<
+  async findAllForAllowanceReset(): Promise<
     Array<{ id: string; planTier: Professional["planTier"] }>
   > {
     return db.professional.findMany({
       select: { id: true, planTier: true },
     });
-  },
-
-  async getTokenBalance(id: string): Promise<number | null> {
-    const row = await db.professional.findUnique({
-      where: { id },
-      select: { tokenBalance: true },
-    });
-    return row?.tokenBalance ?? null;
   },
 };

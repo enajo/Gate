@@ -44,7 +44,7 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Professional profile not found." }, { status: 404 });
     }
 
-    const limit = rateLimit(`gate-test:${professional.id}`, TEST_LIMIT, TEST_WINDOW);
+    const limit = await rateLimit(`gate-test:${professional.id}`, TEST_LIMIT, TEST_WINDOW);
     if (!limit.allowed) return tooManyRequests(limit.resetAt);
 
     const input = gateTestRequestSchema.parse(await request.json());

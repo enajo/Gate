@@ -24,7 +24,7 @@ export type PlatformStats = {
     noResponse: number;
     totalWonValue: number;
   };
-  tokenBalanceRemaining: number;
+  conversationsRemaining: number;
 };
 
 export type ProfessionalSummary = {
@@ -34,7 +34,7 @@ export type ProfessionalSummary = {
   email: string;
   published: boolean;
   leadCount: number;
-  tokenBalance: number;
+  conversationBalance: number;
   createdAt: Date;
 };
 
@@ -48,8 +48,8 @@ export type ProfessionalDetail = {
   timezone: string;
   planTier: string;
   published: boolean;
-  tokenBalance: number;
-  tokenBalanceResetAt: Date | null;
+  conversationBalance: number;
+  conversationBalanceResetAt: Date | null;
   createdAt: Date;
   services: Array<{
     id: string;
@@ -114,7 +114,7 @@ export const adminService = {
       confirmedBookings,
       outcomeCounts,
       wonValueAgg,
-      tokenBalanceAgg,
+      conversationBalanceAgg,
     ] = await Promise.all([
       db.professional.count(),
       db.professional.count({ where: { publishedAt: { not: null } } }),
@@ -134,7 +134,7 @@ export const adminService = {
         _sum: { outcomeValue: true },
         where: { outcome: "WON" },
       }),
-      db.professional.aggregate({ _sum: { tokenBalance: true } }),
+      db.professional.aggregate({ _sum: { conversationBalance: true } }),
     ]);
 
     const byResult: Record<string, number> = {};
@@ -167,7 +167,7 @@ export const adminService = {
         noResponse: outcomeMap.NO_RESPONSE ?? 0,
         totalWonValue: wonValueAgg._sum.outcomeValue ?? 0,
       },
-      tokenBalanceRemaining: tokenBalanceAgg._sum.tokenBalance ?? 0,
+      conversationsRemaining: conversationBalanceAgg._sum.conversationBalance ?? 0,
     };
   },
 
@@ -187,7 +187,7 @@ export const adminService = {
       email: p.user.email ?? "",
       published: Boolean(p.publishedAt),
       leadCount: p._count.leads,
-      tokenBalance: p.tokenBalance,
+      conversationBalance: p.conversationBalance,
       createdAt: p.createdAt,
     }));
   },
@@ -234,8 +234,8 @@ export const adminService = {
       timezone: professional.timezone,
       planTier: professional.planTier,
       published: Boolean(professional.publishedAt),
-      tokenBalance: professional.tokenBalance,
-      tokenBalanceResetAt: professional.tokenBalanceResetAt,
+      conversationBalance: professional.conversationBalance,
+      conversationBalanceResetAt: professional.conversationBalanceResetAt,
       createdAt: professional.createdAt,
       services: professional.services.map((s) => ({
         id: s.id,
@@ -291,21 +291,21 @@ export const adminService = {
   },
 
   /**
-   * Manual AI-qualification token top-up — a support bridge until real
+   * Manual screening-conversation top-up — a support bridge until real
    * billing exists (docs/decisions/0002). Sets the balance to an absolute
    * value rather than adding a delta: simpler mental model for an admin
    * looking at "current balance: 12" and deciding what it should be.
-   * Doesn't touch tokenBalanceResetAt — this is a one-off adjustment, not
+   * Doesn't touch conversationBalanceResetAt — this is a one-off adjustment, not
    * a change to when/whether the monthly reset job runs for them.
    */
-  async setTokenBalance(professionalId: string, tokenBalance: number): Promise<void> {
-    if (!Number.isInteger(tokenBalance) || tokenBalance < 0) {
-      throw new Error("Token balance must be a non-negative whole number.");
+  async setConversationBalance(professionalId: string, conversationBalance: number): Promise<void> {
+    if (!Number.isInteger(conversationBalance) || conversationBalance < 0) {
+      throw new Error("Conversation balance must be a non-negative whole number.");
     }
 
     await db.professional.update({
       where: { id: professionalId },
-      data: { tokenBalance },
+      data: { conversationBalance },
     });
   },
 };

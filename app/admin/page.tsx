@@ -6,7 +6,7 @@ import { auth } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 import { adminService } from "@/server/services/admin.service";
 import { UnpublishButton } from "@/components/admin/unpublish-button";
-import { TokenBalanceButton } from "@/components/admin/token-balance-button";
+import { ConversationBalanceButton } from "@/components/admin/conversation-balance-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -100,8 +100,8 @@ export default async function AdminPage() {
           <StatCard label="Outcomes: Lost" value={stats.outcomes.lost} />
           <StatCard label="Outcomes: No response" value={stats.outcomes.noResponse} />
           <StatCard
-            label="Token balance remaining"
-            value={stats.tokenBalanceRemaining.toLocaleString()}
+            label="Screening conversations left"
+            value={stats.conversationsRemaining.toLocaleString()}
             hint="Summed across all professionals"
           />
         </div>
@@ -120,7 +120,7 @@ export default async function AdminPage() {
                   <TableHead>Slug</TableHead>
                   <TableHead>Published</TableHead>
                   <TableHead>Leads</TableHead>
-                  <TableHead>Token balance</TableHead>
+                  <TableHead>Conversations left</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -158,9 +158,9 @@ export default async function AdminPage() {
                       </TableCell>
                       <TableCell className="tabular-nums">{p.leadCount}</TableCell>
                       <TableCell
-                        className={`tabular-nums ${p.tokenBalance <= 0 ? "text-red-600" : ""}`}
+                        className={`tabular-nums ${p.conversationBalance <= 0 ? "text-red-600" : ""}`}
                       >
-                        {p.tokenBalance.toLocaleString()}
+                        {p.conversationBalance.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-slate-500">
                         {formatDate(p.createdAt)}
@@ -173,10 +173,10 @@ export default async function AdminPage() {
                               fullName={p.fullName}
                             />
                           )}
-                          <TokenBalanceButton
+                          <ConversationBalanceButton
                             professionalId={p.id}
                             fullName={p.fullName}
-                            currentBalance={p.tokenBalance}
+                            currentBalance={p.conversationBalance}
                           />
                         </div>
                       </TableCell>

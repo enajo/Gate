@@ -66,7 +66,7 @@ const HOLD_WINDOW = 10 * 60 * 1000;
 
 export async function POST(request: Request) {
   const ip     = getClientIp(request);
-  const result = rateLimit(`holds:${ip}`, HOLD_LIMIT, HOLD_WINDOW);
+  const result = await rateLimit(`holds:${ip}`, HOLD_LIMIT, HOLD_WINDOW);
   if (!result.allowed) return tooManyRequests(result.resetAt);
 
   try {

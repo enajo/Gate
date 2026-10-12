@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { auth } from "@/lib/auth";
-import { LOW_TOKEN_BALANCE_THRESHOLD } from "@/lib/constants";
+import { LOW_CONVERSATION_BALANCE_THRESHOLD } from "@/lib/constants";
 import { bookingService } from "@/server/services/booking.service";
 import { onboardingService } from "@/server/services/onboarding.service";
 import { profileService } from "@/server/services/profile.service";
@@ -89,8 +89,10 @@ export default async function DashboardPage() {
   // ── Derived values ─────────────────────────────────────────────────────────
 
   const profile = controlRoomState?.profile;
-  const tokenBalance = controlRoomState?.tokenBalance ?? 1000;
-  const lowTokenBalance = tokenBalance <= LOW_TOKEN_BALANCE_THRESHOLD;
+  // null remaining = unlimited plan, never "low".
+  const screening = controlRoomState?.screening ?? { remaining: null, monthly: null };
+  const lowScreening =
+    screening.remaining !== null && screening.remaining <= LOW_CONVERSATION_BALANCE_THRESHOLD;
   const { checklist, counts, completionPercentage } = onboardingState;
   const isPublished = Boolean(controlRoomState?.publishedAt);
   const slug = onboardingState.slug;
@@ -335,41 +337,41 @@ export default async function DashboardPage() {
           })}
         </div>
 
-        {/* ── AI token balance ────────────────────────────────────────────── */}
+        {/* ── AI screening allowance ──────────────────────────────────────── */}
         <div
           className={`mt-5 flex items-center justify-between gap-4 rounded-[1.5rem] border px-6 py-4 ${
-            lowTokenBalance
+            lowScreening
               ? "border-amber-200 bg-amber-50/70"
               : "border-warm-border-soft bg-white/45"
           }`}
         >
           <div className="flex items-center gap-3">
-            {lowTokenBalance ? (
+            {lowScreening ? (
               <AlertTriangle className="size-5 shrink-0 text-amber-500" />
             ) : (
               <Zap className="size-5 shrink-0 text-brand-amber" />
             )}
             <div>
               <p className="text-[14px] font-medium">
-                {lowTokenBalance ? "AI token balance is low" : "AI token balance"}
+                {lowScreening ? "Screening conversations are running low" : "AI screening conversations"}
               </p>
               <p className="text-[12px] text-gray-500">
-                {lowTokenBalance
-                  ? "Running low — each qualification conversation uses tokens."
-                  : "Used for AI-powered visitor qualification conversations."}
+                {lowScreening
+                  ? "When they run out, visitors can still book — they just skip screening until next month."
+                  : "Each visitor's screening chat uses one. Resets monthly."}
               </p>
             </div>
           </div>
           <div className="shrink-0 text-right">
             <p
               className={`text-[28px] font-semibold tracking-[-0.04em] tabular-nums ${
-                lowTokenBalance ? "text-amber-600" : "text-ink"
+                lowScreening ? "text-amber-600" : "text-ink"
               }`}
             >
-              {tokenBalance.toLocaleString()}
+              {screening.remaining === null ? "Unlimited" : screening.remaining.toLocaleString()}
             </p>
             <p className="text-[11px] uppercase tracking-[0.14em] text-gray-400">
-              tokens left
+              {screening.monthly === null ? "on your plan" : `of ${screening.monthly} left`}
             </p>
           </div>
         </div>

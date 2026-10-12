@@ -1,42 +1,14 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { z, ZodError } from "zod";
 
-import { LOW_TOKEN_BALANCE_THRESHOLD } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { getClientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
-import { bookingRepository } from "@/server/repositories/booking.repository";
-import { profileRepository } from "@/server/repositories/profile.repository";
-import { serviceRepository } from "@/server/repositories/service.repository";
-import { visitRepository } from "@/server/repositories/visit.repository";
-import { aiConversationService } from "@/server/services/ai-conversation.service";
+import { qualificationConversationService } from "@/server/services/qualification-conversation.service";
 
 const VISITOR_COOKIE = "gate_visitor_id";
 
-/** Best-effort — a visitor without the cookie (blocked cookies, first-party mismatch) just doesn't get stitched. */
-async function linkVisitsIfPossible(professionalId: string, leadId: string) {
-  try {
-    const cookieStore = await cookies();
-    const visitorId = cookieStore.get(VISITOR_COOKIE)?.value;
-    if (!visitorId) return;
-
-    await visitRepository.linkVisitsToLead({ professionalId, visitorId, leadId });
-  } catch (error) {
-    logger.error("qualification/chat: failed to link visits to lead", {
-      error: error instanceof Error ? error.message : String(error),
-      professionalId,
-      leadId,
-    });
-  }
-}
-
 // ── Input schema ──────────────────────────────────────────────────────────────
-
-const messageSchema = z.object({
-  role: z.enum(["assistant", "user"]),
-  content: z.string().min(1).max(2000),
-});
 
 const chatSchema = z
   .object({
@@ -44,8 +16,10 @@ const chatSchema = z
     serviceId: z.string().trim().min(1),
     name: z.string().trim().min(1).max(120),
     email: z.string().trim().email().max(320),
-    /** Full conversation history so far — empty on the first call. */
-    history: z.array(messageSchema).max(40),
+    /** Returned by the first turn; absent when starting a conversation. */
+    conversationId: z.string().trim().min(1).max(64).nullish(),
+    /** The visitor's next message — the server holds the rest of the transcript. */
+    message: z.string().max(2000).nullish(),
     /** Passive source attribution, captured server-side on page load. */
     referrer: z.string().trim().max(500).nullish(),
     utmSource: z.string().trim().max(200).nullish(),
@@ -53,33 +27,6 @@ const chatSchema = z
     utmCampaign: z.string().trim().max(200).nullish(),
   })
   .strict();
-
-// ── Error helper ──────────────────────────────────────────────────────────────
-
-function errorResponse(error: unknown, status = 400) {
-  if (error instanceof ZodError) {
-    return NextResponse.json(
-      { error: "Invalid request", details: error.flatten() },
-      { status: 422 },
-    );
-  }
-
-  const message =
-    error instanceof Error ? error.message : "An unexpected error occurred.";
-
-  if (
-    message === "Professional profile not found." ||
-    message === "Service not found."
-  ) {
-    return NextResponse.json({ error: message }, { status: 404 });
-  }
-
-  logger.error("Unexpected error in POST /api/public/qualification/chat", {
-    error: message,
-  });
-
-  return NextResponse.json({ error: message }, { status });
-}
 
 // ── Route ─────────────────────────────────────────────────────────────────────
 
@@ -90,174 +37,58 @@ const CHAT_WINDOW = 5 * 60 * 1000;
 
 export async function POST(request: Request) {
   const ip     = getClientIp(request);
-  const result = rateLimit(`qualification:chat:${ip}`, CHAT_LIMIT, CHAT_WINDOW);
+  const result = await rateLimit(`qualification:chat:${ip}`, CHAT_LIMIT, CHAT_WINDOW);
   if (!result.allowed) return tooManyRequests(result.resetAt);
 
   try {
-    const json = (await request.json()) as Record<string, unknown>;
-    const input = chatSchema.parse(json);
+    const input = chatSchema.parse(await request.json());
+    const visitorId = (await cookies()).get(VISITOR_COOKIE)?.value ?? null;
 
-    // 1. Verify professional exists
-    const professional = await profileRepository.findById(input.professionalId);
-    if (!professional) {
-      return NextResponse.json(
-        { error: "Professional profile not found." },
-        { status: 404 },
-      );
-    }
-
-    // 2. Verify the requested service belongs to this professional
-    const requestedService = await serviceRepository.findByIdForProfessional(
-      input.serviceId,
-      input.professionalId,
-    );
-    if (!requestedService) {
-      return NextResponse.json(
-        { error: "Service not found." },
-        { status: 404 },
-      );
-    }
-
-    // 3. Check token balance — if exhausted, fail open (auto-qualify)
-    const currentBalance = professional.tokenBalance;
-    if (currentBalance <= 0) {
-      logger.warn("aiConversationService: token balance exhausted — auto-qualifying", {
-        professionalId: input.professionalId,
-      });
-
-      const lead = await bookingRepository.createLeadForProfessional(
-        input.professionalId,
-        {
-          serviceId: input.serviceId,
-          name: input.name,
-          email: input.email,
-          answersJson: {
-            autoQualified: true,
-            reason: "token_balance_exhausted",
-            history: input.history,
-          } as Prisma.InputJsonValue,
-          qualificationResult: "QUALIFIED",
-          // Fail-open path, not a real AI judgment — must never grant
-          // slot priority, so this is set explicitly rather than left to
-          // the schema default.
-          isStrongFit: false,
-          referrer: input.referrer ?? null,
-          utmSource: input.utmSource ?? null,
-          utmMedium: input.utmMedium ?? null,
-          utmCampaign: input.utmCampaign ?? null,
-        },
-      );
-
-      await linkVisitsIfPossible(input.professionalId, lead.id);
-
-      return NextResponse.json({
-        type: "final",
-        decision: "QUALIFIED",
-        redirectService: null,
-        isStrongFit: false,
-        message: "Sounds like a great fit — let me pull up some available times.",
-        leadId: lead.id,
-        tokensUsed: 0,
-        tokenBalance: 0,
-        lowBalance: true,
-      });
-    }
-
-    // 4. Load all active services so the AI can suggest alternatives
-    const allServices = await serviceRepository.findActiveByProfessionalId(
-      input.professionalId,
-    );
-
-    // 4b. This service's own reviewed leads — real calibration feedback,
-    // see ai-conversation.service.ts's MIN_LABELED_EXAMPLES for the
-    // activation floor.
-    const labeledLeads = await bookingRepository.findRecentLabeledLeadsForService(
-      input.serviceId,
-    );
-
-    // 5. Call the conversational AI
-    const turn = await aiConversationService.nextTurn({
-      professionalName: professional.fullName,
-      professionalTitle: professional.title,
-      professionalBio: professional.bio,
-      services: allServices.map((s) => ({
-        id: s.id,
-        title: s.title,
-        displayPrice: s.displayPrice,
-        description: s.description,
-        idealPersonaDescription: s.idealPersonaDescription,
-        directPurchaseUrl: s.directPurchaseUrl,
-      })),
-      targetServiceId: input.serviceId,
-      history: input.history,
-      visitorName: input.name,
-      labeledExamples: aiConversationService.buildLabeledExamples(labeledLeads),
+    const turn = await qualificationConversationService.handleTurn({
+      ...input,
+      ip,
+      visitorId,
     });
 
-    // 6. Deduct tokens — only when the AI actually called OpenAI
-    let newBalance = currentBalance;
-    if (turn.tokensUsed > 0) {
-      const updated = await profileRepository.deductTokenBalance(
-        input.professionalId,
-        turn.tokensUsed,
-      );
-      newBalance = Math.max(0, updated.tokenBalance);
+    if (turn.kind === "error") {
+      if (turn.status === 429 && turn.resetAt) {
+        return NextResponse.json(
+          { error: turn.error },
+          { status: 429, headers: { "Retry-After": String(Math.ceil((turn.resetAt - Date.now()) / 1000)) } },
+        );
+      }
+      return NextResponse.json({ error: turn.error }, { status: turn.status });
     }
 
-    // 7. If the AI reached a final decision, create the Lead record now
-    if (turn.type === "final") {
-      const lead = await bookingRepository.createLeadForProfessional(
-        input.professionalId,
-        {
-          serviceId: input.serviceId,
-          name: input.name,
-          email: input.email,
-          answersJson: {
-            conversationHistory: input.history,
-            aiDecision: turn.decision,
-            aiMessage: turn.message,
-          } as Prisma.InputJsonValue,
-          qualificationResult: turn.decision,
-          // The one path where the AI actually made the call — already
-          // guaranteed false for any non-QUALIFIED decision by
-          // aiConversationService's own defensive guard.
-          isStrongFit: turn.isStrongFit,
-          referrer: input.referrer ?? null,
-          utmSource: input.utmSource ?? null,
-          utmMedium: input.utmMedium ?? null,
-          utmCampaign: input.utmCampaign ?? null,
-        },
-      );
-
-      await linkVisitsIfPossible(input.professionalId, lead.id);
-
+    if (turn.kind === "question") {
       return NextResponse.json({
-        type: "final",
-        decision: turn.decision,
-        // REDIRECT is paused — kept in the response shape for the client.
-        redirectService: null,
-        isStrongFit: turn.isStrongFit,
-        // aiMessage above keeps the real verdict for the professional.
-        message: aiConversationService.visitorFacingMessage(
-          turn,
-          requestedService.qualificationMode,
-        ),
-        leadId: lead.id,
-        tokensUsed: turn.tokensUsed,
-        tokenBalance: newBalance,
-        lowBalance: newBalance <= LOW_TOKEN_BALANCE_THRESHOLD,
+        type: "question",
+        conversationId: turn.conversationId,
+        message: turn.message,
       });
     }
 
-    // 8. Still in conversation — return the next question
     return NextResponse.json({
-      type: "question",
+      type: "final",
+      conversationId: turn.conversationId,
+      decision: turn.decision,
+      // REDIRECT is paused — kept in the response shape for the client.
+      redirectService: null,
+      isStrongFit: turn.isStrongFit,
       message: turn.message,
-      tokensUsed: turn.tokensUsed,
-      tokenBalance: newBalance,
-      lowBalance: newBalance <= LOW_TOKEN_BALANCE_THRESHOLD,
+      leadId: turn.leadId,
     });
   } catch (error) {
-    return errorResponse(error);
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: "Invalid request", details: error.flatten() },
+        { status: 422 },
+      );
+    }
+
+    logger.error("Unexpected error in POST /api/public/qualification/chat", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }

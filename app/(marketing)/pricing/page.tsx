@@ -21,7 +21,7 @@ const plans = [
     features: [
       "1 active service",
       "Unlimited bookings",
-      "~10 AI-qualified conversations/mo",
+      "10 AI-screened conversations/mo",
       "Google Calendar sync",
     ],
     ctaLabel: "Get started",
@@ -36,7 +36,7 @@ const plans = [
     features: [
       "Unlimited services",
       "Unlimited bookings",
-      "~100 AI-qualified conversations/mo",
+      "100 AI-screened conversations/mo",
       "Pre-call briefings",
       "AI pattern reports",
     ],
@@ -51,7 +51,7 @@ const plans = [
       "For busy practices with steady inbound who don't want to think about limits.",
     features: [
       "Everything in Pro",
-      "~500 AI-qualified conversations/mo",
+      "Unlimited AI-screened conversations (fair use)",
       "Priority support",
     ],
     ctaLabel: "Upgrade to Business",

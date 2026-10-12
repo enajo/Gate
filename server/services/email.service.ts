@@ -483,6 +483,41 @@ export const emailService = {
   },
 
   /**
+   * The professional has used every AI screening conversation in their
+   * monthly allowance. Their gate now fails open (visitors book without
+   * screening) until the allowance resets or they upgrade — sent once per
+   * reset period, see qualification-conversation.service.ts.
+   */
+  async sendConversationAllowanceExhaustedProfessional(params: {
+    to: string;
+    professionalName: string;
+    monthlyConversations: number;
+    settingsUrl: string;
+  }): Promise<void> {
+    const firstName = escapeHtml(params.professionalName.split(" ")[0]);
+    const subject = "Your gate has used this month's screening conversations";
+    await sendEmail({
+      to: params.to,
+      subject,
+      html: htmlWrapper(
+        subject,
+        `<h1 style="margin:0 0 20px;font-size:22px;font-weight:700;color:#1E2422;line-height:1.3;">Your gate is open until next month</h1>
+         <p style="margin:0 0 16px;font-size:14px;color:#6B7280;">
+           Hi ${firstName}, your gate has screened all
+           <strong style="color:#1E2422;">${params.monthlyConversations} conversations</strong>
+           included in your plan this month.
+         </p>
+         <p style="margin:0 0 20px;font-size:14px;color:#6B7280;">
+           Nobody is turned away: new visitors can still book, they just skip
+           the screening until your allowance resets. Upgrade to keep every
+           visitor screened.
+         </p>
+         <a href="${params.settingsUrl}" style="display:inline-block;padding:10px 20px;background:#1E2422;color:#ffffff;text-decoration:none;border-radius:100px;font-size:13px;font-weight:600;">See plans</a>`,
+      ),
+    });
+  },
+
+  /**
    * Ghost recovery: a lead the professional marked "haven't heard back"
    * just returned to their page. A specific, timely reason to reach out —
    * Gate tells the professional, it never contacts the visitor itself.

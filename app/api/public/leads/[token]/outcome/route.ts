@@ -27,7 +27,7 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> },
 ) {
   const ip = getClientIp(request);
-  const result = rateLimit(`outcome:submit:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW);
+  const result = await rateLimit(`outcome:submit:${ip}`, SUBMIT_LIMIT, SUBMIT_WINDOW);
   if (!result.allowed) return tooManyRequests(result.resetAt);
 
   try {

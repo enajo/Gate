@@ -104,12 +104,12 @@ export default async function AdminProfessionalDetailPage({
             <Field label="Timezone" value={professional.timezone} />
             <Field label="Plan tier" value={professional.planTier} />
             <Field
-              label="Token balance"
-              value={professional.tokenBalance.toLocaleString()}
+              label="Conversations left"
+              value={professional.conversationBalance.toLocaleString()}
             />
             <Field
-              label="Tokens reset"
-              value={formatDate(professional.tokenBalanceResetAt)}
+              label="Allowance reset"
+              value={formatDate(professional.conversationBalanceResetAt)}
             />
             <Field label="Joined" value={formatDate(professional.createdAt)} />
           </CardContent>

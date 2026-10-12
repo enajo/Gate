@@ -42,15 +42,28 @@ directly from a route or component.
 `BookingHold` -> `Booking` -> `CalendarEvent`.
 
 - **AI qualification gate** (`server/services/ai-conversation.service.ts`,
-  `app/api/public/qualification/chat/route.ts`) is stateless per request: the
-  client resends the full chat history each turn (capped at 40 messages), the
-  server does not persist conversation state between calls. The final
-  decision + transcript are written once to `Lead.answersJson`. There is no
-  cross-session memory — a returning visitor starts cold.
-- `Professional.tokenBalance` meters OpenAI usage per professional and is
-  decremented per call. The AI **fails open** on any error, non-JSON
-  response, or exhausted balance — it auto-qualifies rather than blocking a
-  visitor. This is intentional; do not "fix" it into fail-closed.
+  `server/services/qualification-conversation.service.ts`,
+  `app/api/public/qualification/chat/route.ts`): the server owns each
+  conversation (`QualificationConversation`). The client sends only the
+  visitor's next message plus the `conversationId`, so history can't be
+  forged or padded; each conversation is capped at
+  `MAX_AI_CALLS_PER_CONVERSATION`. The final decision + transcript are
+  written to `Lead.answersJson`. It decides fit or not (QUALIFIED/REJECTED —
+  REDIRECT is paused, see `docs/STATUS.md`). There is no cross-session
+  memory — a returning visitor starts cold.
+- **Metered in conversations, not tokens.** `Professional.conversationBalance`
+  is the monthly allowance; starting a conversation uses one (atomically),
+  continuing it doesn't. Tiers with `monthlyConversations: null` are
+  unlimited. New conversations are also capped per visitor IP per expert per
+  day. Other AI features (briefing, warm-up note, Pattern Report) aren't
+  metered.
+- **Fail-open is for outages, not bad output.** The gate auto-qualifies
+  (never blocks a visitor) when the AI can't run — no key, network error,
+  timeout, API error — or the allowance is exhausted (the expert is emailed
+  once per period). This is intentional; do not "fix" it into fail-closed.
+  A reply that runs but comes back malformed is retried once, then becomes
+  a neutral follow-up question — never a QUALIFIED, because a visitor can
+  provoke malformed output on purpose.
 - Booking confirmation uses **static access codes**, not payments — a
   deliberate v1 constraint, not a missing feature.
 - Background jobs (`server/jobs/`): expire stale `BookingHold`s, retry failed
@@ -61,10 +74,10 @@ directly from a route or component.
   on real cron yet (`docs/decisions/0004-background-jobs-deferred-inngest.md`).
 - **Plan tiers** (`Professional.planTier`, limits in `lib/constants.ts`
   `PLAN_TIER_LIMITS`): FREE/PRO/BUSINESS control the active-`Service` cap
-  (enforced in `service-catalog.service.ts`) and the monthly AI-qualification
-  token allowance (reset by `server/jobs/reset-token-balances.job.ts`, no
-  rollover). Billing is tied to confirmed bookings, not self-reported
-  outcomes — see `docs/decisions/0002-plan-tier-billing-model.md`. Stripe
+  (enforced in `service-catalog.service.ts`) and the monthly AI-screening
+  conversation allowance (reset by
+  `server/jobs/reset-conversation-allowances.job.ts`, no rollover). Billing
+  is tied to confirmed bookings, not self-reported outcomes — see `docs/decisions/0002-plan-tier-billing-model.md`. Stripe
   checkout/subscriptions/webhooks are **not built** — nothing collects
   payment or moves a professional between tiers yet.
 - **Embeddable booking widget** (`public/embed.js` + `/embed/[slug]`): lets a
@@ -114,7 +127,7 @@ directly from a route or component.
   hoist mocks for every repository/service it imports, `vi.mock` the module,
   and assert on behavior (calls made, values returned) rather than
   implementation details.
-- Fail-open paths (AI errors, exhausted token balance) are behavior, not
+- Fail-open paths (AI outages, exhausted conversation allowance) are behavior, not
   edge cases to "handle away" — write tests that assert the fallback fires,
   not tests that assume the happy path always runs.
 
@@ -124,7 +137,9 @@ directly from a route or component.
   optional locally — corresponding features degrade gracefully (no calendar
   sync, no email send, auto-qualify) rather than crashing.
 - Public API routes are rate-limited per IP (`lib/rate-limit.ts`) — expect
-  429s under repeated local testing of the same endpoint.
+  429s under repeated local testing of the same endpoint. Counters live in
+  Postgres (`RateLimitCounter`, keys hashed) so they hold across Vercel
+  instances; the limiter fails open if the database is unreachable.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

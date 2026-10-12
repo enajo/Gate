@@ -41,6 +41,9 @@ export type GateTestResult = {
   readyWhen: string | null;
   /** Must-haves the gate confirmed before qualifying, with the visitor's words. */
   evidence: Array<{ requirement: string; quote: string }>;
+  /** Why the gate turned them away — quotes the visitor didn't say are null. */
+  reasons: Array<{ requirement: string; quote: string | null }>;
+  strongFitReason: string | null;
   verdict: GateTestVerdict;
   tokensUsed: number;
 };
@@ -257,6 +260,8 @@ export const gateTestService = {
     let isStrongFit = false;
     let readyWhen: string | null = null;
     let evidence: GateTestResult["evidence"] = [];
+    let reasons: GateTestResult["reasons"] = [];
+    let strongFitReason: string | null = null;
 
     for (let turnIndex = 0; turnIndex < MAX_GATE_TURNS; turnIndex++) {
       const turn = await aiConversationService.nextTurn({
@@ -282,6 +287,8 @@ export const gateTestService = {
         isStrongFit = turn.isStrongFit;
         readyWhen = turn.readyWhen ?? null;
         evidence = turn.evidence ?? [];
+        reasons = turn.reasons ?? [];
+        strongFitReason = turn.strongFitReason ?? null;
         break;
       }
 
@@ -314,6 +321,8 @@ export const gateTestService = {
       isStrongFit,
       readyWhen,
       evidence,
+      reasons,
+      strongFitReason,
       verdict: verdictFor(input.archetype, outcome),
       tokensUsed,
     };

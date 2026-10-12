@@ -79,6 +79,15 @@ directly from a route or component.
   malformed reply: retried with a correction, then a follow-up question.
   The evidence is saved as `answersJson.qualificationEvidence`. It can't
   catch a visitor who lies — only a gate that never asked.
+- **Every decision explains itself** (shown as "Why this decision" in the
+  leads inbox, and in Test your gate). Alongside the qualification evidence:
+  a REJECTED carries `rejectionReasons` (failed must-have or red flag + the
+  visitor's words — unverifiable quotes are dropped to null, never shown
+  made-up; a rejection missing reasons gets one retry, then stands, never
+  turned into a question), a strong fit carries `strongFitReason`, and every
+  AI decision stores `gateCriteria` (the criteria at the time) and
+  `calibrationReviewsUsed`. Fail-open let-throughs show their reason.
+  Keep this when changing the gate — it's how experts calibrate it.
 - Booking confirmation uses **static access codes**, not payments — a
   deliberate v1 constraint, not a missing feature.
 - Background jobs (`server/jobs/`): expire stale `BookingHold`s, retry failed

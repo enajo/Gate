@@ -18,6 +18,8 @@ type TestResult = {
   isStrongFit: boolean;
   readyWhen: string | null;
   evidence: Array<{ requirement: string; quote: string }>;
+  reasons: Array<{ requirement: string; quote: string | null }>;
+  strongFitReason: string | null;
   verdict: Verdict;
 };
 
@@ -245,6 +247,21 @@ function VisitorCard({ run }: { run: VisitorRun }) {
           {result.evidence.map((e, i) => (
             <li key={i} className="text-[12px] text-slate-600">
               ✓ {e.requirement} <span className="text-slate-400">— &ldquo;{e.quote}&rdquo;</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {result.strongFitReason && (
+        <p className="mt-1 text-[12px] text-slate-600">★ Strong fit: {result.strongFitReason}</p>
+      )}
+      {result.reasons.length > 0 && (
+        <ul className="mt-1 space-y-0.5">
+          {result.reasons.map((r, i) => (
+            <li key={i} className="text-[12px] text-slate-600">
+              ✗ {r.requirement}{" "}
+              <span className="text-slate-400">
+                {r.quote ? <>— &ldquo;{r.quote}&rdquo;</> : "— not said outright"}
+              </span>
             </li>
           ))}
         </ul>

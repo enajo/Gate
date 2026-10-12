@@ -44,7 +44,10 @@ vi.mock("@/server/repositories/qualification-conversation.repository", () => ({
   qualificationConversationRepository: mocks.conversationRepository,
 }));
 vi.mock("@/server/repositories/visit.repository", () => ({ visitRepository: mocks.visitRepository }));
-vi.mock("@/server/services/ai-conversation.service", () => ({ aiConversationService: mocks.aiConversationService }));
+vi.mock("@/server/services/ai-conversation.service", () => ({
+  aiConversationService: mocks.aiConversationService,
+  MIN_LABELED_EXAMPLES: 3,
+}));
 vi.mock("@/server/services/email.service", () => ({ emailService: mocks.emailService }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: mocks.rateLimit }));
 
@@ -243,6 +246,28 @@ describe("qualificationConversationService.handleTurn", () => {
       expect(mocks.bookingRepository.createLeadForProfessional).toHaveBeenCalledWith(
         PRO_ID,
         expect.objectContaining({ answersJson: expect.objectContaining({ qualificationEvidence: evidence }) }),
+      );
+    });
+
+    it("records why on every decision: reasons, the criteria used, and how many reviews shaped it", async () => {
+      mocks.serviceRepository.findActiveByProfessionalId.mockResolvedValue([
+        { id: SERVICE_ID, title: "Coaching", idealPersonaDescription: "MUST-HAVES:\n- Team of 15-80 people" },
+      ]);
+      mocks.aiConversationService.buildLabeledExamples.mockReturnValue([{}, {}, {}, {}] as never);
+      const reasons = [{ requirement: "Team of 15-80 people", quote: "we're at 12 people" }];
+      mocks.aiConversationService.nextTurn.mockResolvedValue(final("REJECTED", { reasons }));
+
+      await qualificationConversationService.handleTurn({ ...BASE_INPUT, conversationId: "conv_1", message: "Hi" });
+
+      expect(mocks.bookingRepository.createLeadForProfessional).toHaveBeenCalledWith(
+        PRO_ID,
+        expect.objectContaining({
+          answersJson: expect.objectContaining({
+            rejectionReasons: reasons,
+            gateCriteria: "MUST-HAVES:\n- Team of 15-80 people",
+            calibrationReviewsUsed: 4,
+          }),
+        }),
       );
     });
 

@@ -191,6 +191,7 @@ describe("aiConversationService.nextTurn isStrongFit", () => {
             content: JSON.stringify({
               type: "final",
               decision: "REJECTED",
+              reasons: [{ requirement: "Has raised funding", quote: null }],
               message: "Thanks for sharing — this isn't the right fit.",
             }),
           },
@@ -343,7 +344,12 @@ describe("aiConversationService not-yet door", () => {
 
   it("carries readyWhen on a not-yet rejection", async () => {
     mockCreate.mockResolvedValueOnce(
-      finalReply({ decision: "REJECTED", notYet: true, readyWhen: " has closed a funding round " }),
+      finalReply({
+        decision: "REJECTED",
+        notYet: true,
+        readyWhen: " has closed a funding round ",
+        reasons: [{ requirement: "Has raised funding", quote: null }],
+      }),
     );
 
     const turn = await aiConversationService.nextTurn(BASE_INPUT);
@@ -353,7 +359,12 @@ describe("aiConversationService not-yet door", () => {
 
   it("has no readyWhen for a fundamental mismatch", async () => {
     mockCreate.mockResolvedValueOnce(
-      finalReply({ decision: "REJECTED", notYet: false, readyWhen: "something" }),
+      finalReply({
+        decision: "REJECTED",
+        notYet: false,
+        readyWhen: "something",
+        reasons: [{ requirement: "Is the founder and CEO", quote: null }],
+      }),
     );
 
     expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({ readyWhen: null });
@@ -482,8 +493,86 @@ describe("aiConversationService must-have evidence", () => {
   });
 
   it("doesn't need evidence to reject", async () => {
-    mockCreate.mockResolvedValueOnce(reply({ type: "final", decision: "REJECTED", message: "Not the right fit." }));
+    mockCreate.mockResolvedValueOnce(
+      reply({
+        type: "final",
+        decision: "REJECTED",
+        message: "Not the right fit.",
+        reasons: [{ requirement: "Has raised funding", quote: null }],
+      }),
+    );
 
     expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({ decision: "REJECTED" });
+  });
+});
+
+describe("aiConversationService explains every decision", () => {
+  function reply(fields: Record<string, unknown>) {
+    return {
+      usage: { total_tokens: 60 },
+      choices: [{ message: { content: JSON.stringify({ type: "final", message: "Thanks.", ...fields }) } }],
+    };
+  }
+
+  const TEAM_INPUT = {
+    ...BASE_INPUT,
+    history: [{ role: "user" as const, content: "I'm the CEO. We're at around 12 people right now." }],
+  };
+
+  beforeEach(() => {
+    mockCreate.mockReset();
+  });
+
+  it("keeps a rejection's reasons, with the visitor's real words", async () => {
+    mockCreate.mockResolvedValueOnce(
+      reply({
+        decision: "REJECTED",
+        reasons: [{ requirement: "Team of 15-80 people", quote: "We're at around 12 people" }],
+      }),
+    );
+
+    expect(await aiConversationService.nextTurn(TEAM_INPUT)).toMatchObject({
+      decision: "REJECTED",
+      reasons: [{ requirement: "Team of 15-80 people", quote: "We're at around 12 people" }],
+    });
+  });
+
+  it("drops a quote the visitor never said, but keeps the reason", async () => {
+    mockCreate.mockResolvedValueOnce(
+      reply({
+        decision: "REJECTED",
+        reasons: [{ requirement: "Has raised funding", quote: "We have no funding at all" }],
+      }),
+    );
+
+    expect(await aiConversationService.nextTurn(TEAM_INPUT)).toMatchObject({
+      reasons: [{ requirement: "Has raised funding", quote: null }],
+    });
+  });
+
+  it("asks once for missing reasons, then lets the rejection stand — never turns it into a question", async () => {
+    mockCreate
+      .mockResolvedValueOnce(reply({ decision: "REJECTED" }))
+      .mockResolvedValueOnce(reply({ decision: "REJECTED" }));
+
+    const turn = await aiConversationService.nextTurn(TEAM_INPUT);
+
+    expect(turn).toMatchObject({ type: "final", decision: "REJECTED", reasons: [] });
+    expect(mockCreate.mock.calls[1]![0].messages.at(-1).content).toContain('gave no "reasons"');
+  });
+
+  it("keeps a strong-fit reason only on a real strong fit", async () => {
+    mockCreate.mockResolvedValueOnce(
+      reply({ decision: "QUALIFIED", isStrongFit: true, strongFitReason: "Funded CEO, exactly the profile.", evidence: EVIDENCE }),
+    );
+    expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({
+      isStrongFit: true,
+      strongFitReason: "Funded CEO, exactly the profile.",
+    });
+
+    mockCreate.mockResolvedValueOnce(
+      reply({ decision: "QUALIFIED", isStrongFit: false, strongFitReason: "Should be dropped.", evidence: EVIDENCE }),
+    );
+    expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({ strongFitReason: null });
   });
 });

@@ -17,6 +17,7 @@ import { serviceRepository } from "@/server/repositories/service.repository";
 import { visitRepository } from "@/server/repositories/visit.repository";
 import {
   aiConversationService,
+  MIN_LABELED_EXAMPLES,
   type ConversationMessage,
   type ReturningVisitorContext,
 } from "@/server/services/ai-conversation.service";
@@ -346,6 +347,8 @@ export const qualificationConversationService = {
       bookingRepository.findRecentLabeledLeadsForService(input.serviceId),
     ]);
 
+    const labeledExamples = aiConversationService.buildLabeledExamples(labeledLeads);
+
     const turn = await aiConversationService.nextTurn({
       professionalName: professional.fullName,
       professionalTitle: professional.title,
@@ -361,7 +364,7 @@ export const qualificationConversationService = {
       targetServiceId: input.serviceId,
       history,
       visitorName: input.name,
-      labeledExamples: aiConversationService.buildLabeledExamples(labeledLeads),
+      labeledExamples,
       returningVisitor,
     });
 
@@ -391,6 +394,14 @@ export const qualificationConversationService = {
         ...(turn.failedOpen ? { autoQualified: true, reason: "ai_unavailable" } : {}),
         ...(returningFromLeadId ? { returningFromLeadId } : {}),
         ...(turn.evidence?.length ? { qualificationEvidence: turn.evidence } : {}),
+        ...(turn.reasons ? { rejectionReasons: turn.reasons } : {}),
+        ...(turn.strongFitReason ? { strongFitReason: turn.strongFitReason } : {}),
+        // What this decision was judged against — the expert can edit the
+        // gate later, so the lead keeps its own copy.
+        gateCriteria:
+          allServices.find((s) => s.id === input.serviceId)?.idealPersonaDescription ?? null,
+        calibrationReviewsUsed:
+          labeledExamples.length >= MIN_LABELED_EXAMPLES ? labeledExamples.length : 0,
       },
       qualificationResult: turn.decision,
       notYetReadyWhen: turn.readyWhen ?? null,

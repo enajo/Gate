@@ -18,6 +18,12 @@ type AnswersJson = {
   redirectServiceId?: string | null;
   autoQualified?: boolean;
   reason?: string;
+  mode?: string;
+  rejectionReasons?: Array<{ requirement: string; quote: string | null }>;
+  strongFitReason?: string;
+  /** The gate's criteria at the time of this decision. */
+  gateCriteria?: string | null;
+  calibrationReviewsUsed?: number;
 };
 
 type CorrectableResult = "QUALIFIED" | "REDIRECTED" | "REJECTED";
@@ -103,17 +109,114 @@ function formatDateTime(value: Date | string) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function Transcript({ answersJson }: { answersJson: unknown }) {
-  const data = answersJson as AnswersJson;
-  const history = data?.conversationHistory ?? [];
+const AUTO_QUALIFIED_REASONS: Record<string, string> = {
+  conversation_allowance_exhausted:
+    "Let through without screening — your monthly screening conversations were used up.",
+  token_balance_exhausted:
+    "Let through without screening — your monthly screening allowance was used up.",
+  ai_unavailable: "Let through without screening — the AI was unavailable at the time.",
+};
 
-  if (data?.autoQualified) {
-    return (
-      <p className="text-[13px] text-gray-400 italic">
-        Auto-qualified (AI token balance exhausted).
+/**
+ * Why the gate decided what it did — shown for every lead so the expert can
+ * check it applied their criteria the way they meant, and correct it if not.
+ */
+function DecisionReasons({ lead }: { lead: LeadRow }) {
+  const data = (lead.answersJson ?? {}) as AnswersJson;
+
+  let body: React.ReactNode;
+
+  if (data.mode === "OPEN") {
+    body = <p className="text-[13px] text-gray-600">No screening — this service is in Open mode.</p>;
+  } else if (data.autoQualified) {
+    body = (
+      <p className="text-[13px] text-gray-600">
+        {AUTO_QUALIFIED_REASONS[data.reason ?? ""] ?? "Let through without screening."}
+      </p>
+    );
+  } else if (lead.qualificationResult === "QUALIFIED" && data.qualificationEvidence?.length) {
+    body = (
+      <>
+        <ul className="space-y-1.5">
+          {data.qualificationEvidence.map((e, i) => (
+            <li key={i} className="text-[13px] leading-5 text-ink">
+              <span className="font-medium text-emerald-700">✓ {e.requirement}</span>
+              <span className="text-gray-500"> — &ldquo;{e.quote}&rdquo;</span>
+            </li>
+          ))}
+        </ul>
+        {data.strongFitReason && (
+          <p className="mt-2 text-[13px] leading-5 text-ink">
+            <span className="font-medium">★ Strong fit:</span> {data.strongFitReason}
+          </p>
+        )}
+      </>
+    );
+  } else if (lead.qualificationResult === "REJECTED" && data.rejectionReasons) {
+    body = (
+      <>
+        {data.rejectionReasons.length > 0 ? (
+          <ul className="space-y-1.5">
+            {data.rejectionReasons.map((r, i) => (
+              <li key={i} className="text-[13px] leading-5 text-ink">
+                <span className="font-medium text-red-700">✗ {r.requirement}</span>
+                <span className="text-gray-500">
+                  {r.quote ? <> — &ldquo;{r.quote}&rdquo;</> : " — not said outright"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[13px] text-gray-600">The gate turned them away without naming a reason.</p>
+        )}
+        {lead.notYetReadyWhen && (
+          <p className="mt-2 text-[13px] leading-5 text-amber-800">
+            <span className="font-medium">Not yet</span> — ready when {lead.notYetReadyWhen}
+          </p>
+        )}
+      </>
+    );
+  } else {
+    body = (
+      <p className="text-[13px] text-gray-500 italic">
+        No reasons recorded — this decision was made before Gate started recording them.
       </p>
     );
   }
+
+  return (
+    <div className="mb-5 rounded-[1rem] border border-warm-border-soft bg-white/80 px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+        Why this decision
+      </p>
+      <div className="mt-2">{body}</div>
+
+      {(data.gateCriteria || (data.calibrationReviewsUsed ?? 0) > 0) && (
+        <div className="mt-3 border-t border-warm-border-soft/60 pt-2.5 text-[12px] text-gray-500">
+          {(data.calibrationReviewsUsed ?? 0) > 0 && (
+            <p>Shaped by {data.calibrationReviewsUsed} of your past reviews.</p>
+          )}
+          {data.gateCriteria && (
+            <details className="group mt-1">
+              <summary className="cursor-pointer list-none hover:text-ink">
+                <span className="inline-block transition-transform group-open:rotate-90">▶</span>{" "}
+                Criteria this was judged against
+              </summary>
+              <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap rounded-lg bg-warm-cream/60 p-3 font-sans text-[12px] leading-5 text-gray-700">
+                {data.gateCriteria}
+              </pre>
+            </details>
+          )}
+          <p className="mt-1">Disagree? Mark the right call below — your reviews calibrate the gate.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Transcript({ answersJson }: { answersJson: unknown }) {
+  const data = answersJson as AnswersJson;
+  const history = data?.conversationHistory ?? [];
 
   if (history.length === 0) {
     return (
@@ -147,21 +250,6 @@ function Transcript({ answersJson }: { answersJson: unknown }) {
         </div>
       )}
 
-      {data.qualificationEvidence && data.qualificationEvidence.length > 0 && (
-        <div className="rounded-[1rem] border border-emerald-100 bg-emerald-50/60 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-800">
-            Why they qualified
-          </p>
-          <ul className="mt-2 space-y-1.5">
-            {data.qualificationEvidence.map((e, i) => (
-              <li key={i} className="text-[13px] leading-5 text-ink">
-                <span className="font-medium">✓ {e.requirement}</span>
-                <span className="text-gray-500"> — &ldquo;{e.quote}&rdquo;</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
@@ -387,6 +475,7 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
           <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-gray-400">
             Conversation
           </p>
+          <DecisionReasons lead={lead} />
           <Transcript answersJson={lead.answersJson} />
           <CorrectionControl lead={lead} />
         </div>

@@ -60,6 +60,12 @@ export type QualificationEvidence = {
   quote: string;
 };
 
+/** Why a visitor was turned away: the requirement or red flag, and their words (null if the gate's quote couldn't be verified). */
+export type RejectionReason = {
+  requirement: string;
+  quote: string | null;
+};
+
 export type ReturningVisitorContext = {
   /** e.g. "3 March 2026" */
   previousVisitDate: string;
@@ -68,7 +74,7 @@ export type ReturningVisitorContext = {
   earlierAnswers: string | null;
 };
 
-const MIN_LABELED_EXAMPLES = 3;
+export const MIN_LABELED_EXAMPLES = 3;
 
 export type ConversationTurn =
   | { type: "question"; message: string; tokensUsed: number }
@@ -88,6 +94,10 @@ export type ConversationTurn =
       readyWhen?: string | null;
       /** Only on QUALIFIED: each must-have, with the visitor's words confirming it (checked against what they said). */
       evidence?: QualificationEvidence[];
+      /** Only when isStrongFit: one line on why they stand out. */
+      strongFitReason?: string | null;
+      /** Only on REJECTED: what they failed. Quotes are verified or dropped to null. */
+      reasons?: RejectionReason[];
     };
 
 // ── Fallback (fail open — never block a visitor) ──────────────────────────────
@@ -141,6 +151,16 @@ const aiResponseSchema = z.discriminatedUnion("type", [
         z.object({
           requirement: z.string().trim().min(1).max(200),
           quote: z.string().trim().min(1).max(300),
+        }),
+      )
+      .max(6)
+      .optional(),
+    strongFitReason: z.string().trim().max(300).nullish(),
+    reasons: z
+      .array(
+        z.object({
+          requirement: z.string().trim().min(1).max(200),
+          quote: z.string().trim().max(300).nullish(),
         }),
       )
       .max(6)
@@ -267,6 +287,15 @@ must-haves.
   copied verbatim, under 15 words, no ellipses>" }. Only quote what the
   visitor wrote, never your own words.
 
+WHY — every decision explains itself to ${professionalName}
+• With REJECTED, include "reasons": one entry per must-have the visitor
+  failed or red flag they matched — { "requirement": "<the must-have or
+  red flag>", "quote": "<the visitor's exact words showing it, under 15
+  words, no ellipses>" }. If they never said it outright (e.g. dodged the
+  question), set "quote": null.
+• With "isStrongFit": true, include "strongFitReason": one sentence on what
+  makes them a standout match, in terms of the profile.
+
 NOT-YET FLAG (only when decision is REJECTED)
 Set "notYet": true only when they're the right kind of person but the
 reason is something that could realistically change — timing, stage,
@@ -283,7 +312,7 @@ While gathering information:
 
 When ready to decide:
 { "type": "final", "decision": "QUALIFIED" | "REJECTED", "isStrongFit": true | false, "notYet": true | false, "readyWhen": null | "...", "evidence": [{ "requirement": "...", "quote": "..." }], "message": "..." }
-("evidence" is required for QUALIFIED; omit it for REJECTED.)
+("evidence" is required for QUALIFIED; "reasons" is required for REJECTED; "strongFitReason" only when isStrongFit is true.)
 
 MESSAGE GUIDELINES
 • Write as a warm, confident human assistant — never robotic
@@ -376,6 +405,28 @@ function quoteIsFromVisitor(quote: string, visitorText: string, visitorWords: Se
 
   const found = words.filter((w) => visitorWords.has(w)).length;
   return found / words.length >= 0.8;
+}
+
+/**
+ * A rejection's reasons, with any quote the visitor didn't actually say
+ * dropped to null — the expert sees the requirement, never a made-up quote.
+ */
+function verifiedReasons(
+  reasons: Array<{ requirement: string; quote?: string | null }> | undefined,
+  history: ConversationMessage[],
+): RejectionReason[] {
+  const visitorText = normalizeForMatch(
+    history.filter((m) => m.role === "user").map((m) => m.content).join(" "),
+  );
+  const visitorWords = new Set(visitorText.split(" "));
+
+  return (reasons ?? []).map((r) => {
+    const quote = r.quote?.trim();
+    return {
+      requirement: r.requirement,
+      quote: quote && quoteIsFromVisitor(quote, visitorText, visitorWords) ? quote : null,
+    };
+  });
 }
 
 /**
@@ -569,6 +620,21 @@ export const aiConversationService = {
         }
       }
 
+      // A REJECTED must say why. Unlike a QUALIFIED it's never turned into a
+      // question — the AI did decide no — so a missing reason gets one
+      // corrective retry, then the rejection stands with no reasons.
+      if (decision === "REJECTED" && !validated.reasons?.length && attempt < MALFORMED_REPLY_ATTEMPTS) {
+        logger.warn("aiConversationService: REJECTED without reasons — retrying", { attempt });
+        messages.push(
+          { role: "assistant", content: raw },
+          {
+            role: "system",
+            content: `Your last reply rejected the visitor but gave no "reasons". Return the same decision with "reasons": the must-haves they failed or red flags they matched, quoting their exact words (or null if they never said it outright).`,
+          },
+        );
+        continue;
+      }
+
       return {
         type: "final",
         decision,
@@ -582,6 +648,11 @@ export const aiConversationService = {
             ? validated.readyWhen.trim()
             : null,
         ...(decision === "QUALIFIED" ? { evidence: validated.evidence } : {}),
+        ...(decision === "REJECTED" ? { reasons: verifiedReasons(validated.reasons, input.history) } : {}),
+        strongFitReason:
+          decision === "QUALIFIED" && validated.isStrongFit && validated.strongFitReason?.trim()
+            ? validated.strongFitReason.trim()
+            : null,
         message: validated.message,
         tokensUsed,
       };

@@ -20,9 +20,15 @@ const BASE_INPUT = {
   professionalBio: null,
   services: [{ id: "svc-1", title: "Strategy Session" }],
   targetServiceId: "svc-1",
-  history: [],
+  history: [{ role: "user" as const, content: "I'm the founder and CEO, and we just closed our seed round." }],
   visitorName: "Alex",
 };
+
+/** Valid must-have evidence for BASE_INPUT's visitor message. */
+const EVIDENCE = [
+  { requirement: "Is the founder and CEO", quote: "I'm the founder and CEO" },
+  { requirement: "Has raised funding", quote: "we just closed our seed round" },
+];
 
 function mockNextQuestion() {
   mockCreate.mockResolvedValue({
@@ -158,6 +164,7 @@ describe("aiConversationService.nextTurn isStrongFit", () => {
               type: "final",
               decision: "QUALIFIED",
               redirectServiceId: null,
+              evidence: EVIDENCE,
               message: "Great — let me pull up some times.",
               ...overrides,
             }),
@@ -354,7 +361,7 @@ describe("aiConversationService not-yet door", () => {
 
   it("never carries readyWhen on a QUALIFIED decision, even if the model sets one", async () => {
     mockCreate.mockResolvedValueOnce(
-      finalReply({ decision: "QUALIFIED", notYet: true, readyWhen: "has raised" }),
+      finalReply({ decision: "QUALIFIED", notYet: true, readyWhen: "has raised", evidence: EVIDENCE }),
     );
 
     expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({
@@ -411,5 +418,72 @@ describe("aiConversationService.buildReturningContext", () => {
       readyWhen: "has closed a funding round",
       earlierAnswers: "We haven't raised yet.",
     });
+  });
+});
+
+describe("aiConversationService must-have evidence", () => {
+  function reply(fields: Record<string, unknown>) {
+    return {
+      usage: { total_tokens: 60 },
+      choices: [{ message: { content: JSON.stringify(fields) } }],
+    };
+  }
+
+  const qualified = (evidence: unknown) => reply({ type: "final", decision: "QUALIFIED", message: "Great!", evidence });
+
+  beforeEach(() => {
+    mockCreate.mockReset();
+  });
+
+  it("qualifies when every quote is the visitor's own words, and passes the evidence on", async () => {
+    mockCreate.mockResolvedValueOnce(qualified(EVIDENCE));
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ type: "final", decision: "QUALIFIED", evidence: EVIDENCE });
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("tolerates small differences in a quote (case, punctuation, a dropped word)", async () => {
+    mockCreate.mockResolvedValueOnce(
+      qualified([{ requirement: "Has raised funding", quote: "We just closed the seed round!" }]),
+    );
+
+    expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({ decision: "QUALIFIED" });
+  });
+
+  it("refuses a QUALIFIED with no evidence: retries with a correction, then asks instead", async () => {
+    mockCreate
+      .mockResolvedValueOnce(qualified(undefined))
+      .mockResolvedValueOnce(qualified([]));
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn.type).toBe("question");
+    expect(turn).not.toHaveProperty("failedOpen");
+    const retryMessages = mockCreate.mock.calls[1]![0].messages;
+    expect(retryMessages.at(-1)).toMatchObject({ role: "system" });
+    expect(retryMessages.at(-1).content).toContain("no evidence");
+  });
+
+  it("refuses evidence the visitor never said — a CTO can't be quoted as the CEO", async () => {
+    const input = {
+      ...BASE_INPUT,
+      history: [{ role: "user" as const, content: "I'm the CTO and co-founder of a funded startup." }],
+    };
+    mockCreate
+      .mockResolvedValueOnce(qualified([{ requirement: "Is the CEO", quote: "I'm the CEO" }]))
+      .mockResolvedValueOnce(reply({ type: "question", message: "Are you the CEO, or in another role?" }));
+
+    const turn = await aiConversationService.nextTurn(input);
+
+    expect(turn).toEqual({ type: "question", message: "Are you the CEO, or in another role?", tokensUsed: 120 });
+    expect(mockCreate.mock.calls[1]![0].messages.at(-1).content).toContain(`"I'm the CEO"`);
+  });
+
+  it("doesn't need evidence to reject", async () => {
+    mockCreate.mockResolvedValueOnce(reply({ type: "final", decision: "REJECTED", message: "Not the right fit." }));
+
+    expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({ decision: "REJECTED" });
   });
 });

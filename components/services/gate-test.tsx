@@ -17,6 +17,7 @@ type TestResult = {
   outcome: Outcome;
   isStrongFit: boolean;
   readyWhen: string | null;
+  evidence: Array<{ requirement: string; quote: string }>;
   verdict: Verdict;
 };
 
@@ -238,6 +239,15 @@ function VisitorCard({ run }: { run: VisitorRun }) {
       <p className="mt-1 text-[12px] text-slate-500">{result.persona.summary}</p>
       {result.readyWhen && (
         <p className="mt-1 text-[12px] text-amber-800">Ready when: {result.readyWhen}</p>
+      )}
+      {result.evidence.length > 0 && (
+        <ul className="mt-1 space-y-0.5">
+          {result.evidence.map((e, i) => (
+            <li key={i} className="text-[12px] text-slate-600">
+              ✓ {e.requirement} <span className="text-slate-400">— &ldquo;{e.quote}&rdquo;</span>
+            </li>
+          ))}
+        </ul>
       )}
 
       {needsCheck && <p className="mt-1.5 text-[12px] text-red-700">{checkThisHint(result)}</p>}

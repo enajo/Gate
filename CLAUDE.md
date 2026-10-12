@@ -69,6 +69,16 @@ directly from a route or component.
   A reply that runs but comes back malformed is retried once, then becomes
   a neutral follow-up question — never a QUALIFIED, because a visitor can
   provoke malformed output on purpose.
+- **Must-haves before QUALIFIED.** The gate won't qualify anyone until every
+  must-have (the compiled prompt's MUST-HAVES section, or the profile's
+  clearest hard requirements on older gates) is confirmed by something the
+  visitor said; unconfirmed ones get asked about. A QUALIFIED must carry
+  `evidence` — a quote of the visitor's own words per must-have — and the
+  server checks each quote against the visitor's messages
+  (`evidenceProblem`). Missing or invented evidence is treated like a
+  malformed reply: retried with a correction, then a follow-up question.
+  The evidence is saved as `answersJson.qualificationEvidence`. It can't
+  catch a visitor who lies — only a gate that never asked.
 - Booking confirmation uses **static access codes**, not payments — a
   deliberate v1 constraint, not a missing feature.
 - Background jobs (`server/jobs/`): expire stale `BookingHold`s, retry failed

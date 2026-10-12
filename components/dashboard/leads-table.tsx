@@ -13,6 +13,8 @@ type AnswersJson = {
   conversationHistory?: ChatMessage[];
   aiDecision?: string;
   aiMessage?: string;
+  /** Must-haves the gate confirmed before qualifying, with the visitor's words. */
+  qualificationEvidence?: Array<{ requirement: string; quote: string }>;
   redirectServiceId?: string | null;
   autoQualified?: boolean;
   reason?: string;
@@ -142,6 +144,22 @@ function Transcript({ answersJson }: { answersJson: unknown }) {
           <div className="max-w-[80%] rounded-[1rem] rounded-tl-sm border border-warm-border-soft bg-white/80 px-4 py-2.5 text-[13px] leading-6 text-ink">
             {data.aiMessage}
           </div>
+        </div>
+      )}
+
+      {data.qualificationEvidence && data.qualificationEvidence.length > 0 && (
+        <div className="rounded-[1rem] border border-emerald-100 bg-emerald-50/60 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-800">
+            Why they qualified
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {data.qualificationEvidence.map((e, i) => (
+              <li key={i} className="text-[13px] leading-5 text-ink">
+                <span className="font-medium">✓ {e.requirement}</span>
+                <span className="text-gray-500"> — &ldquo;{e.quote}&rdquo;</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

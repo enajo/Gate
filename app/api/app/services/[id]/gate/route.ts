@@ -87,6 +87,12 @@ OUTPUT FORMAT — return ONLY valid JSON, no markdown, no code fences:
 COMPILED PROMPT STRUCTURE — the compiledPrompt must include these clearly labeled sections:
 - WHAT THIS EXPERT DOES & THE OUTCOME THEY DELIVER
 - THE TRIGGER — situation the ideal client is in right now
+- MUST-HAVES — 2 to 4 hard requirements, one per line starting with "- ".
+  Each is something a visitor can confirm in one sentence (e.g. "- Is the
+  founder and CEO", "- Has raised a seed or Series A round"). Only true
+  deal-breakers from the expert's answers — nice-to-haves go under
+  POSITIVE SIGNALS. The screening AI won't qualify anyone until every
+  must-have is confirmed by something they said.
 - POSITIVE SIGNALS (visitor must show most of these)
 - RED FLAGS — reject or hold for review if any of these appear
 - KEY QUESTION — the single most important thing to probe

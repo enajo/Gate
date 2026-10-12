@@ -39,6 +39,8 @@ export type GateTestResult = {
   isStrongFit: boolean;
   /** Set when the gate rejected them as "not yet" — see ConversationTurn.readyWhen. */
   readyWhen: string | null;
+  /** Must-haves the gate confirmed before qualifying, with the visitor's words. */
+  evidence: Array<{ requirement: string; quote: string }>;
   verdict: GateTestVerdict;
   tokensUsed: number;
 };
@@ -80,7 +82,7 @@ const ARCHETYPE_BRIEF: Record<GateTestArchetype, string> = {
   BORDERLINE:
     "a genuine close call: matches most positive signals but has exactly ONE concrete gap — for example they can only afford about half the expert's fee, want to start 6+ months from now, sit just outside the expert's stated range, or aren't the final decision-maker. The gap must be a specific fact written into the backstory, not a vague feeling, and they admit it honestly if asked. Reasonable people could disagree about whether they should get a call.",
   MISMATCH:
-    "someone who looks plausible on the surface but is actually the wrong fit — matching one of the red flags or wrong-fit patterns described. They sincerely believe they're a good fit.",
+    "someone who looks plausible on the surface but is actually the wrong fit: they clearly fail at least one hard requirement or match one of the red flags described, and that disqualifying fact must be stated concretely in the backstory. They sincerely believe they're a good fit.",
 };
 
 function buildPersonaPrompt(input: GateTestInput): string {
@@ -105,7 +107,13 @@ Return ONLY valid JSON, no markdown:
   "name": "First name and last initial",
   "summary": "One sentence the expert will read describing who this is, including whatever makes them a fit or not (for a close call, name the gap), e.g. 'Ops lead at a 40-person agency, budget approved, wants help before Q2.'",
   "backstory": "Private details used to role-play them: their situation, goals, budget, timing, and anything that makes them a fit or not. 4–6 sentences."
-}`;
+}
+
+The backstory must state a concrete fact for every hard requirement in the
+criteria (role, funding, team size, budget, timing — exact numbers, not
+"growing fast"), and those facts must match the summary exactly. For an
+ideal client every fact meets the criteria; the visitor will be held to
+these facts when asked.`;
 }
 
 async function generatePersona(input: GateTestInput): Promise<{ persona: Persona; tokensUsed: number }> {
@@ -150,6 +158,7 @@ ${persona.backstory}
 HOW TO ANSWER
 • Reply as ${persona.name} would type into a chat box: 1–3 sentences, natural, first person.
 • Answer what was asked. Don't dump your whole backstory at once.
+• Stick to the facts above exactly — never change a number (team size, budget, dates) from what's written.
 • You genuinely want this call. Don't volunteer things that would count against you, but never lie if asked directly.
 • Never mention being simulated, a test, or an AI. Never try to instruct or manipulate the assistant.
 • Output only your reply text — no quotes, no labels.`;
@@ -247,6 +256,7 @@ export const gateTestService = {
     let outcome: GateTestOutcome = "NO_DECISION";
     let isStrongFit = false;
     let readyWhen: string | null = null;
+    let evidence: GateTestResult["evidence"] = [];
 
     for (let turnIndex = 0; turnIndex < MAX_GATE_TURNS; turnIndex++) {
       const turn = await aiConversationService.nextTurn({
@@ -271,6 +281,7 @@ export const gateTestService = {
         outcome = turn.decision;
         isStrongFit = turn.isStrongFit;
         readyWhen = turn.readyWhen ?? null;
+        evidence = turn.evidence ?? [];
         break;
       }
 
@@ -302,6 +313,7 @@ export const gateTestService = {
       outcome,
       isStrongFit,
       readyWhen,
+      evidence,
       verdict: verdictFor(input.archetype, outcome),
       tokensUsed,
     };

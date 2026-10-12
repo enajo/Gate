@@ -390,6 +390,7 @@ export const qualificationConversationService = {
         aiMessage: turn.message,
         ...(turn.failedOpen ? { autoQualified: true, reason: "ai_unavailable" } : {}),
         ...(returningFromLeadId ? { returningFromLeadId } : {}),
+        ...(turn.evidence?.length ? { qualificationEvidence: turn.evidence } : {}),
       },
       qualificationResult: turn.decision,
       notYetReadyWhen: turn.readyWhen ?? null,

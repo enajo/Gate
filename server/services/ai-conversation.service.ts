@@ -54,6 +54,12 @@ export type ConversationServiceInput = {
  * visitors (see qualification-conversation.service.ts for how they're
  * recognized).
  */
+/** A must-have, and the visitor's own words that confirm it. */
+export type QualificationEvidence = {
+  requirement: string;
+  quote: string;
+};
+
 export type ReturningVisitorContext = {
   /** e.g. "3 March 2026" */
   previousVisitDate: string;
@@ -80,6 +86,8 @@ export type ConversationTurn =
        * to change. null for QUALIFIED and for fundamental mismatches.
        */
       readyWhen?: string | null;
+      /** Only on QUALIFIED: each must-have, with the visitor's words confirming it (checked against what they said). */
+      evidence?: QualificationEvidence[];
     };
 
 // ── Fallback (fail open — never block a visitor) ──────────────────────────────
@@ -128,6 +136,15 @@ const aiResponseSchema = z.discriminatedUnion("type", [
     // Optional so a model that omits them never fails the parse.
     notYet: z.boolean().optional(),
     readyWhen: z.string().max(300).nullish(),
+    evidence: z
+      .array(
+        z.object({
+          requirement: z.string().trim().min(1).max(200),
+          quote: z.string().trim().min(1).max(300),
+        }),
+      )
+      .max(6)
+      .optional(),
     message: z.string().min(1).max(800),
   }),
 ]);
@@ -206,7 +223,9 @@ HOW TO RUN THE CONVERSATION
    disclosure requirement, not optional), then ask one open question about
    their situation.
 2. Ask ONE question per turn. If an answer is vague, ask ONE targeted follow-up.
-3. Reach a final decision within 2–4 exchanges.
+3. Reach a final decision within 2–4 exchanges — but never by skipping an
+   unconfirmed must-have (see MUST-HAVES below); asking about one is always
+   worth an extra exchange.
 4. If a question turn's answer clearly matches the ideal client profile
    with a strong positive signal, you may briefly affirm that before your
    next question (e.g. "That's exactly the kind of situation I help with —
@@ -231,6 +250,23 @@ described. If it's a closer call, set false. When genuinely unsure, set
 false — this flag only ever grants extra access, never use it to soften a
 rejection. Omit it entirely (or set false) for REJECTED.
 
+MUST-HAVES — check every one before you QUALIFY
+Use the MUST-HAVES section of the ideal client profile if it has one. If it
+doesn't, treat the 2–4 clearest hard requirements in the profile (role,
+stage, funding, budget, timing, size — whatever it says is required) as the
+must-haves.
+• Never QUALIFY until EVERY must-have is confirmed by something the visitor
+  actually said. Plausible context is not confirmation — "I lead a funded
+  startup" does not confirm "is the founder and CEO".
+• If a must-have is still unconfirmed, ask about it directly (one question
+  per turn) instead of deciding.
+• If the visitor clearly fails a must-have, decide REJECTED (and consider
+  the NOT-YET FLAG).
+• With QUALIFIED, include "evidence": one entry per must-have —
+  { "requirement": "<the must-have>", "quote": "<the visitor's exact words,
+  copied verbatim, under 15 words, no ellipses>" }. Only quote what the
+  visitor wrote, never your own words.
+
 NOT-YET FLAG (only when decision is REJECTED)
 Set "notYet": true only when they're the right kind of person but the
 reason is something that could realistically change — timing, stage,
@@ -246,7 +282,8 @@ While gathering information:
 { "type": "question", "message": "..." }
 
 When ready to decide:
-{ "type": "final", "decision": "QUALIFIED" | "REJECTED", "isStrongFit": true | false, "notYet": true | false, "readyWhen": null | "...", "message": "..." }
+{ "type": "final", "decision": "QUALIFIED" | "REJECTED", "isStrongFit": true | false, "notYet": true | false, "readyWhen": null | "...", "evidence": [{ "requirement": "...", "quote": "..." }], "message": "..." }
+("evidence" is required for QUALIFIED; omit it for REJECTED.)
 
 MESSAGE GUIDELINES
 • Write as a warm, confident human assistant — never robotic
@@ -311,6 +348,62 @@ function summarizeAnswers(answersJson: unknown): string | null {
 const MALFORMED_REPLY_ATTEMPTS = 2;
 
 const CLARIFY_MESSAGE = "Sorry, I didn't quite catch that — could you tell me a bit more about your situation?";
+
+// ── Must-have evidence ────────────────────────────────────────────────────────
+
+function normalizeForMatch(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[^a-z0-9' ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Whether a quoted fragment really came from the visitor. Exact (normalized)
+ * match first; otherwise at least 80% of its meaningful words must appear in
+ * what they wrote — tolerant of a dropped word, not of a fabricated claim
+ * ("I'm the CEO" when they said "CTO" fails on "ceo").
+ */
+function quoteIsFromVisitor(quote: string, visitorText: string, visitorWords: Set<string>): boolean {
+  const normalized = normalizeForMatch(quote);
+  if (!normalized) return false;
+  if (visitorText.includes(normalized)) return true;
+
+  const words = normalized.split(" ").filter((w) => w.length >= 3);
+  if (words.length < 2) return false;
+
+  const found = words.filter((w) => visitorWords.has(w)).length;
+  return found / words.length >= 0.8;
+}
+
+/**
+ * Why a QUALIFIED reply's evidence doesn't hold up, or null if it does. The
+ * server can't judge whether a must-have is met — but it can insist the AI
+ * cites the visitor's own words for each one, which is what stops it
+ * qualifying on a plausible story it never actually checked.
+ */
+function evidenceProblem(
+  evidence: QualificationEvidence[] | undefined,
+  history: ConversationMessage[],
+): string | null {
+  if (!evidence || evidence.length === 0) {
+    return "it listed no evidence for the must-haves";
+  }
+
+  const visitorText = normalizeForMatch(
+    history.filter((m) => m.role === "user").map((m) => m.content).join(" "),
+  );
+  const visitorWords = new Set(visitorText.split(" "));
+
+  const unsupported = evidence.filter((e) => !quoteIsFromVisitor(e.quote, visitorText, visitorWords));
+  if (unsupported.length > 0) {
+    return `these quotes aren't the visitor's own words: ${unsupported.map((e) => `"${e.quote}"`).join(", ")}`;
+  }
+
+  return null;
+}
 
 /** null for anything that isn't a valid reply — never throws. */
 function parseModelReply(raw: string): z.infer<typeof aiResponseSchema> | null {
@@ -458,6 +551,24 @@ export const aiConversationService = {
 
       const decision = validated.decision === "QUALIFIED" ? "QUALIFIED" : "REJECTED";
 
+      // A QUALIFIED has to show its work. Unsupported evidence is handled
+      // like any other bad reply — retried with a correction, then a
+      // follow-up question — never a fail-open.
+      if (decision === "QUALIFIED") {
+        const problem = evidenceProblem(validated.evidence, input.history);
+        if (problem) {
+          logger.warn("aiConversationService: QUALIFIED without valid evidence", { attempt, problem });
+          messages.push(
+            { role: "assistant", content: raw },
+            {
+              role: "system",
+              content: `Your last reply qualified the visitor, but ${problem}. Every must-have needs a short quote of the visitor's exact words. If a must-have hasn't actually been confirmed, ask about it instead (type "question").`,
+            },
+          );
+          continue;
+        }
+      }
+
       return {
         type: "final",
         decision,
@@ -470,6 +581,7 @@ export const aiConversationService = {
           decision === "REJECTED" && validated.notYet && validated.readyWhen?.trim()
             ? validated.readyWhen.trim()
             : null,
+        ...(decision === "QUALIFIED" ? { evidence: validated.evidence } : {}),
         message: validated.message,
         tokensUsed,
       };

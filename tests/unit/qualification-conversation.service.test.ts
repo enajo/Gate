@@ -234,6 +234,18 @@ describe("qualificationConversationService.handleTurn", () => {
       expect(result).toMatchObject({ kind: "final", decision: "REJECTED", leadId: "lead_1" });
     });
 
+    it("saves the must-have evidence on a qualified Lead", async () => {
+      const evidence = [{ requirement: "Is the founder and CEO", quote: "I'm the founder and CEO" }];
+      mocks.aiConversationService.nextTurn.mockResolvedValue(final("QUALIFIED", { evidence }));
+
+      await qualificationConversationService.handleTurn({ ...BASE_INPUT, conversationId: "conv_1", message: "Hi" });
+
+      expect(mocks.bookingRepository.createLeadForProfessional).toHaveBeenCalledWith(
+        PRO_ID,
+        expect.objectContaining({ answersJson: expect.objectContaining({ qualificationEvidence: evidence }) }),
+      );
+    });
+
     it("uses one conversation from the allowance once the gate decides", async () => {
       mocks.aiConversationService.nextTurn.mockResolvedValue(final("REJECTED"));
 

@@ -25,7 +25,10 @@ includes, and what happens when a paid professional stops paying.
   still fails open to auto-qualify rather than blocking a visitor, and the
   expert is emailed once per period.
 - **Metered in conversations, not tokens (changed 2026-10-12).** One
-  conversation = one visitor's whole screening chat. Tokens were the wrong
+  conversation = one visitor's screening chat that reaches a decision
+  (QUALIFIED or REJECTED). Abandoned chats and fail-open outcomes are free
+  — the expert pays for decisions, not attempts; cost from unfinished chats
+  is bounded by the per-visitor cap and per-conversation AI-call cap. Tokens were the wrong
   unit to sell: experts can't reason about them, and live tests showed a
   real conversation costs ~3–5k tokens, not the ~1.5k the old 15k-token
   free tier assumed — it was really ~4 conversations, not the ~10 promised.

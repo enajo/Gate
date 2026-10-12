@@ -16,6 +16,7 @@ type TestResult = {
   transcript: Array<{ role: "assistant" | "user"; content: string }>;
   outcome: Outcome;
   isStrongFit: boolean;
+  readyWhen: string | null;
   verdict: Verdict;
 };
 
@@ -53,7 +54,7 @@ function outcomeLabel(result: TestResult): string {
     case "QUALIFIED":
       return result.isStrongFit ? "Qualified · strong fit" : "Qualified";
     case "REJECTED":
-      return "Rejected";
+      return result.readyWhen ? "Not yet" : "Rejected";
     case "NO_DECISION":
       return "No decision";
     case "GATE_ERROR":
@@ -235,6 +236,9 @@ function VisitorCard({ run }: { run: VisitorRun }) {
       </div>
 
       <p className="mt-1 text-[12px] text-slate-500">{result.persona.summary}</p>
+      {result.readyWhen && (
+        <p className="mt-1 text-[12px] text-amber-800">Ready when: {result.readyWhen}</p>
+      )}
 
       {needsCheck && <p className="mt-1.5 text-[12px] text-red-700">{checkThisHint(result)}</p>}
       {result.verdict === "CLOSE_CALL" && (

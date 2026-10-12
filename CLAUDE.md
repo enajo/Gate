@@ -49,11 +49,16 @@ directly from a route or component.
   forged or padded; each conversation is capped at
   `MAX_AI_CALLS_PER_CONVERSATION`. The final decision + transcript are
   written to `Lead.answersJson`. It decides fit or not (QUALIFIED/REJECTED —
-  REDIRECT is paused, see `docs/STATUS.md`). There is no cross-session
-  memory — a returning visitor starts cold.
+  REDIRECT is paused, see `docs/STATUS.md`). The only cross-visit memory is
+  the **not-yet door**: a rejection that's "right person, wrong time" saves
+  `Lead.notYetReadyWhen`, and if that same browser (`gate_visitor_id`
+  cookie — never a typed email) comes back to the same service within a
+  year, the gate gets that context and re-screens. Everyone else starts
+  cold; keep it that narrow.
 - **Metered in conversations, not tokens.** `Professional.conversationBalance`
-  is the monthly allowance; starting a conversation uses one (atomically),
-  continuing it doesn't. Tiers with `monthlyConversations: null` are
+  is the monthly allowance; a conversation uses one (atomically) only when
+  the gate reaches a decision — abandoned chats and fail-open outcomes are
+  free. Tiers with `monthlyConversations: null` are
   unlimited. New conversations are also capped per visitor IP per expert per
   day. Other AI features (briefing, warm-up note, Pattern Report) aren't
   metered.

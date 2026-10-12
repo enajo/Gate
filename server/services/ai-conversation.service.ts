@@ -45,6 +45,21 @@ export type ConversationServiceInput = {
    * corrections.
    */
   labeledExamples?: LabeledExample[];
+  /** Set only when this visitor is coming back after a "not yet" — see buildReturningContext. */
+  returningVisitor?: ReturningVisitorContext | null;
+};
+
+/**
+ * The only memory the gate keeps across visits, and only for "not yet"
+ * visitors (see qualification-conversation.service.ts for how they're
+ * recognized).
+ */
+export type ReturningVisitorContext = {
+  /** e.g. "3 March 2026" */
+  previousVisitDate: string;
+  readyWhen: string;
+  /** A couple of the visitor's own earlier answers. */
+  earlierAnswers: string | null;
 };
 
 const MIN_LABELED_EXAMPLES = 3;
@@ -60,6 +75,11 @@ export type ConversationTurn =
       tokensUsed: number;
       /** Set only on FALLBACK_TURN — the AI never actually judged this visitor. */
       failedOpen?: boolean;
+      /**
+       * Only on a REJECTED that's "right person, wrong time": what would need
+       * to change. null for QUALIFIED and for fundamental mismatches.
+       */
+      readyWhen?: string | null;
     };
 
 // ── Fallback (fail open — never block a visitor) ──────────────────────────────
@@ -105,6 +125,9 @@ const aiResponseSchema = z.discriminatedUnion("type", [
     // away real decisions and failed open.
     redirectServiceId: z.string().nullish(),
     isStrongFit: z.boolean().optional(),
+    // Optional so a model that omits them never fails the parse.
+    notYet: z.boolean().optional(),
+    readyWhen: z.string().max(300).nullish(),
     message: z.string().min(1).max(800),
   }),
 ]);
@@ -119,6 +142,7 @@ function buildSystemPrompt(input: ConversationServiceInput): string {
     services,
     targetServiceId,
     labeledExamples,
+    returningVisitor,
   } = input;
 
   const targetService = services.find((s) => s.id === targetServiceId);
@@ -153,6 +177,17 @@ function buildSystemPrompt(input: ConversationServiceInput): string {
           .join("\n")}\n────────────────────────────────────────────────\n`
       : "";
 
+  const returningBlock = returningVisitor
+    ? `\nRETURNING VISITOR — you spoke with this person on ${returningVisitor.previousVisitDate}. They weren't ready yet; what needed to change: ${returningVisitor.readyWhen}.${
+        returningVisitor.earlierAnswers ? ` What they told you then: "${returningVisitor.earlierAnswers}".` : ""
+      }
+On your first turn, welcome them back by name (keep the AI disclosure), mention
+briefly that you spoke before, and ask whether that has changed. Then screen
+as usual against the profile above — coming back is not a reason to qualify
+them, and don't assume anything changed unless they say so.
+────────────────────────────────────────────────\n`
+    : "";
+
   return `You are a screening assistant for ${professionalName}${professionalTitle ? `, ${professionalTitle}` : ""}.${bioLine}
 
 Your job is to run a short qualification conversation and return a strict PASS/FAIL decision for ${professionalName}'s calendar.
@@ -163,7 +198,7 @@ ${coreBlock}
 ────────────────────────────────────────────────
 ${personaBlock}
 ────────────────────────────────────────────────
-${calibrationBlock}
+${calibrationBlock}${returningBlock}
 HOW TO RUN THE CONVERSATION
 1. On the very first turn, warmly greet the visitor by name, briefly and
    naturally let them know they're talking with an AI assistant screening on
@@ -196,13 +231,22 @@ described. If it's a closer call, set false. When genuinely unsure, set
 false — this flag only ever grants extra access, never use it to soften a
 rejection. Omit it entirely (or set false) for REJECTED.
 
+NOT-YET FLAG (only when decision is REJECTED)
+Set "notYet": true only when they're the right kind of person but the
+reason is something that could realistically change — timing, stage,
+funding, budget, team size. Then set "readyWhen" to a short phrase naming
+what would need to change, written about them (e.g. "has closed a funding
+round", "can budget around $6k", "is ready to start within 3 months").
+For a fundamental mismatch (wrong kind of help, wrong person) set "notYet":
+false and "readyWhen": null. Omit both for QUALIFIED.
+
 OUTPUT FORMAT — return ONLY valid JSON, no markdown, no code fences:
 
 While gathering information:
 { "type": "question", "message": "..." }
 
 When ready to decide:
-{ "type": "final", "decision": "QUALIFIED" | "REJECTED", "isStrongFit": true | false, "message": "..." }
+{ "type": "final", "decision": "QUALIFIED" | "REJECTED", "isStrongFit": true | false, "notYet": true | false, "readyWhen": null | "...", "message": "..." }
 
 MESSAGE GUIDELINES
 • Write as a warm, confident human assistant — never robotic
@@ -324,6 +368,24 @@ export const aiConversationService = {
   },
 
   /**
+   * Context for a visitor returning after a "not yet" — null for any lead
+   * that wasn't one, so memory never extends past that case.
+   */
+  buildReturningContext(lead: Lead): ReturningVisitorContext | null {
+    if (!lead.notYetReadyWhen) return null;
+
+    return {
+      previousVisitDate: lead.createdAt.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+      readyWhen: lead.notYetReadyWhen,
+      earlierAnswers: summarizeAnswers(lead.answersJson),
+    };
+  },
+
+  /**
    * Fail-open is for when the AI can't run at all (no key, network error,
    * timeout, API error) — a visitor is never blocked by an outage. A reply
    * that runs but comes back malformed is different: a visitor can provoke
@@ -402,6 +464,12 @@ export const aiConversationService = {
         // Defensive: strength only ever modifies a real QUALIFIED decision,
         // never trust it on any other outcome even if the model is confused.
         isStrongFit: decision === "QUALIFIED" ? (validated.isStrongFit ?? false) : false,
+        // Same defensive shape: only a real REJECTED flagged not-yet, with
+        // an actual phrase, ever carries one.
+        readyWhen:
+          decision === "REJECTED" && validated.notYet && validated.readyWhen?.trim()
+            ? validated.readyWhen.trim()
+            : null,
         message: validated.message,
         tokensUsed,
       };

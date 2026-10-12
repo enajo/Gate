@@ -47,6 +47,9 @@ export type LeadRow = {
   utmSource?: string | null;
   correctedResult?: CorrectableResult | null;
   correctionNote?: string | null;
+  /** "Right person, wrong time" — what would need to change. */
+  notYetReadyWhen?: string | null;
+  notYetReturnedAt?: Date | string | null;
   createdAt: Date | string;
   visits?: VisitRow[];
   priorVisits?: PriorVisitSummary[];
@@ -325,6 +328,16 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
                 Reviewed
               </span>
             )}
+            {lead.notYetReadyWhen && (
+              <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-medium text-amber-800">
+                Not yet
+              </span>
+            )}
+            {lead.notYetReturnedAt && (
+              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-medium text-emerald-800">
+                Came back {formatDate(lead.notYetReturnedAt)}
+              </span>
+            )}
             {lead.priorVisits && lead.priorVisits.length > 0 && (
               <span className="inline-flex items-center rounded-full border border-brand-amber/40 bg-brand-amber-faint px-2.5 py-0.5 text-[11px] font-medium text-ink">
                 Repeat contact
@@ -332,6 +345,11 @@ function LeadRowItem({ lead }: { lead: LeadRow }) {
             )}
           </div>
           <p className="mt-0.5 text-[12px] text-gray-500">{lead.email}</p>
+          {lead.notYetReadyWhen && (
+            <p className="mt-0.5 text-[12px] text-amber-800">
+              Ready when: {lead.notYetReadyWhen}
+            </p>
+          )}
         </div>
 
         <div className="hidden shrink-0 text-right sm:block">

@@ -18,6 +18,7 @@ import { visitRepository } from "@/server/repositories/visit.repository";
 import {
   aiConversationService,
   type ConversationMessage,
+  type ReturningVisitorContext,
 } from "@/server/services/ai-conversation.service";
 import { emailService } from "@/server/services/email.service";
 
@@ -58,6 +59,9 @@ export type ChatTurnResult =
 const AUTO_QUALIFY_MESSAGE = "Sounds like a great fit — let me pull up some available times.";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// A not-yet visitor is remembered for this long; after that they start cold.
+const NOT_YET_MEMORY_DAYS = 365;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -110,12 +114,63 @@ async function notifyAllowanceExhausted(professionalId: string, monthlyConversat
   }
 }
 
+/**
+ * The earlier "not yet" Lead this browser is coming back from, if any.
+ * Deliberately narrow — this is the only cross-visit memory the gate has:
+ * recognized by the gate_visitor_id cookie only (never a typed email, which
+ * anyone could enter to see someone else's earlier answers); only when that
+ * browser's most recent lead with this expert was a not-yet for the same
+ * service; only within NOT_YET_MEMORY_DAYS.
+ */
+async function findReturningNotYetLead(input: ChatTurnInput) {
+  if (!input.visitorId) return null;
+
+  try {
+    const lead = await visitRepository.findMostRecentLinkedLead({
+      professionalId: input.professionalId,
+      visitorId: input.visitorId,
+    });
+
+    if (
+      !lead ||
+      !lead.notYetReadyWhen ||
+      lead.serviceId !== input.serviceId ||
+      Date.now() - lead.createdAt.getTime() > NOT_YET_MEMORY_DAYS * DAY_MS
+    ) {
+      return null;
+    }
+
+    return lead;
+  } catch (error) {
+    // Memory is a nicety — never fail a visitor's conversation over it.
+    logger.error("qualificationConversation: returning-visitor lookup failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
+async function loadReturningContext(leadId: string | null): Promise<ReturningVisitorContext | null> {
+  if (!leadId) return null;
+
+  try {
+    const lead = await bookingRepository.findLeadById(leadId);
+    return lead ? aiConversationService.buildReturningContext(lead) : null;
+  } catch (error) {
+    logger.error("qualificationConversation: returning context unavailable", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
+}
+
 async function createLead(
   input: ChatTurnInput,
   data: {
     answersJson: Record<string, unknown>;
     qualificationResult: "QUALIFIED" | "REJECTED";
     isStrongFit: boolean;
+    notYetReadyWhen?: string | null;
   },
 ) {
   const lead = await bookingRepository.createLeadForProfessional(input.professionalId, {
@@ -125,6 +180,7 @@ async function createLead(
     answersJson: data.answersJson as Prisma.InputJsonValue,
     qualificationResult: data.qualificationResult,
     isStrongFit: data.isStrongFit,
+    notYetReadyWhen: data.notYetReadyWhen ?? null,
     referrer: input.referrer ?? null,
     utmSource: input.utmSource ?? null,
     utmMedium: input.utmMedium ?? null,
@@ -141,10 +197,11 @@ export const qualificationConversationService = {
   /**
    * One turn of a visitor's screening conversation. The server owns the
    * transcript: the client only sends its next message, so history can't be
-   * forged (fake assistant turns) or padded to inflate AI cost. The first
-   * turn uses one conversation from the expert's monthly allowance; when
-   * that's exhausted the gate fails open (the visitor books unscreened) and
-   * the expert is emailed once.
+   * forged (fake assistant turns) or padded to inflate AI cost. A
+   * conversation is used from the expert's monthly allowance only when the
+   * gate reaches a decision; when the allowance is already exhausted at the
+   * start, the gate fails open (the visitor books unscreened) and the
+   * expert is emailed once.
    */
   async handleTurn(input: ChatTurnInput): Promise<ChatTurnResult> {
     const professional = await profileRepository.findById(input.professionalId);
@@ -167,6 +224,8 @@ export const qualificationConversationService = {
     let conversationId: string;
     let history: ConversationMessage[];
     let expectedAiCalls: number;
+    let returningVisitor: ReturningVisitorContext | null = null;
+    let returningFromLeadId: string | null = null;
 
     if (!input.conversationId) {
       // Per visitor, per expert, per day — bounds anyone deliberately
@@ -185,11 +244,11 @@ export const qualificationConversationService = {
         };
       }
 
+      // Only checked here — a conversation is used when it reaches a
+      // decision (see recordDecision below), so abandoned chats are free.
       const monthlyConversations = PLAN_TIER_LIMITS[professional.planTier].monthlyConversations;
       if (monthlyConversations !== null) {
-        const claimed = await profileRepository.claimConversation(input.professionalId);
-
-        if (!claimed) {
+        if (professional.conversationBalance <= 0) {
           logger.warn("qualificationConversation: allowance exhausted — auto-qualifying", {
             professionalId: input.professionalId,
           });
@@ -214,9 +273,18 @@ export const qualificationConversationService = {
         }
       }
 
+      const returningLead = await findReturningNotYetLead(input);
+      if (returningLead) {
+        returningFromLeadId = returningLead.id;
+        returningVisitor = aiConversationService.buildReturningContext(returningLead);
+        // Shows the expert this not-yet visitor came back.
+        await bookingRepository.updateLeadById(returningLead.id, { notYetReturnedAt: new Date() });
+      }
+
       const conversation = await qualificationConversationRepository.create({
         professionalId: input.professionalId,
         serviceId: input.serviceId,
+        returningFromLeadId,
       });
 
       conversationId = conversation.id;
@@ -254,6 +322,8 @@ export const qualificationConversationService = {
       conversationId = conversation.id;
       history = [...readMessages(conversation.messages), { role: "user", content: text }];
       expectedAiCalls = conversation.aiCalls;
+      returningFromLeadId = conversation.returningFromLeadId;
+      returningVisitor = await loadReturningContext(conversation.returningFromLeadId);
     }
 
     // ── Claim the turn, then ask the gate ───────────────────────────────────
@@ -292,6 +362,7 @@ export const qualificationConversationService = {
       history,
       visitorName: input.name,
       labeledExamples: aiConversationService.buildLabeledExamples(labeledLeads),
+      returningVisitor,
     });
 
     const withReply: ConversationMessage[] = [...history, { role: "assistant", content: turn.message }];
@@ -304,14 +375,24 @@ export const qualificationConversationService = {
       return { kind: "question", conversationId, message: turn.message };
     }
 
+    // A conversation counts once the gate actually decides. Not when it
+    // failed open (the AI never judged them), and not on unlimited plans.
+    // If the last one was used by a parallel chat in the meantime, this
+    // decision goes uncounted rather than cutting the visitor off.
+    if (!turn.failedOpen && PLAN_TIER_LIMITS[professional.planTier].monthlyConversations !== null) {
+      await profileRepository.claimConversation(input.professionalId);
+    }
+
     const lead = await createLead(input, {
       answersJson: {
         conversationHistory: history,
         aiDecision: turn.decision,
         aiMessage: turn.message,
         ...(turn.failedOpen ? { autoQualified: true, reason: "ai_unavailable" } : {}),
+        ...(returningFromLeadId ? { returningFromLeadId } : {}),
       },
       qualificationResult: turn.decision,
+      notYetReadyWhen: turn.readyWhen ?? null,
       // Already guaranteed false for anything but a real QUALIFIED
       // judgment by aiConversationService's own guards.
       isStrongFit: turn.isStrongFit,

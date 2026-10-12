@@ -282,9 +282,10 @@ export const profileRepository = {
   },
 
   /**
-   * Atomically uses one screening conversation from the monthly allowance.
-   * false means the allowance is exhausted. The `> 0` guard sits in the same
-   * UPDATE, so concurrent visitors can't push the balance below zero.
+   * Atomically uses one screening conversation from the monthly allowance —
+   * called when a conversation reaches a decision. false means it was
+   * already at zero. The `> 0` guard sits in the same UPDATE, so concurrent
+   * decisions can't push the balance below zero.
    */
   async claimConversation(id: string): Promise<boolean> {
     const { count } = await db.professional.updateMany({

@@ -434,6 +434,10 @@ model Lead {
   outcomeFollowUpSentAt DateTime?   @map("outcome_follow_up_sent_at")
   /** Last time the professional was alerted that this NO_RESPONSE lead came back to their page — rate-limits ghost-recovery alerts. */
   ghostReturnAlertedAt DateTime?   @map("ghost_return_alerted_at")
+  /** Set when the gate rejected a "right person, wrong time" visitor: what would need to change (e.g. "has closed a funding round"). Null for any other outcome. */
+  notYetReadyWhen      String?      @db.Text @map("not_yet_ready_when")
+  /** When this not-yet visitor came back to the gate (same browser). */
+  notYetReturnedAt     DateTime?    @map("not_yet_returned_at")
   /** AI-generated pre-call prep, cached from the qualification transcript — regenerated only if never run. */
   briefingSummary      Json?        @map("briefing_summary")
   briefingGeneratedAt  DateTime?    @map("briefing_generated_at")
@@ -587,6 +591,8 @@ model QualificationConversation {
   /** [{ role: "assistant" | "user", content }] oldest first. */
   messages       Json      @default("[]")
   aiCalls        Int       @default(0) @map("ai_calls")
+  /** The earlier not-yet Lead this visitor is returning from — the only memory the gate keeps across visits. */
+  returningFromLeadId String? @map("returning_from_lead_id")
   endedAt        DateTime? @map("ended_at")
   leadId         String?   @unique @map("lead_id")
   createdAt      DateTime  @default(now()) @map("created_at")

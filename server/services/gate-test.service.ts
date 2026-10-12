@@ -37,6 +37,8 @@ export type GateTestResult = {
   transcript: ConversationMessage[];
   outcome: GateTestOutcome;
   isStrongFit: boolean;
+  /** Set when the gate rejected them as "not yet" — see ConversationTurn.readyWhen. */
+  readyWhen: string | null;
   verdict: GateTestVerdict;
   tokensUsed: number;
 };
@@ -244,6 +246,7 @@ export const gateTestService = {
     const history: ConversationMessage[] = [];
     let outcome: GateTestOutcome = "NO_DECISION";
     let isStrongFit = false;
+    let readyWhen: string | null = null;
 
     for (let turnIndex = 0; turnIndex < MAX_GATE_TURNS; turnIndex++) {
       const turn = await aiConversationService.nextTurn({
@@ -267,6 +270,7 @@ export const gateTestService = {
         history.push({ role: "assistant", content: turn.message });
         outcome = turn.decision;
         isStrongFit = turn.isStrongFit;
+        readyWhen = turn.readyWhen ?? null;
         break;
       }
 
@@ -297,6 +301,7 @@ export const gateTestService = {
       transcript: history,
       outcome,
       isStrongFit,
+      readyWhen,
       verdict: verdictFor(input.archetype, outcome),
       tokensUsed,
     };

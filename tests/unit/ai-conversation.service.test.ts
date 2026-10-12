@@ -321,3 +321,95 @@ describe("aiConversationService malformed replies", () => {
     expect(turn).toMatchObject({ type: "final", decision: "QUALIFIED", failedOpen: true });
   });
 });
+
+describe("aiConversationService not-yet door", () => {
+  function finalReply(fields: Record<string, unknown>) {
+    return {
+      usage: { total_tokens: 60 },
+      choices: [{ message: { content: JSON.stringify({ type: "final", message: "Thanks.", ...fields }) } }],
+    };
+  }
+
+  beforeEach(() => {
+    mockCreate.mockReset();
+  });
+
+  it("carries readyWhen on a not-yet rejection", async () => {
+    mockCreate.mockResolvedValueOnce(
+      finalReply({ decision: "REJECTED", notYet: true, readyWhen: " has closed a funding round " }),
+    );
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ decision: "REJECTED", readyWhen: "has closed a funding round" });
+  });
+
+  it("has no readyWhen for a fundamental mismatch", async () => {
+    mockCreate.mockResolvedValueOnce(
+      finalReply({ decision: "REJECTED", notYet: false, readyWhen: "something" }),
+    );
+
+    expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({ readyWhen: null });
+  });
+
+  it("never carries readyWhen on a QUALIFIED decision, even if the model sets one", async () => {
+    mockCreate.mockResolvedValueOnce(
+      finalReply({ decision: "QUALIFIED", notYet: true, readyWhen: "has raised" }),
+    );
+
+    expect(await aiConversationService.nextTurn(BASE_INPUT)).toMatchObject({
+      decision: "QUALIFIED",
+      readyWhen: null,
+    });
+  });
+
+  it("tells the gate about a returning not-yet visitor, and nothing otherwise", async () => {
+    mockCreate.mockResolvedValue({
+      usage: { total_tokens: 50 },
+      choices: [{ message: { content: JSON.stringify({ type: "question", message: "Hi!" }) } }],
+    });
+
+    await aiConversationService.nextTurn(BASE_INPUT);
+    expect(systemPromptFromLastCall()).not.toContain("RETURNING VISITOR");
+
+    await aiConversationService.nextTurn({
+      ...BASE_INPUT,
+      returningVisitor: {
+        previousVisitDate: "3 March 2026",
+        readyWhen: "has closed a funding round",
+        earlierAnswers: "We're pre-revenue and haven't raised.",
+      },
+    });
+
+    const prompt = systemPromptFromLastCall();
+    expect(prompt).toContain("RETURNING VISITOR");
+    expect(prompt).toContain("3 March 2026");
+    expect(prompt).toContain("has closed a funding round");
+    expect(prompt).toContain("We're pre-revenue and haven't raised.");
+    expect(prompt).toContain("coming back is not a reason to qualify");
+  });
+});
+
+describe("aiConversationService.buildReturningContext", () => {
+  const baseLead = {
+    createdAt: new Date("2026-03-03T10:00:00Z"),
+    answersJson: { conversationHistory: [{ role: "user", content: "We haven't raised yet." }] },
+  };
+
+  it("builds context only for a not-yet lead", () => {
+    expect(
+      aiConversationService.buildReturningContext({ ...baseLead, notYetReadyWhen: null } as never),
+    ).toBeNull();
+
+    expect(
+      aiConversationService.buildReturningContext({
+        ...baseLead,
+        notYetReadyWhen: "has closed a funding round",
+      } as never),
+    ).toEqual({
+      previousVisitDate: "3 March 2026",
+      readyWhen: "has closed a funding round",
+      earlierAnswers: "We haven't raised yet.",
+    });
+  });
+});

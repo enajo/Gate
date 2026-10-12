@@ -8,6 +8,7 @@ export const qualificationConversationRepository = {
   async create(data: {
     professionalId: string;
     serviceId: string;
+    returningFromLeadId?: string | null;
   }): Promise<QualificationConversation> {
     return db.qualificationConversation.create({ data });
   },

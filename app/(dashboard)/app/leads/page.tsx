@@ -8,7 +8,17 @@ import { LeadsTable, type LeadRow } from "@/components/dashboard/leads-table";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const RESULT_FILTERS = ["QUALIFIED", "REDIRECTED", "REJECTED"] as const;
+// NOT_YET isn't a qualificationResult — it's the "right person, wrong time"
+// subset of rejections, the expert's list of people getting closer to ready.
+const RESULT_FILTERS = ["QUALIFIED", "REDIRECTED", "REJECTED", "NOT_YET"] as const;
+
+const FILTER_LABELS: Record<(typeof RESULT_FILTERS)[number] | "ALL", string> = {
+  ALL: "All",
+  QUALIFIED: "Qualified",
+  REDIRECTED: "Redirected",
+  REJECTED: "Rejected",
+  NOT_YET: "Not yet",
+};
 type ResultFilter = (typeof RESULT_FILTERS)[number] | "ALL";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -40,12 +50,15 @@ export default async function LeadsPage({
     QUALIFIED: allLeads.filter((l) => l.qualificationResult === "QUALIFIED").length,
     REDIRECTED: allLeads.filter((l) => l.qualificationResult === "REDIRECTED").length,
     REJECTED: allLeads.filter((l) => l.qualificationResult === "REJECTED").length,
+    NOT_YET: allLeads.filter((l) => l.notYetReadyWhen).length,
   };
 
   const filtered =
     activeFilter === "ALL"
       ? allLeads
-      : allLeads.filter((l) => l.qualificationResult === activeFilter);
+      : activeFilter === "NOT_YET"
+        ? allLeads.filter((l) => l.notYetReadyWhen)
+        : allLeads.filter((l) => l.qualificationResult === activeFilter);
 
   // Group the full (unfiltered) list by email so repeat contacts show their
   // whole history even when the current filter tab would otherwise hide it.
@@ -84,6 +97,8 @@ export default async function LeadsPage({
       utmSource: l.utmSource,
       correctedResult: l.correctedResult as LeadRow["correctedResult"],
       correctionNote: l.correctionNote,
+      notYetReadyWhen: l.notYetReadyWhen,
+      notYetReturnedAt: l.notYetReturnedAt,
       createdAt: l.createdAt,
       visits: l.visits.map((v) => ({
         id: v.id,
@@ -129,6 +144,8 @@ export default async function LeadsPage({
           {(["ALL", ...RESULT_FILTERS] as const)
             // Redirect is paused — only show its tab while older redirected leads exist.
             .filter((f) => f !== "REDIRECTED" || counts.REDIRECTED > 0)
+            // Only once there's someone on it.
+            .filter((f) => f !== "NOT_YET" || counts.NOT_YET > 0)
             .map((f) => {
             const isActive = activeFilter === f;
             const count = counts[f];
@@ -144,7 +161,7 @@ export default async function LeadsPage({
                     : "border-warm-border-soft bg-white/60 text-gray-600 hover:border-ink/40 hover:text-ink"
                 }`}
               >
-                {f === "ALL" ? "All" : f.charAt(0) + f.slice(1).toLowerCase()}
+                {FILTER_LABELS[f]}
                 <span
                   className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] tabular-nums ${
                     isActive ? "bg-white/20" : "bg-warm-border-soft text-gray-500"

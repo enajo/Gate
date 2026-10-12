@@ -21,8 +21,9 @@ export const BOOKING_REMINDER_HOURS_BEFORE = 24;
 
 // Plan tiers — limits live in code, not the database, so pricing can change
 // without a migration. null means unlimited. AI screening is metered in
-// conversations (one visitor's whole screening chat), not tokens — the unit
-// an expert can actually reason about. BUSINESS is unlimited under fair use;
+// conversations — one visitor's screening chat that reaches a decision
+// (abandoned chats are free) — not tokens, the unit an expert can actually
+// reason about. BUSINESS is unlimited under fair use;
 // abuse is bounded by per-visitor caps and rate limits, not an allowance.
 export const PLAN_TIER_LIMITS: Record<
   "FREE" | "PRO" | "BUSINESS",
@@ -39,8 +40,10 @@ export const PLAN_TIER_LIMITS: Record<
 export const MAX_AI_CALLS_PER_CONVERSATION = 8;
 
 // New screening conversations one visitor (by IP) can start with one
-// expert per day — stops someone burning a FREE expert's monthly allowance
-// on purpose. Generous for a real person who refreshes or retries.
+// expert per day. Abandoned chats don't use allowance, so this (with
+// MAX_AI_CALLS_PER_CONVERSATION and the chat route's rate limit) is what
+// bounds AI cost from someone opening chats they never finish. Generous for
+// a real person who refreshes or retries.
 export const MAX_CONVERSATIONS_PER_VISITOR_PER_DAY = 5;
 
 export const ROUTES = {

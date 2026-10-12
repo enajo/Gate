@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Lead } from "@prisma/client";
+import type { Lead, QualificationMode } from "@prisma/client";
 import OpenAI from "openai";
 import { z, ZodError } from "zod";
 
@@ -17,7 +17,7 @@ export type ConversationMessage = {
 export type LabeledExample = {
   /** Short gist of the visitor's situation — a couple of their own answers, not the full transcript. */
   situationSummary: string;
-  correctDecision: "QUALIFIED" | "REDIRECT" | "REJECTED";
+  correctDecision: "QUALIFIED" | "REJECTED";
   note?: string | null;
 };
 
@@ -53,12 +53,13 @@ export type ConversationTurn =
   | { type: "question"; message: string; tokensUsed: number }
   | {
       type: "final";
-      decision: "QUALIFIED" | "REDIRECT" | "REJECTED";
-      redirectServiceId: string | null;
+      decision: "QUALIFIED" | "REJECTED";
       /** Only ever true when decision === "QUALIFIED" — see nextTurn's defensive guard. */
       isStrongFit: boolean;
       message: string;
       tokensUsed: number;
+      /** Set only on FALLBACK_TURN — the AI never actually judged this visitor. */
+      failedOpen?: boolean;
     };
 
 // ── Fallback (fail open — never block a visitor) ──────────────────────────────
@@ -66,12 +67,19 @@ export type ConversationTurn =
 const FALLBACK_TURN: ConversationTurn = {
   type: "final",
   decision: "QUALIFIED",
-  redirectServiceId: null,
   // Fail-open, not a real judgment — must never grant slot priority.
   isStrongFit: false,
   message: "Sounds like a great fit — let me pull up some available times.",
   tokensUsed: 0,
+  failedOpen: true,
 };
+
+/**
+ * Triage never turns anyone away — every visitor goes on to the calendar —
+ * so a not-a-fit visitor must never read the AI's "not right now" close
+ * right before slots open. The real message is still stored on the Lead.
+ */
+const TRIAGE_HANDOFF_MESSAGE = "Thanks for sharing all that — let me pull up some available times.";
 
 // ── OpenAI client ─────────────────────────────────────────────────────────────
 
@@ -88,8 +96,14 @@ const aiResponseSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("final"),
+    // REDIRECT is paused — the gate decides fit or not only — but still
+    // accepted here and downgraded to REJECTED in nextTurn. Rejecting it at
+    // the schema would fail open and auto-qualify a visitor the model
+    // judged not a fit.
     decision: z.enum(["QUALIFIED", "REDIRECT", "REJECTED"]),
-    redirectServiceId: z.string().nullable(),
+    // Ignored, and often omitted by the model — requiring it once threw
+    // away real decisions and failed open.
+    redirectServiceId: z.string().nullish(),
     isStrongFit: z.boolean().optional(),
     message: z.string().min(1).max(800),
   }),
@@ -108,25 +122,20 @@ function buildSystemPrompt(input: ConversationServiceInput): string {
   } = input;
 
   const targetService = services.find((s) => s.id === targetServiceId);
+  // Direct-purchase offers aren't shown to the gate while REDIRECT is
+  // paused — listed, the model recommends them in rejection messages.
   const coreServices = services.filter((s) => !s.directPurchaseUrl);
-  const altServices = services.filter((s) => !!s.directPurchaseUrl);
 
   const formatService = (s: ConversationServiceInput["services"][number]) => {
     const price = s.displayPrice ? ` — ${s.displayPrice}` : "";
     const desc = s.description ? `\n     ${s.description}` : "";
-    const url = s.directPurchaseUrl ? `\n     Buy link: ${s.directPurchaseUrl}` : "";
-    return `  • [id: ${s.id}] ${s.title}${price}${desc}${url}`;
+    return `  • [id: ${s.id}] ${s.title}${price}${desc}`;
   };
 
   const coreBlock =
     coreServices.length > 0
       ? `PRIMARY SERVICES (calendar booking required):\n${coreServices.map(formatService).join("\n")}`
       : "PRIMARY SERVICES: (none configured)";
-
-  const altBlock =
-    altServices.length > 0
-      ? `\nALTERNATIVE OFFERS (direct purchase, no call needed):\n${altServices.map(formatService).join("\n")}`
-      : "";
 
   const personaBlock = targetService?.idealPersonaDescription
     ? `IDEAL CLIENT FOR THIS SERVICE\n────────────────────────────────────────────────\n${targetService.idealPersonaDescription.trim()}`
@@ -149,7 +158,7 @@ function buildSystemPrompt(input: ConversationServiceInput): string {
 Your job is to run a short qualification conversation and return a strict PASS/FAIL decision for ${professionalName}'s calendar.
 
 ────────────────────────────────────────────────
-${coreBlock}${altBlock}
+${coreBlock}
 
 ────────────────────────────────────────────────
 ${personaBlock}
@@ -172,12 +181,11 @@ HOW TO RUN THE CONVERSATION
 
 DECISION RULES — pick exactly one:
 • QUALIFIED  — visitor clearly fits the ideal client profile. Only use this when you have POSITIVE signal.
-• REDIRECT   — doesn't fit the primary service but clearly fits an alternative offer; set redirectServiceId to that service's id string.
-• REJECTED   — visitor does not fit. Use this whenever you have NEGATIVE signal OR are genuinely unsure.
+• REJECTED   — visitor does not fit (or not yet). Use this whenever you have NEGATIVE signal OR are genuinely unsure.
 
 CRITICAL: The "decision" field and the "message" field must ALWAYS agree.
 • If decision is QUALIFIED, the message must sound welcoming and positive — never mention "not a fit", "mismatch", or any hedge.
-• If decision is REJECTED, the message must be a polite, firm close — never offer hope or suggest a future call.
+• If decision is REJECTED, the message must be a kind, clear close — never suggest booking a call now or imply they qualified.
 • NEVER output a QUALIFIED decision with a message that sounds like rejection. NEVER output a REJECTED decision with a message that sounds welcoming.
 
 STRONG-FIT FLAG (only when decision is QUALIFIED)
@@ -186,7 +194,7 @@ IDEAL CLIENT FOR THIS SERVICE above but is a standout match against it —
 multiple strong positive signals, no hedging answers, exactly the profile
 described. If it's a closer call, set false. When genuinely unsure, set
 false — this flag only ever grants extra access, never use it to soften a
-rejection. Omit it entirely (or set false) for REDIRECT/REJECTED.
+rejection. Omit it entirely (or set false) for REJECTED.
 
 OUTPUT FORMAT — return ONLY valid JSON, no markdown, no code fences:
 
@@ -194,14 +202,22 @@ While gathering information:
 { "type": "question", "message": "..." }
 
 When ready to decide:
-{ "type": "final", "decision": "QUALIFIED" | "REDIRECT" | "REJECTED", "redirectServiceId": null | "<service-id>", "isStrongFit": true | false, "message": "..." }
+{ "type": "final", "decision": "QUALIFIED" | "REJECTED", "isStrongFit": true | false, "message": "..." }
 
 MESSAGE GUIDELINES
 • Write as a warm, confident human assistant — never robotic
 • question turns: one natural question only, no preamble
 • QUALIFIED: 1–2 sentences, enthusiastic welcoming close ("Great — let me pull up some times.")
-• REDIRECT: 2–3 sentences — acknowledge the mismatch, name the alternative, clear next step
-• REJECTED: 2 sentences max — polite and final; no apology, no "maybe later"; do NOT ask for their email (the UI handles that)
+• REJECTED: 2–3 sentences, kind and respectful — thank them and briefly say
+  why it isn't the right fit, framed around their situation, never as a
+  judgment of them.
+  – If the reason could change (timing, stage, funding, budget, team size),
+    say so warmly and invite them back once it does — e.g. "Once you've
+    closed your first round, ${professionalName} would love to hear from you."
+  – If it's a fundamental mismatch (wrong kind of help, wrong person), close
+    kindly without implying a future fit.
+  – Never recommend other products, services, or people. Do NOT ask for
+    their email (the UI handles that).
 • Avoid robotic/technical phrasing like "algorithm", "routing", or internal
   process names — but you've already disclosed you're an AI on turn one, and
   if asked directly whether you're a bot or AI at any point, confirm it
@@ -249,6 +265,16 @@ function summarizeAnswers(answersJson: unknown): string | null {
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const aiConversationService = {
+  /** What the visitor actually reads for a final turn, given the service's mode. */
+  visitorFacingMessage(
+    turn: Extract<ConversationTurn, { type: "final" }>,
+    mode: QualificationMode,
+  ): string {
+    return mode === "TRIAGE" && turn.decision !== "QUALIFIED"
+      ? TRIAGE_HANDOFF_MESSAGE
+      : turn.message;
+  },
+
   /**
    * Turns a service's professional-reviewed leads (see
    * bookingRepository.findRecentLabeledLeadsForService) into calibration
@@ -268,8 +294,10 @@ export const aiConversationService = {
       return [
         {
           situationSummary,
+          // A professional's REDIRECTED correction still means "not a fit
+          // for this service" while REDIRECT is paused.
           correctDecision:
-            lead.correctedResult === "REDIRECTED" ? "REDIRECT" : lead.correctedResult,
+            lead.correctedResult === "REDIRECTED" ? "REJECTED" : lead.correctedResult,
           note: lead.correctionNote,
         },
       ];
@@ -326,39 +354,19 @@ export const aiConversationService = {
         return { type: "question", message: validated.message, tokensUsed };
       }
 
-      // Sanity-check: REDIRECT must reference a known service
+      // REDIRECT is paused — anything that isn't a fit is a REJECTED.
       if (validated.decision === "REDIRECT") {
-        const knownIds = input.services.map((s) => s.id);
-        if (
-          !validated.redirectServiceId ||
-          !knownIds.includes(validated.redirectServiceId)
-        ) {
-          logger.warn(
-            "aiConversationService: REDIRECT pointed to unknown serviceId — downgrading to REJECTED",
-            { redirectServiceId: validated.redirectServiceId },
-          );
-          return {
-            type: "final",
-            decision: "REJECTED",
-            redirectServiceId: null,
-            isStrongFit: false,
-            message: validated.message,
-            tokensUsed,
-          };
-        }
+        logger.warn("aiConversationService: model returned paused REDIRECT — treating as REJECTED");
       }
+
+      const decision = validated.decision === "QUALIFIED" ? "QUALIFIED" : "REJECTED";
 
       return {
         type: "final",
-        decision: validated.decision,
-        redirectServiceId:
-          validated.type === "final" ? validated.redirectServiceId : null,
+        decision,
         // Defensive: strength only ever modifies a real QUALIFIED decision,
         // never trust it on any other outcome even if the model is confused.
-        isStrongFit:
-          validated.decision === "QUALIFIED"
-            ? (validated.isStrongFit ?? false)
-            : false,
+        isStrongFit: decision === "QUALIFIED" ? (validated.isStrongFit ?? false) : false,
         message: validated.message,
         tokensUsed,
       };

@@ -145,7 +145,9 @@ function Transcript({ answersJson }: { answersJson: unknown }) {
   );
 }
 
-const CORRECTABLE_OPTIONS: CorrectableResult[] = ["QUALIFIED", "REDIRECTED", "REJECTED"];
+// Redirect is paused — the gate decides fit or not, so corrections do too.
+// (CorrectableResult keeps REDIRECTED so older corrections still display.)
+const CORRECTABLE_OPTIONS: CorrectableResult[] = ["QUALIFIED", "REJECTED"];
 
 /** Lets a professional flag that the AI's decision was wrong — every correction is captured, not lost. */
 function CorrectionControl({ lead }: { lead: LeadRow }) {

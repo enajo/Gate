@@ -111,3 +111,20 @@ export type ReorderServicesInput = z.infer<typeof reorderServicesSchema>;
 export type ServiceIdParamInput = z.infer<typeof serviceIdParamSchema>;
 export type ServiceSlugParamInput = z.infer<typeof serviceSlugParamSchema>;
 export type ServiceAvailabilityRequestInput = z.infer<typeof serviceAvailabilityRequestSchema>;
+
+/**
+ * One simulated visitor per request — the client fires a batch in parallel
+ * so results appear as each finishes. Runs against the *draft* gate prompt,
+ * so an expert can test before saving.
+ */
+export const gateTestRequestSchema = z
+  .object({
+    archetype: z.enum(["IDEAL", "BORDERLINE", "MISMATCH"]),
+    /** Distinguishes visitors of the same archetype within one run, so they don't all come out alike. */
+    variant: z.number().int().min(0).max(9),
+    idealPersonaDescription: z.string().trim().min(20).max(8000),
+    serviceTitle: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export type GateTestRequestInput = z.infer<typeof gateTestRequestSchema>;

@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GateTest } from "@/components/services/gate-test";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -349,6 +350,12 @@ export function GateSetup({
           </div>
         </details>
 
+        <GateTest
+          serviceId={serviceId}
+          serviceTitle={serviceTitle ?? serviceName}
+          prompt={result.compiledPrompt}
+        />
+
         <div className="flex flex-wrap gap-2.5">
           <Button
             type="button"
@@ -392,6 +399,12 @@ export function GateSetup({
           value={editedPrompt}
           onChange={(e) => setEditedPrompt(e.target.value)}
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-[12px] leading-relaxed outline-none focus:border-slate-400"
+        />
+
+        <GateTest
+          serviceId={serviceId}
+          serviceTitle={serviceTitle ?? serviceName}
+          prompt={editedPrompt}
         />
 
         <div className="flex gap-2.5">

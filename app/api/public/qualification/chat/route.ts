@@ -206,31 +206,6 @@ export async function POST(request: Request) {
 
     // 7. If the AI reached a final decision, create the Lead record now
     if (turn.type === "final") {
-      // Resolve redirect service details if needed
-      let redirectService: {
-        id: string;
-        title: string;
-        directPurchaseUrl: string;
-      } | null = null;
-
-      if (turn.decision === "REDIRECT" && turn.redirectServiceId) {
-        const match = allServices.find((s) => s.id === turn.redirectServiceId);
-        if (match?.directPurchaseUrl) {
-          redirectService = {
-            id: match.id,
-            title: match.title,
-            directPurchaseUrl: match.directPurchaseUrl,
-          };
-        }
-      }
-
-      const qualificationResult =
-        turn.decision === "QUALIFIED"
-          ? "QUALIFIED"
-          : turn.decision === "REDIRECT"
-            ? "REDIRECTED"
-            : "REJECTED";
-
       const lead = await bookingRepository.createLeadForProfessional(
         input.professionalId,
         {
@@ -241,9 +216,8 @@ export async function POST(request: Request) {
             conversationHistory: input.history,
             aiDecision: turn.decision,
             aiMessage: turn.message,
-            redirectServiceId: turn.redirectServiceId ?? null,
           } as Prisma.InputJsonValue,
-          qualificationResult,
+          qualificationResult: turn.decision,
           // The one path where the AI actually made the call — already
           // guaranteed false for any non-QUALIFIED decision by
           // aiConversationService's own defensive guard.
@@ -260,9 +234,14 @@ export async function POST(request: Request) {
       return NextResponse.json({
         type: "final",
         decision: turn.decision,
-        redirectService,
+        // REDIRECT is paused — kept in the response shape for the client.
+        redirectService: null,
         isStrongFit: turn.isStrongFit,
-        message: turn.message,
+        // aiMessage above keeps the real verdict for the professional.
+        message: aiConversationService.visitorFacingMessage(
+          turn,
+          requestedService.qualificationMode,
+        ),
         leadId: lead.id,
         tokensUsed: turn.tokensUsed,
         tokenBalance: newBalance,

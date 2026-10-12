@@ -126,7 +126,10 @@ export default async function LeadsPage({
 
         {/* Filter tabs */}
         <div className="mt-8 flex flex-wrap gap-2">
-          {(["ALL", ...RESULT_FILTERS] as const).map((f) => {
+          {(["ALL", ...RESULT_FILTERS] as const)
+            // Redirect is paused — only show its tab while older redirected leads exist.
+            .filter((f) => f !== "REDIRECTED" || counts.REDIRECTED > 0)
+            .map((f) => {
             const isActive = activeFilter === f;
             const count = counts[f];
             const href = f === "ALL" ? "/app/leads" : `/app/leads?result=${f}`;

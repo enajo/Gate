@@ -70,7 +70,7 @@ describe("aiConversationService calibration block", () => {
         { situationSummary: "Scaling a Series A team.", correctDecision: "QUALIFIED" },
         {
           situationSummary: "Early-stage, pre-funding.",
-          correctDecision: "REDIRECT",
+          correctDecision: "REJECTED",
           note: "Better fit for the starter package.",
         },
       ],
@@ -81,7 +81,6 @@ describe("aiConversationService calibration block", () => {
     expect(prompt).toContain("RECENT CALIBRATION");
     expect(prompt).toContain("Wants a quick one-off call.");
     expect(prompt).toContain("correct call: REJECTED");
-    expect(prompt).toContain("correct call: REDIRECT");
     expect(prompt).toContain("Better fit for the starter package.");
   });
 });
@@ -121,7 +120,7 @@ describe("aiConversationService.buildLabeledExamples", () => {
     expect(result).toEqual([]);
   });
 
-  it("maps REDIRECTED to REDIRECT and carries the correction note through", () => {
+  it("maps REDIRECTED to REJECTED while redirect is paused, keeping the correction note", () => {
     const result = aiConversationService.buildLabeledExamples([
       lead({ correctedResult: "REDIRECTED", correctionNote: "Better fit for the starter package." }),
     ] as never);
@@ -129,7 +128,7 @@ describe("aiConversationService.buildLabeledExamples", () => {
     expect(result).toEqual([
       {
         situationSummary: "Pre-seed, no revenue yet.",
-        correctDecision: "REDIRECT",
+        correctDecision: "REJECTED",
         note: "Better fit for the starter package.",
       },
     ]);
@@ -176,6 +175,28 @@ describe("aiConversationService.nextTurn isStrongFit", () => {
     expect(turn).toMatchObject({ type: "final", decision: "QUALIFIED", isStrongFit: false });
   });
 
+  it("keeps a real REJECTED decision when the model omits redirectServiceId", async () => {
+    mockCreate.mockResolvedValueOnce({
+      usage: { total_tokens: 80 },
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              type: "final",
+              decision: "REJECTED",
+              message: "Thanks for sharing — this isn't the right fit.",
+            }),
+          },
+        },
+      ],
+    });
+
+    const turn = await aiConversationService.nextTurn(BASE_INPUT);
+
+    expect(turn).toMatchObject({ type: "final", decision: "REJECTED" });
+    expect(turn).not.toHaveProperty("failedOpen");
+  });
+
   it("passes isStrongFit: true through unchanged when decision is QUALIFIED", async () => {
     mockFinalTurn({ isStrongFit: true });
 
@@ -200,7 +221,7 @@ describe("aiConversationService.nextTurn isStrongFit", () => {
     expect(turn).toMatchObject({ decision: "REJECTED", isStrongFit: false });
   });
 
-  it("forces isStrongFit to false on REDIRECT even if the model confusingly sets it true", async () => {
+  it("treats a paused REDIRECT as REJECTED — never fails open on it", async () => {
     mockFinalTurn({
       decision: "REDIRECT",
       redirectServiceId: "svc-1",
@@ -209,6 +230,51 @@ describe("aiConversationService.nextTurn isStrongFit", () => {
 
     const turn = await aiConversationService.nextTurn(BASE_INPUT);
 
-    expect(turn).toMatchObject({ decision: "REDIRECT", isStrongFit: false });
+    expect(turn).toMatchObject({ decision: "REJECTED", isStrongFit: false });
+    expect(turn).not.toHaveProperty("failedOpen");
+  });
+
+  it("keeps direct-purchase offers out of the gate's prompt while redirect is paused", async () => {
+    mockNextQuestion();
+
+    await aiConversationService.nextTurn({
+      ...BASE_INPUT,
+      services: [
+        ...BASE_INPUT.services,
+        { id: "svc-2", title: "Self-Study Course", directPurchaseUrl: "https://example.com/course" },
+      ],
+    });
+
+    const prompt = systemPromptFromLastCall();
+    expect(prompt).toContain("Strategy Session");
+    expect(prompt).not.toContain("Self-Study Course");
+    expect(prompt).not.toContain("REDIRECT");
+  });
+});
+
+describe("aiConversationService.visitorFacingMessage", () => {
+  const rejected = {
+    type: "final" as const,
+    decision: "REJECTED" as const,
+    isStrongFit: false,
+    message: "This isn't the right fit yet — come back once you've raised.",
+    tokensUsed: 80,
+  };
+
+  it("hides a not-a-fit verdict from Triage visitors, who still go on to the calendar", () => {
+    const message = aiConversationService.visitorFacingMessage(rejected, "TRIAGE");
+
+    expect(message).not.toBe(rejected.message);
+    expect(message).toMatch(/available times/);
+  });
+
+  it("shows the real rejection in Gatekeeper, where it ends the conversation", () => {
+    expect(aiConversationService.visitorFacingMessage(rejected, "GATEKEEPER")).toBe(rejected.message);
+  });
+
+  it("keeps the AI's own welcome for a qualified Triage visitor", () => {
+    const qualified = { ...rejected, decision: "QUALIFIED" as const, message: "Great — let me pull up some times." };
+
+    expect(aiConversationService.visitorFacingMessage(qualified, "TRIAGE")).toBe(qualified.message);
   });
 });

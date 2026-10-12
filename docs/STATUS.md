@@ -5,11 +5,11 @@ schedule, an inventory. Items in the same group have no order dependency on
 each other, only on the gate named in their heading. Update this in the same
 commit as the feature it describes.
 
-_Last updated: 2026-10-09_
+_Last updated: 2026-10-12_
 
-## Already built (25)
+## Already built (26)
 
-- **Core AI qualification gate** — conversational screening, QUALIFIED / REDIRECT / REJECTED
+- **Core AI qualification gate** — conversational screening, fit or not: QUALIFIED / REJECTED. A rejection is a kind close that names the reason in terms of the visitor's situation; when that reason could change (timing, stage, funding, budget, team size) it invites them back once it does. In Triage mode the visitor never sees a not-a-fit verdict (they still go on to the calendar), so they get a neutral handoff instead; the AI's real message stays on the Lead for the professional (`aiConversationService.visitorFacingMessage`). **REDIRECT is paused (2026-10-12):** in live tests the gate almost never used it, and a prompt rewrite that made it redirect wrong fits (0/8 → 5/8) also sent 2 of 12 ideal clients to a $199 course instead of a call. Paused rather than removed: the `REDIRECTED` enum stays (no migration, older leads still display), direct-purchase offers are left out of the gate prompt, a stray REDIRECT from the model is treated as REJECTED (never fails open), and experts' corrections offer fit / not a fit only. Revisit with a post-rejection approach that can't touch qualified visitors
 - **Gate-setup compiler** — turns an expert's 4 answers into a qualification prompt + sample conversation
 - **Booking flow** — holds, access codes, slot picking, confirmation
 - **Google Calendar integration** — multi-calendar conflict checking, default event calendar; multiple Google calendars per professional already supported
@@ -35,9 +35,13 @@ _Last updated: 2026-10-09_
 - **Dynamic slot priority** — the AI's QUALIFIED call now also carries `isStrongFit` (stored on `Lead`, only ever set by a real AI judgment, never a fail-open path). A professional can mark availability rules `priorityOnly` (held back for strong-fit leads) and set a narrower `Service.standardAvailabilityExposure` window for everyone else. Strong-fit status is re-derived server-side from the `leadId` in both `/api/public/slots` and the hold/confirm slot check in `booking.service.ts` — never trusted from the client. The narrower standard window is applied client-side only (a perk, not a security boundary); priority-only slots are excluded server-side.
 - **AI disclosure + value-first fit signal** — visitors are told up front they're chatting with Gate's AI screening assistant (identity form line + the AI's first turn), and the AI confirms honestly if asked. On a clearly strong answer it may affirm the fit mid-conversation instead of staying neutral until the final decision.
 - **Outlook calendar integration (code)** — `outlook-auth.service.ts`, `outlook-calendar.service.ts`, `outlook-sync.service.ts`, the `OUTLOOK` branch in `calendar-provider.service.ts`, `/api/app/outlook/{connect,callback}` routes, `OutlookConnectButton` on both calendar UI surfaces. Not usable until the credentials below exist.
+- **Test your gate** (`gate-test.service.ts`, `POST /api/app/services/[id]/gate/test`, `components/services/gate-test.tsx`) — in the gate setup's preview and edit screens, one button sends 6 simulated visitors (2 ideal, 2 borderline, 2 wrong-fit, each an AI-invented persona) through the expert's *draft* prompt using the same `aiConversationService.nextTurn` as the live gate, so it can be tested before saving. Each result shows who got in, a readable transcript, and a verdict: as expected, "check this" (ideal client turned away, wrong fit let in, no decision, or an AI error) with a hint on what to change, or "close call" for borderline visitors. Nothing is persisted — simulated visitors never become Leads, so they can't touch the inbox, attribution, reports, or billing. Not metered against `tokenBalance` (a run is ~a cent on gpt-4o-mini); capped at 30 simulated visitors/hour per professional instead. A fail-open fallback is reported as an AI error, never as QUALIFIED (`ConversationTurn.failedOpen`). Calibration examples are loaded only after confirming the service belongs to the caller. Not yet built: correcting a simulated call to feed the calibration loop — that would need simulated leads stored apart from real ones
 
-## Buildable now (2)
+## Buildable now (4)
 
+- **The "not yet" door** — many rejections are right-person-wrong-time (no budget yet, too early, not urgent). Instead of a flat close, the gate says *not yet*, says what would make them ready, and invites them back; a returning visitor (same `gate_visitor_id`, as ghost recovery already uses) is re-screened with their earlier answers as context. The expert sees a small "ripening" list. Visitor-initiated only — Gate never contacts them. Note this introduces cross-session memory, which the gate deliberately doesn't have today (see CLAUDE.md) — scope it to "not yet" leads only.
+
+- **Call budget that tightens the gate** — one setting: "I want at most N hours of calls this week." Time as a budget, not empty slots. While the budget has room the gate runs as configured; as it fills, the remaining slots are held back for strong-fit leads only; once spent, new visitors are shown next week's slots rather than turned away. Builds on dynamic slot priority (`AvailabilityRule.priorityOnly`, `Lead.isStrongFit`) and the existing per-day cap (`maxBookingsPerDay`) — mostly a matter of switching priority-only on automatically from weekly budget consumption instead of only via hand-set rules. Strong-fit re-derivation stays server-side, same as today. Possible small follow-up: a "this would be your 5th call this week, 1 over budget" cost line on the manual-approval hold screen. Keep it to the one setting — no per-day/per-service budget variants unless asked.
 - **Stripe billing — checkout, subscriptions, webhooks.** The piece that actually moves a professional between tiers and collects money. Blocked on a Stripe account + API keys — can't be built and verified live without them. Policy already decided (see decision 0002): non-payment soft-locks new leads/bookings after Stripe's retry window, existing confirmed bookings are never touched.
 - **Outlook credentials** — code is built (see above); blocked purely on a real Azure AD (Microsoft Entra ID) app registration + `MICROSOFT_CLIENT_ID`/`SECRET`. See `.env.example` for the registration steps.
 
@@ -55,9 +59,23 @@ _Last updated: 2026-10-09_
 - **Directory / listing pages** — searchable by profession and city
 - **Registry-scrape-and-claim pipeline** — import public bar/medical/tax-advisor registries, build the claim-and-upgrade flow; needs legal review first
 
-## Gated on the referral-network trust question (3)
+## Gated on post-launch volume (6)
 
-- **Cross-professional `REDIRECT`** — extend the existing single-professional redirect to route across a vetted network
+These need real traffic to say anything useful — 6 beta testers don't produce enough rejections or outcomes to learn from.
+
+- **What your hours earn** — attribution × outcomes as value per hour of call time, by channel and service ("LinkedIn calls earn ~€310/hr of your time, website ~€90"). Lives in the weekly Pattern Report. Outcomes are self-reported — label the number as such and never bill on it (decision 0002).
+- **Your gate tells you when you're underpriced** — when qualified visitors routinely can't get a slot within ~2 weeks, that's a pricing signal: suggest a rate increase or paid priority slots. Schedulers see bookings, not the demand that couldn't fit; Gate sees both. Pairs with the call budget.
+- **A no that still helps** — the expert uploads their own material (articles, guides, a free resource); a rejected visitor leaves with a useful next step from the expert's own work, not just a polite close. Only the expert's own content — no new visitor data. Also gated on the lawyer interviews: an AI quoting legal/medical material is a liability question for regulated professions.
+- **Proof of fit for the visitor** — the gate screens both ways: a qualified visitor sees honest evidence this expert fits them (e.g. "most clients in your situation came back to work with them again"), from the expert's own outcomes. Needs real volume and careful wording since outcomes are self-reported.
+
+- **"Your gate designs your next offer" (unmet-demand mirror)** — every scheduler only sees who said yes; Gate also hears, in the visitor's own words, why the people it turns away came. Monthly, cluster REJECTED/REDIRECTED conversations from `Lead.answersJson` into what people actually asked for ("14 people asked for help with fundraising decks — you don't offer that"), size it roughly at the expert's own rates (labeled an estimate), and offer one-click "create this offer": a new `Service` with `idealPersonaDescription` prefilled from the visitors' words via the gate-setup compiler. Future matches get `REDIRECT`ed to it instead of rejected, and attribution shows what it earns. Surfaces as one card a month (natural home: the Pattern Report), no dashboard or settings. Add "can rejected visitors' answers be aggregated like this?" to the lawyer interviews — the Pattern Report already processes this data, but offer-design is a new purpose. Verify "nobody else does this" before using it in external copy.
+- **Outcome-trained gate** — today the gate calibrates on the professional's corrections (`buildLabeledExamples`); extend it to learn from WON/LOST outcomes, so it learns what a *client* looks like, not just what a qualified lead looks like. Outcomes feed learning only — billing stays on confirmed bookings (decision 0002), since outcomes are self-reported.
+
+## Gated on the referral-network trust question (4)
+
+- **Gate Pass** — a visitor who qualified through one expert's gate carries portable proof of fit to the next, instead of starting cold. Depends on the same network trust and verification questions as cross-professional `REDIRECT`.
+
+- **Cross-professional `REDIRECT`** — extend single-professional redirect (currently paused, see the core gate entry) to route across a vetted network
 - **Network verification / credentialing** — infrastructure to vouch for who's actually in the network
 - **Split billing model** — subscription/placement where referral fees are banned (lawyers, doctors); revenue-share where legal (trades, unregulated coaches)
 

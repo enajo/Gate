@@ -260,9 +260,15 @@ function ProgressBars({
 export function PublicSalesPageTemplate({
   data,
   preview = false,
+  gateLinkSource,
 }: {
   data: PublicSalesPageTemplateData;
   preview?: boolean;
+  /**
+   * Where the "Want your own gate?" link is being shown — tags the sign-ups
+   * it brings in. Omitted (no link) in the Control Room preview.
+   */
+  gateLinkSource?: "page" | "embed";
 }) {
   const initialService =
     data.services.find((service) => service.id === data.activeServiceId) ||
@@ -1395,6 +1401,21 @@ export function PublicSalesPageTemplate({
           </div>
         </div>
       </section>
+
+      {/* Every visitor sees a gate working — this is how they get one. */}
+      {gateLinkSource && !preview ? (
+        <p className="pb-8 text-center text-[12px] text-[var(--text-secondary)]">
+          Screened by Gate ·{" "}
+          <a
+            href={`/?via=${encodeURIComponent(data.slug)}&src=${gateLinkSource}`}
+            target="_blank"
+            rel="noopener"
+            className="underline underline-offset-2 hover:text-[var(--text-primary)]"
+          >
+            Want your own gate?
+          </a>
+        </p>
+      ) : null}
     </main>
   );
 }

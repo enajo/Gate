@@ -59,5 +59,5 @@ export default async function PublicProfessionalPage({
   );
   if (!pageData) notFound();
 
-  return <PublicSalesPageTemplate data={pageData} />;
+  return <PublicSalesPageTemplate data={pageData} gateLinkSource="page" />;
 }

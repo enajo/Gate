@@ -282,6 +282,25 @@ export const profileRepository = {
   },
 
   /**
+   * Records who referred this professional — only if nothing's recorded
+   * yet, in the same UPDATE, so a later sign-in can never overwrite it.
+   */
+  async recordSignupReferral(params: {
+    userId: string;
+    referredByProfessionalId: string;
+    signupSource: string;
+  }): Promise<boolean> {
+    const { count } = await db.professional.updateMany({
+      where: { userId: params.userId, signupSource: null },
+      data: {
+        referredByProfessionalId: params.referredByProfessionalId,
+        signupSource: params.signupSource,
+      },
+    });
+    return count > 0;
+  },
+
+  /**
    * Atomically uses one screening conversation from the monthly allowance —
    * called when a conversation reaches a decision. false means it was
    * already at zero. The `> 0` guard sits in the same UPDATE, so concurrent

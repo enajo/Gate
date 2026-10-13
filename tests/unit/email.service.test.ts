@@ -94,3 +94,28 @@ describe("emailService HTML escaping", () => {
     expect(html).not.toContain("&amp;amp;");
   });
 });
+
+describe("emailService 'Want your own gate?' link", () => {
+  beforeEach(() => {
+    mockSend.mockReset();
+  });
+
+  it("tags the visitor confirmation's link with the professional and the email source", async () => {
+    await emailService.sendBookingConfirmedVisitor({
+      to: "visitor@example.com",
+      visitorName: "Dana",
+      professionalName: "Sarah Malik",
+      serviceTitle: "Interview Prep",
+      slotStart: new Date("2026-11-02T10:00:00Z"),
+      slotEnd: new Date("2026-11-02T10:45:00Z"),
+      timezone: "UTC",
+      holdId: "hold_1",
+      appUrl: "https://gate.example",
+      professionalSlug: "sarah-malik",
+    });
+
+    const { html } = sentEmail();
+    expect(html).toContain('href="https://gate.example/?via=sarah-malik&src=email"');
+    expect(html).toContain("Want your own gate?");
+  });
+});

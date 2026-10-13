@@ -1,7 +1,9 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { auth } from "@/lib/auth";
+import { decodeReferralCookie, SIGNUP_REF_COOKIE } from "@/lib/signup-referral";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { profileService } from "@/server/services/profile.service";
 
@@ -77,6 +79,14 @@ export async function POST(request: Request) {
       industry: input.industry ?? null,
       onboardingSurvey: input.onboardingSurvey ?? null,
     });
+
+    // Came in through a gate's "Want your own gate?" link (see proxy.ts).
+    const cookieStore = await cookies();
+    const referral = decodeReferralCookie(cookieStore.get(SIGNUP_REF_COOKIE)?.value);
+    if (referral) {
+      await profileService.recordSignupReferral(session.user.id, referral);
+      cookieStore.delete(SIGNUP_REF_COOKIE);
+    }
 
     return NextResponse.json({ ok: true, slug }, { status: 200 });
   } catch (error) {

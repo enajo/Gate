@@ -276,9 +276,12 @@ export const emailService = {
     appUrl: string;
     /** Optional personalized prep note — see visitor-warmup.service.ts. */
     warmUp?: VisitorWarmUpNote | null;
+    /** The professional's slug — tags sign-ups from the "your own gate" link. */
+    professionalSlug: string;
   }): Promise<void> {
     const slot = formatSlot(params.slotStart, params.slotEnd, params.timezone);
     const statusUrl = `${params.appUrl}/booking/${params.holdId}`;
+    const ownGateUrl = `${params.appUrl}/?via=${encodeURIComponent(params.professionalSlug)}&src=email`;
 
     const meetingSection = params.meetingUrl
       ? `<p style="margin:16px 0 0;font-size:14px;color:#6B7280;">
@@ -306,7 +309,10 @@ export const emailService = {
          </p>
          <a href="${statusUrl}" style="display:inline-block;padding:12px 24px;background:#1E2422;color:#ffffff;text-decoration:none;border-radius:100px;font-size:14px;font-weight:600;">
            View Booking Details
-         </a>`,
+         </a>
+         <p style="margin:28px 0 0;font-size:12px;color:#9CA3AF;">
+           Screened by Gate · <a href="${ownGateUrl}" style="color:#9CA3AF;">Want your own gate?</a>
+         </p>`,
       ),
     });
   },

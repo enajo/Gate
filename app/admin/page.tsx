@@ -104,7 +104,36 @@ export default async function AdminPage() {
             value={stats.conversationsRemaining.toLocaleString()}
             hint="Summed across all professionals"
           />
+          <StatCard
+            label="Sign-ups from gate links"
+            value={stats.gateSignups.total}
+            hint={
+              stats.gateSignups.total > 0
+                ? `page ${stats.gateSignups.bySource.page ?? 0} · email ${stats.gateSignups.bySource.email ?? 0} · embed ${stats.gateSignups.bySource.embed ?? 0}`
+                : "“Want your own gate?” — none yet"
+            }
+          />
         </div>
+
+        {stats.gateSignups.topReferrers.length > 0 && (
+          <Card className="mt-8 hover:translate-y-0 hover:shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-base">Gates bringing in new professionals</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ul className="space-y-1.5 text-sm">
+                {stats.gateSignups.topReferrers.map((r) => (
+                  <li key={r.slug} className="flex justify-between">
+                    <span>
+                      {r.fullName} <span className="text-slate-400">/{r.slug}</span>
+                    </span>
+                    <span className="tabular-nums font-medium">{r.count}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Professionals table */}
         <Card className="mt-8 hover:translate-y-0 hover:shadow-xl">

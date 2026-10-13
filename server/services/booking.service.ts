@@ -1078,6 +1078,7 @@ export const bookingService = {
           meetingUrl,
           appUrl,
           warmUp,
+          professionalSlug: professional.slug,
         }),
         emailService.sendBookingConfirmedProfessional({
           to: professionalEmail,

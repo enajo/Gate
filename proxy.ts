@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { logger } from "@/lib/logger";
+import {
+  encodeReferralCookie,
+  parseReferralParams,
+  SIGNUP_REF_COOKIE,
+  SIGNUP_REF_MAX_AGE_SECONDS,
+} from "@/lib/signup-referral";
 
 const AUTH_ROUTES = ["/login", "/register"];
 const PROTECTED_PREFIXES = ["/app", "/admin"];
@@ -48,6 +54,22 @@ export function proxy(request: NextRequest) {
     });
   }
 
+  // Arrived via a gate's "Want your own gate?" link — remember which one
+  // until they finish onboarding (sign-in redirects drop the query string).
+  const referral = parseReferralParams(
+    request.nextUrl.searchParams.get("via"),
+    request.nextUrl.searchParams.get("src"),
+  );
+  if (referral && !isAuthenticated) {
+    response.cookies.set(SIGNUP_REF_COOKIE, encodeReferralCookie(referral), {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: SIGNUP_REF_MAX_AGE_SECONDS,
+      path: "/",
+    });
+  }
+
   // Attach request ID to every response so clients and Sentry can correlate
   response.headers.set("x-request-id", requestId);
 
@@ -63,5 +85,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/admin/:path*", "/login", "/register"],
+  matcher: ["/", "/app/:path*", "/admin/:path*", "/login", "/register"],
 };

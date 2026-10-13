@@ -786,6 +786,7 @@ describe("bookingService", () => {
       mockProfileRepository.findByIdWithUser.mockResolvedValue({
         id: PROFESSIONAL_ID,
         fullName: "John Carter",
+        slug: "john-carter",
         user: { email: "john@example.com" },
       });
       mockGoogleRepository.findDefaultEventCalendarByProfessionalId.mockResolvedValue(null);
@@ -805,7 +806,7 @@ describe("bookingService", () => {
         expect.objectContaining({ conversationHistory: CONVERSATION }),
       );
       expect(mockEmailService.sendBookingConfirmedVisitor).toHaveBeenCalledWith(
-        expect.objectContaining({ warmUp: WARM_UP_NOTE }),
+        expect.objectContaining({ warmUp: WARM_UP_NOTE, professionalSlug: "john-carter" }),
       );
     });
 

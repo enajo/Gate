@@ -23,6 +23,8 @@ import {
   upsertProfessionalProfileSchema,
 } from "@/server/validators/profile.validator";
 import { PLAN_TIER_LIMITS } from "@/lib/constants";
+import { logger } from "@/lib/logger";
+import type { SignupReferral } from "@/lib/signup-referral";
 import { db } from "@/lib/db";
 import { profileRepository } from "@/server/repositories/profile.repository";
 import { serviceRepository } from "@/server/repositories/service.repository";
@@ -156,6 +158,28 @@ function screeningAllowance(professional: { planTier: PlanTier; conversationBala
 }
 
 export const profileService = {
+  /**
+   * Credits the professional whose "Want your own gate?" link brought this
+   * new professional in. Best effort: attribution must never fail an
+   * onboarding, and nobody is credited for referring themselves.
+   */
+  async recordSignupReferral(userId: string, referral: SignupReferral): Promise<void> {
+    try {
+      const referrer = await profileRepository.findBySlug(referral.slug);
+      if (!referrer || referrer.userId === userId) return;
+
+      await profileRepository.recordSignupReferral({
+        userId,
+        referredByProfessionalId: referrer.id,
+        signupSource: referral.source,
+      });
+    } catch (error) {
+      logger.error("profileService: failed to record sign-up referral", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  },
+
   // ── Basic profile ────────────────────────────────────────────────────────────
 
   async getProfileByUserId(userId: string): Promise<ProfessionalProfile | null> {

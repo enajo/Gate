@@ -56,7 +56,7 @@ export default async function EmbedProfessionalPage({
   return (
     <>
       <EmbedHeightReporter />
-      <PublicSalesPageTemplate data={pageData} />
+      <PublicSalesPageTemplate data={pageData} gateLinkSource="embed" />
     </>
   );
 }

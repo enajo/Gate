@@ -25,6 +25,12 @@ export type PlatformStats = {
     totalWonValue: number;
   };
   conversationsRemaining: number;
+  /** Professionals who signed up through a gate's "Want your own gate?" link. */
+  gateSignups: {
+    total: number;
+    bySource: Record<string, number>;
+    topReferrers: Array<{ fullName: string; slug: string; count: number }>;
+  };
 };
 
 export type ProfessionalSummary = {
@@ -115,6 +121,8 @@ export const adminService = {
       outcomeCounts,
       wonValueAgg,
       conversationBalanceAgg,
+      signupsBySource,
+      signupsByReferrer,
     ] = await Promise.all([
       db.professional.count(),
       db.professional.count({ where: { publishedAt: { not: null } } }),
@@ -135,7 +143,40 @@ export const adminService = {
         where: { outcome: "WON" },
       }),
       db.professional.aggregate({ _sum: { conversationBalance: true } }),
+      db.professional.groupBy({
+        by: ["signupSource"],
+        _count: { _all: true },
+        where: { signupSource: { not: null } },
+      }),
+      db.professional.groupBy({
+        by: ["referredByProfessionalId"],
+        _count: { _all: true },
+        where: { referredByProfessionalId: { not: null } },
+        orderBy: { _count: { referredByProfessionalId: "desc" } },
+        take: 5,
+      }),
     ]);
+
+    const bySource: Record<string, number> = {};
+    for (const row of signupsBySource) {
+      if (row.signupSource) bySource[row.signupSource] = row._count._all;
+    }
+
+    const referrerIds = signupsByReferrer.flatMap((r) =>
+      r.referredByProfessionalId ? [r.referredByProfessionalId] : [],
+    );
+    const referrers = referrerIds.length
+      ? await db.professional.findMany({
+          where: { id: { in: referrerIds } },
+          select: { id: true, fullName: true, slug: true },
+        })
+      : [];
+    const topReferrers = signupsByReferrer.flatMap((r) => {
+      const referrer = referrers.find((p) => p.id === r.referredByProfessionalId);
+      return referrer
+        ? [{ fullName: referrer.fullName, slug: referrer.slug, count: r._count._all }]
+        : [];
+    });
 
     const byResult: Record<string, number> = {};
     for (const row of leadsByResult) {
@@ -168,6 +209,11 @@ export const adminService = {
         totalWonValue: wonValueAgg._sum.outcomeValue ?? 0,
       },
       conversationsRemaining: conversationBalanceAgg._sum.conversationBalance ?? 0,
+      gateSignups: {
+        total: Object.values(bySource).reduce((a, b) => a + b, 0),
+        bySource,
+        topReferrers,
+      },
     };
   },
 

@@ -246,6 +246,10 @@ model Professional {
   /** Set when the "you've used all your screening conversations" email goes out — one per reset period. */
   allowanceExhaustedNotifiedAt DateTime? @map("allowance_exhausted_notified_at")
   industry                   String?   @map("industry")
+  /** Who brought them in: the professional whose "Want your own gate?" link they followed. Set once at sign-up, never overwritten. */
+  referredByProfessionalId   String?   @map("referred_by_professional_id")
+  /** Which link: "page" | "embed" | "email". Null for sign-ups that didn't come through a gate. */
+  signupSource               String?   @map("signup_source")
   createdAt                  DateTime  @default(now()) @map("created_at")
   updatedAt                  DateTime  @updatedAt @map("updated_at")
 
@@ -262,6 +266,7 @@ model Professional {
   visits                 Visit[]
   qualificationConversations QualificationConversation[]
 
+  @@index([referredByProfessionalId])
   @@map("professionals")
 }
 

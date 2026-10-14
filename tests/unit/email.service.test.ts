@@ -119,3 +119,36 @@ describe("emailService 'Want your own gate?' link", () => {
     expect(html).toContain("Want your own gate?");
   });
 });
+
+describe("emailService weekly report: time protected", () => {
+  const base = {
+    to: "pro@example.com",
+    professionalName: "Sarah Malik",
+    leadCount: 12,
+    topRejectionReasons: [],
+    commonObjections: [],
+    suggestion: "Ask about budget earlier.",
+    channelBreakdown: [],
+  };
+
+  beforeEach(() => {
+    mockSend.mockReset();
+  });
+
+  it("leads with the time protected when the gate kept calls off the calendar", async () => {
+    await emailService.sendPatternReportProfessional({ ...base, timeProtected: { calls: 4, label: "3 hours" } });
+
+    const { subject, html } = sentEmail();
+    expect(subject).toBe("Your gate protected 3 hours this week");
+    expect(html).toContain("3 hours protected");
+    expect(html).toContain("4 calls that weren't the right fit");
+  });
+
+  it("keeps the usual subject and no section when nothing was protected", async () => {
+    await emailService.sendPatternReportProfessional({ ...base, timeProtected: { calls: 0, label: "0 minutes" } });
+
+    const { subject, html } = sentEmail();
+    expect(subject).toBe("Your weekly gate report — 12 leads screened");
+    expect(html).not.toContain("protected");
+  });
+});

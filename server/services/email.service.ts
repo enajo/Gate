@@ -595,6 +595,8 @@ export const emailService = {
     to: string;
     professionalName: string;
     leadCount: number;
+    /** Calls the gate kept off the calendar this week, with the time pre-formatted ("2.5 hours"). See time-protected.service.ts. */
+    timeProtected?: { calls: number; label: string } | null;
     topRejectionReasons: string[];
     commonObjections: string[];
     suggestion: string;
@@ -647,7 +649,20 @@ export const emailService = {
          <table style="width:100%;border-collapse:collapse;margin:0 0 20px;">${channelRows}</table>`
       : "";
 
-    const subject = `Your weekly gate report — ${params.leadCount} lead${params.leadCount === 1 ? "" : "s"} screened`;
+    const protectedCalls = params.timeProtected?.calls ?? 0;
+    const subject =
+      protectedCalls > 0
+        ? `Your gate protected ${params.timeProtected!.label} this week`
+        : `Your weekly gate report — ${params.leadCount} lead${params.leadCount === 1 ? "" : "s"} screened`;
+    const timeProtectedSection =
+      protectedCalls > 0
+        ? `<div style="margin:0 0 20px;padding:14px 18px;border-radius:12px;background:#ECFDF5;border:1px solid #A7F3D0;">
+             <p style="margin:0;font-size:22px;font-weight:700;color:#047857;">${escapeHtml(params.timeProtected!.label)} protected</p>
+             <p style="margin:4px 0 0;font-size:13px;color:#065F46;">
+               ${protectedCalls} call${protectedCalls === 1 ? "" : "s"} that weren't the right fit never reached your calendar.
+             </p>
+           </div>`
+        : "";
     await sendEmail({
       to: params.to,
       subject,
@@ -659,6 +674,7 @@ export const emailService = {
            <strong style="color:#1E2422;">${params.leadCount}</strong>
            lead${params.leadCount === 1 ? "" : "s"} this week. Here's what stood out.
          </p>
+         ${timeProtectedSection}
          ${rejectionSection}
          ${objectionSection}
          ${channelSection}

@@ -130,6 +130,31 @@ export const bookingRepository = {
     });
   },
 
+  /**
+   * Leads since `since` that never became a booking, with what the gate
+   * (and the professional's correction, if any) decided — the raw material
+   * for "time protected". See time-protected.service.ts.
+   */
+  async findUnbookedLeadsWithDuration(
+    professionalId: string,
+    since: Date,
+  ): Promise<
+    Array<{
+      qualificationResult: Lead["qualificationResult"];
+      correctedResult: Lead["correctedResult"];
+      service: { durationMinutes: number };
+    }>
+  > {
+    return db.lead.findMany({
+      where: { professionalId, createdAt: { gte: since }, bookings: { none: {} } },
+      select: {
+        qualificationResult: true,
+        correctedResult: true,
+        service: { select: { durationMinutes: true } },
+      },
+    });
+  },
+
   async createLead(data: Prisma.LeadCreateInput): Promise<Lead> {
     return db.lead.create({
       data,

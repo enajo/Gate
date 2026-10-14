@@ -9,6 +9,7 @@ import {
   Inbox,
   LockKeyhole,
   Settings2,
+  ShieldCheck,
   Sparkles,
   Zap,
 } from "lucide-react";
@@ -18,6 +19,10 @@ import { LOW_CONVERSATION_BALANCE_THRESHOLD } from "@/lib/constants";
 import { bookingService } from "@/server/services/booking.service";
 import { onboardingService } from "@/server/services/onboarding.service";
 import { profileService } from "@/server/services/profile.service";
+import {
+  formatTimeProtected,
+  timeProtectedService,
+} from "@/server/services/time-protected.service";
 import { CalendarModalCard } from "@/components/dashboard/calendar-modal-card";
 import { CopyLinkButton } from "@/components/dashboard/copy-link-button";
 
@@ -65,12 +70,17 @@ export default async function DashboardPage() {
   if (!session) redirect("/login");
 
   // Fetch everything in parallel — degrade gracefully on errors
-  const [onboardingResult, controlRoomResult, upcomingResult, holdsResult] =
+  // "This month" for time protected — the same period as the conversation allowance.
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+
+  const [onboardingResult, controlRoomResult, upcomingResult, holdsResult, timeProtectedResult] =
     await Promise.allSettled([
       onboardingService.getState(session.user.id),
       profileService.getControlRoomState(session.user.id),
       bookingService.listUpcomingBookings(session.user.id),
       bookingService.listActiveHolds(session.user.id),
+      timeProtectedService.forUser(session.user.id, monthStart),
     ]);
 
   // If no profile exists at all → send to onboarding
@@ -85,6 +95,8 @@ export default async function DashboardPage() {
     upcomingResult.status === "fulfilled" ? upcomingResult.value : [];
   const activeHolds =
     holdsResult.status === "fulfilled" ? holdsResult.value : [];
+  const timeProtected =
+    timeProtectedResult.status === "fulfilled" ? timeProtectedResult.value : null;
 
   // ── Derived values ─────────────────────────────────────────────────────────
 
@@ -336,6 +348,25 @@ export default async function DashboardPage() {
             );
           })}
         </div>
+
+        {/* ── Time protected ─────────────────────────────────────────────── */}
+        {timeProtected && timeProtected.calls > 0 && (
+          <div className="mt-5 flex items-center justify-between gap-4 rounded-[1.5rem] border border-emerald-200 bg-emerald-50/60 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="size-5 shrink-0 text-emerald-600" />
+              <div>
+                <p className="text-[14px] font-medium">Time your gate protected this month</p>
+                <p className="text-[12px] text-gray-500">
+                  {timeProtected.calls} {timeProtected.calls === 1 ? "call" : "calls"} that
+                  weren&apos;t the right fit never reached your calendar.
+                </p>
+              </div>
+            </div>
+            <p className="shrink-0 text-[28px] font-semibold tracking-[-0.04em] tabular-nums text-emerald-700">
+              {formatTimeProtected(timeProtected.minutes)}
+            </p>
+          </div>
+        )}
 
         {/* ── AI screening allowance ──────────────────────────────────────── */}
         <div

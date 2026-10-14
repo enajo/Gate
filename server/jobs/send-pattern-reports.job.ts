@@ -3,6 +3,7 @@ import "server-only";
 import { logger } from "@/lib/logger";
 import { bookingRepository } from "@/server/repositories/booking.repository";
 import { profileRepository } from "@/server/repositories/profile.repository";
+import { formatTimeProtected, timeProtectedService } from "@/server/services/time-protected.service";
 import { patternReportService } from "@/server/services/pattern-report.service";
 import { emailService } from "@/server/services/email.service";
 import type { PatternReportLeadInput } from "@/server/services/pattern-report.service";
@@ -93,10 +94,18 @@ export async function sendPatternReportsJob(): Promise<SendPatternReportsJobResu
         continue;
       }
 
+      // Best effort — the report still goes out if this fails.
+      const timeProtected = await timeProtectedService
+        .forProfessional(professionalId, since)
+        .catch(() => null);
+
       await emailService.sendPatternReportProfessional({
         to: professional.user.email ?? "",
         professionalName: professional.fullName,
         leadCount: leads.length,
+        timeProtected: timeProtected
+          ? { calls: timeProtected.calls, label: formatTimeProtected(timeProtected.minutes) }
+          : null,
         topRejectionReasons: report.topRejectionReasons,
         commonObjections: report.commonObjections,
         suggestion: report.suggestion,
